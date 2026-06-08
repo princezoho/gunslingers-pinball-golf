@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 46 · ICE CRACKS';
+  var BUILD = 'BUILD 47 · RUBBER RIPPLES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -442,6 +442,17 @@
           var iang = ir / irays * TAU + iprnd(ist * 5 + 3 + ir) * 0.7, ilen = 70 + iprnd(ist * 7 + ir) * 130, idx = Math.sin(iang), idz = Math.cos(iang), ipx = -idz, ipz = idx;
           var icg = new T.BufferGeometry(); icg.setAttribute('position', new T.BufferAttribute(new Float32Array([icx + idx * ilen, igy, icz + idz * ilen, icx + ipx * 5, igy, icz + ipz * 5, icx - ipx * 5, igy, icz - ipz * 5]), 3)); icg.setIndex([0, 1, 2]); icg.computeVertexNormals();
           R3.group.add(new T.Mesh(icg, crackMat));
+        }
+      }
+    }
+    // RUBBER — concentric "bounce ripple" rings on the springy turf (flat decals, no collision)
+    if (hole.theme === 'rubber') {
+      var rprnd = function (n) { var x = Math.sin(n * 73.3 + 1.1) * 43758.5453; return x - Math.floor(x); };
+      var ringMat = new T.MeshBasicMaterial({ color: 0x6e2018, transparent: true, opacity: 0.42, side: T.DoubleSide, depthWrite: false });
+      for (var rp = 0; rp < 5; rp++) {
+        var rcx = bn.minX + 80 + rprnd(rp * 4) * (bn.maxX - bn.minX - 160), rcz = bn.minZ + 80 + rprnd(rp * 4 + 1) * (bn.maxZ - bn.minZ - 160), rgy = hole.terrain(rcx, rcz) + 2, nr = 2 + Math.floor(rprnd(rp * 4 + 2) * 2);
+        for (var ri = 0; ri < nr; ri++) {
+          var rad = 26 + ri * 25 + rprnd(rp * 4 + 3) * 8, rg = new T.Mesh(new T.RingGeometry(rad, rad + 7, 28), ringMat); rg.rotation.x = -PI / 2; rg.position.set(rcx, rgy, rcz); R3.group.add(rg);
         }
       }
     }
