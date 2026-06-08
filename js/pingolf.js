@@ -513,7 +513,7 @@
     for (var i = 0; i < wm.n; i++) { var a = ((wm.ang + i / wm.n * TAU) % TAU + TAU) % TAU, dd = Math.abs(a - PI); dd = Math.min(dd, TAU - dd); if (dd < nearest) nearest = dd; }
     if (nearest < win) {
       if (b.vz >= 0) { b.z = wm.z - (K.R + 15); b.vz = -Math.abs(b.vz) * 0.55; } else { b.z = wm.z + (K.R + 15); b.vz = Math.abs(b.vz) * 0.55; }
-      b.vx *= 0.7; wm.flash = .3; St.shake = Math.min(10, St.shake + 5); spark(b.x, gy + 20, b.z, 8); sfx('tick');
+      b.vx *= 0.7; wm.flash = .3; St.shake = Math.min(10, St.shake + 5); spark(b.x, gy + 20, b.z, 8); pop3d(b.x, b.z, gy, 'WHACK!', '#ff8a2a'); sfx('tick');
     }
   }
   function laserActive(la) { var p = ((St.t + la.phase * la.period) % la.period) / la.period; return p < la.onFrac; }
