@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 39 · SHIELD BUBBLE';
+  var BUILD = 'BUILD 40 · SOUNDTRACK + VOLUME';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -757,9 +757,23 @@
   function spark(x, y, z, n) { for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 50 + Math.random() * 180; St.fx.push({ x: x, y: y, z: z, vx: Math.cos(a) * s, vy: 80 + Math.random() * 200, vz: Math.sin(a) * s, life: .5, max: .5 }); } }
   function sparkBurst(x, z, n) { var y = St.hole.terrain(x, z); for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 100 + Math.random() * 240; St.fx.push({ x: x, y: y + 12, z: z, vx: Math.cos(a) * s, vy: 200 + Math.random() * 280, vz: Math.sin(a) * s, life: 1, max: 1, gold: true }); } }
   function pop3d(x, z, gy, text, col) { St.pops.push({ x: x, y: gy + 70, z: z, text: text, col: col, life: .85, max: .85 }); if (St.pops.length > 8) St.pops.shift(); }
-  var AU = { ctx: null, on: true };
-  function audioInit() { if (AU.ctx) return; try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-  function sfx(kind) { if (!AU.on || !AU.ctx) return; var t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); var m = ({ hit: [190, 'sawtooth', .12], bump: [520, 'square', .07], flip: [360, 'triangle', .05], tick: [200, 'square', .04], boost: [320, 'sawtooth', .2], sink: [660, 'sine', .25], coin: [780, 'triangle', .09] })[kind] || [200, 'square', .04]; o.type = m[1]; o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[0] * (kind === 'sink' || kind === 'coin' ? 1.7 : .6), t + m[2]); g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + m[2]); o.connect(g); g.connect(AU.ctx.destination); o.start(t); o.stop(t + m[2] + .02); }
+  // --- AUDIO: master / music / sfx volumes (default 50%, never full), music soundtrack, persisted ---
+  var AU = { ctx: null, on: true, master: 0.5, music: 0.5, sfx: 0.5, masterGain: null, sfxGain: null, musicEl: null, tracks: ['assets/audio/music1.mp3', 'assets/audio/music2.mp3', 'assets/audio/music3.mp3'], ti: 0, started: false };
+  function audioLoadPrefs() { try { var p = JSON.parse(localStorage.getItem('pg_audio') || 'null'); if (p) { if (typeof p.master === 'number') AU.master = clamp(p.master, 0, 1); if (typeof p.music === 'number') AU.music = clamp(p.music, 0, 1); if (typeof p.sfx === 'number') AU.sfx = clamp(p.sfx, 0, 1); if (typeof p.on === 'boolean') AU.on = p.on; } } catch (e) { } }
+  function audioSavePrefs() { try { localStorage.setItem('pg_audio', JSON.stringify({ master: AU.master, music: AU.music, sfx: AU.sfx, on: AU.on })); } catch (e) { } }
+  function audioApply() { if (AU.masterGain) AU.masterGain.gain.value = AU.on ? AU.master : 0; if (AU.sfxGain) AU.sfxGain.gain.value = AU.sfx; if (AU.musicEl) AU.musicEl.volume = clamp((AU.on ? 1 : 0) * AU.master * AU.music, 0, 1); }
+  function audioInit() { if (AU.ctx) return; try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); AU.masterGain = AU.ctx.createGain(); AU.sfxGain = AU.ctx.createGain(); AU.sfxGain.connect(AU.masterGain); AU.masterGain.connect(AU.ctx.destination); } catch (e) { } audioApply(); }
+  function musicStart() { // begin the soundtrack on first user gesture (browser autoplay policy); cycles tracks; silent if assets absent
+    if (AU.started) return; AU.started = true;
+    try {
+      var el = new Audio(); AU.musicEl = el; el.loop = false; el.preload = 'auto';
+      el.addEventListener('ended', function () { AU.ti = (AU.ti + 1) % AU.tracks.length; el.src = AU.tracks[AU.ti]; el.play().catch(function () { }); });
+      el.addEventListener('error', function () { }); // missing/blocked file → no music, game continues
+      el.src = AU.tracks[AU.ti]; audioApply(); el.play().catch(function () { AU.started = false; });
+    } catch (e) { AU.started = false; }
+  }
+  function musicNext() { if (!AU.musicEl) return; AU.ti = (AU.ti + 1) % AU.tracks.length; AU.musicEl.src = AU.tracks[AU.ti]; if (AU.on && AU.master > 0 && AU.music > 0) AU.musicEl.play().catch(function () { }); audioApply(); }
+  function sfx(kind) { if (!AU.on || !AU.ctx || AU.master <= 0 || AU.sfx <= 0) return; var t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); var m = ({ hit: [190, 'sawtooth', .12], bump: [520, 'square', .07], flip: [360, 'triangle', .05], tick: [200, 'square', .04], boost: [320, 'sawtooth', .2], sink: [660, 'sine', .25], coin: [780, 'triangle', .09] })[kind] || [200, 'square', .04]; o.type = m[1]; o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[0] * (kind === 'sink' || kind === 'coin' ? 1.7 : .6), t + m[2]); g.gain.setValueAtTime(.46, t); g.gain.exponentialRampToValueAtTime(.001, t + m[2]); o.connect(g); g.connect(AU.sfxGain || AU.ctx.destination); o.start(t); o.stop(t + m[2] + .02); }
 
   /* ================================================================ camera */
   function placeCam() {
@@ -871,7 +885,7 @@
 
   /* ================================================================ input */
   function ptr(e) { var r = St.scene.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-  function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'L' : 'R'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
+  function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'L' : 'R'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
   function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0; St.aimYaw = St.drag.yaw0 - dx * 0.0048; St.drag.pull = Math.max(0, dy); St.power = clamp(St.drag.pull / K.pullPx, 0.05, 1); }
   function onUp(e) { if (ED.on) { edUp(); return; } if (St.ptr) { var role = St.ptr[e.pointerId]; if (role === 'L' || role === 'R') { delete St.ptr[e.pointerId]; var any = false; for (var k in St.ptr) if (St.ptr[k] === role) any = true; flipPress(role, any); return; } delete St.ptr[e.pointerId]; } if (!St.drag) return; var pull = St.drag.pull; St.drag = null; if (pull >= 14) shoot(); }
   function onKey(down, e) { var k = e.code; if (St.state === 'roll') { if (k === 'ArrowLeft' || k === 'KeyA') { flipPress('L', down); e.preventDefault(); } else if (k === 'ArrowRight' || k === 'KeyD') { flipPress('R', down); e.preventDefault(); } } else if (down && St.state === 'aim') { if (k === 'ArrowLeft' || k === 'KeyA') { St.camOrbit -= 0.06; e.preventDefault(); } else if (k === 'ArrowRight' || k === 'KeyD') { St.camOrbit += 0.06; e.preventDefault(); } } }
@@ -1487,7 +1501,33 @@
   function tick(dt) { if (St.slowT > 0) { St.slowT = Math.max(0, St.slowT - dt); dt *= 0.45; } St.acc += dt; var fx = 1 / K.hz, guard = 0; while (St.acc >= fx && guard++ < 90) { physStep(fx); St.acc -= fx; } stepVisuals(dt); }
   function frame(ts) { var dt = Math.min(0.05, (ts - St.last) / 1000 || 0); St.last = ts; if (ED.on) { if (ED.view3d) { if (ED.dirty3d) { ED.dirty3d = false; buildScene(ED.draft); } St.t += dt; var hh = St.hole; for (var wi = 0; wi < (hh.windmills || []).length; wi++) hh.windmills[wi].ang += hh.windmills[wi].speed * dt; for (var ei = 0; ei < (hh.enemies || []).length; ei++) { var en = hh.enemies[ei]; en.ph += en.speed * dt; var eu = Math.abs((en.ph % 2) - 1); en.cx = en.x + (en.ex - en.x) * eu; en.cz = en.z + (en.ez - en.z) * eu; } syncMeshes(); orbitCam(); R3.r.render(R3.scene, R3.cam); if (St.hctx) draw3DHud(St.hctx); } else if (St.hctx) drawEditor(St.hctx); requestAnimationFrame(frame); return; } if (St.state !== 'load') tick(dt); drawHUD(); requestAnimationFrame(frame); }
   function resize() { var r = St.scene.getBoundingClientRect(); St.dpr = Math.min(2, window.devicePixelRatio || 1); St.w = r.width; St.h = r.height; St.hud.width = Math.round(St.w * St.dpr); St.hud.height = Math.round(St.h * St.dpr); if (R3.ready) { R3.r.setSize(St.w, St.h, false); R3.cam.aspect = St.w / St.h; R3.cam.updateProjectionMatrix(); } if (ED.on) edToolbarLabels(); }
+  function audioUI() {
+    var dock = document.getElementById('snd'); if (!dock) return;
+    var mb = document.getElementById('mute');
+    var panel = elt('div', 'position:absolute;right:0;bottom:48px;width:210px;padding:12px 13px;border:2px solid #160d06;border-radius:12px;background:linear-gradient(180deg,#2a1c10,#160d06);box-shadow:0 7px 24px rgba(0,0,0,.6);color:#f3eedd;font:12px Georgia;display:none;', null, dock);
+    AU.panel = panel;
+    elt('div', 'font:900 13px Wantedo,Georgia;color:#f5c542;letter-spacing:1px;margin-bottom:10px;text-align:center;', '♪ AUDIO', panel);
+    function row(label, key) {
+      var r = elt('div', 'margin-bottom:9px;', null, panel);
+      var top = elt('div', 'display:flex;justify-content:space-between;margin-bottom:3px;', null, r);
+      elt('span', 'color:#e8dcc0;', label, top);
+      var val = elt('span', 'color:#f5c542;font-weight:700;', Math.round(AU[key] * 100) + '%', top);
+      var sl = elt('input', 'width:100%;accent-color:#f5c542;cursor:pointer;', null, r); sl.type = 'range'; sl.min = '0'; sl.max = '100'; sl.step = '5'; sl.value = String(Math.round(AU[key] * 100));
+      sl.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      sl.addEventListener('input', function () { AU[key] = clamp((+sl.value) / 100, 0, 1); val.textContent = Math.round(AU[key] * 100) + '%'; if (!AU.ctx) audioInit(); musicStart(); audioApply(); audioSavePrefs(); });
+      return sl;
+    }
+    row('Master', 'master'); row('Music', 'music'); row('SFX', 'sfx');
+    var btnrow = elt('div', 'display:flex;gap:6px;margin-top:4px;', null, panel);
+    var BCSS = 'flex:1;padding:7px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:800 11px Georgia;cursor:pointer;';
+    var mt = elt('button', BCSS, AU.on ? '🔊 ON' : '🔇 OFF', btnrow);
+    mt.addEventListener('click', function (e) { e.stopPropagation(); AU.on = !AU.on; mt.textContent = AU.on ? '🔊 ON' : '🔇 OFF'; if (AU.on) { if (!AU.ctx) audioInit(); musicStart(); } audioApply(); audioSavePrefs(); if (mb) mb.textContent = AU.on ? '🔊' : '🔇'; });
+    var nx = elt('button', BCSS, '⏭ Track', btnrow);
+    nx.addEventListener('click', function (e) { e.stopPropagation(); if (!AU.ctx) audioInit(); if (!AU.started) musicStart(); else musicNext(); });
+    if (mb) { mb.textContent = AU.on ? '🔊' : '🔇'; mb.title = 'Audio & volume'; mb.addEventListener('click', function (e) { e.stopPropagation(); panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; }); }
+  }
   function boot() {
+    audioLoadPrefs();
     St.scene = document.getElementById('scene'); St.hud = document.getElementById('hud'); St.hctx = St.hud.getContext('2d');
     initGL(St.scene); resize(); window.addEventListener('resize', resize);
     St.scene.addEventListener('pointerdown', onDown); window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp);
@@ -1497,7 +1537,7 @@
     cb('rotL', function () { St.camOrbit -= 0.14; }); cb('rotR', function () { St.camOrbit += 0.14; });
     cb('zin', function () { R3.zoom = clamp(R3.zoom * 0.86, 0.55, 1.8); }); cb('zout', function () { R3.zoom = clamp(R3.zoom * 1.16, 0.55, 1.8); }); cb('vreset', function () { R3.zoom = 1; St.camOrbit = 0; });
     St.scene.addEventListener('wheel', function (e) { e.preventDefault(); if (ED.on && ED.view3d) { ED.orb.dist = clamp(ED.orb.dist * (e.deltaY > 0 ? 1.08 : 0.92), 0.5, 4); return; } R3.zoom = clamp(R3.zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.55, 1.8); }, { passive: false });
-    var mb = document.getElementById('mute'); if (mb) mb.addEventListener('click', function (e) { e.stopPropagation(); AU.on = !AU.on; e.currentTarget.style.opacity = AU.on ? '1' : '.45'; });
+    audioUI();
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
     edInit();
     var BTNCSS = 'position:fixed;left:12px;z-index:30;padding:7px 11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;';
@@ -1530,6 +1570,7 @@
   /* test hooks */
   PG.game = St; PG.K = K; PG.HOLES = HOLES;
   PG.__tick = tick; PG.__render = drawHUD; PG.__load = loadHole; PG.__St = St; PG.__HOLES = HOLES; PG.__K = K;
+  PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU;
   PG.__edSerialize = function () { return edSerialize(); }; PG.__edDeserialize = function (o) { return edDeserialize(o); };
   PG.__edDown = function (px, py, shift) { edDown({ x: px, y: py }, !!shift); }; PG.__edMove = function (px, py) { edMove({ x: px, y: py }); }; PG.__edUp = function () { edUp(); };
   PG.__project = function (x, y, z) { return project(x, y, z); }; PG.__ed3dWorld = function (px, py) { return ed3DToWorld({ x: px, y: py }); }; PG.__orbitCam = function () { orbitCam(); }; PG.__edSel = function () { return ED.sel; };

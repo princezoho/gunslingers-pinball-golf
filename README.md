@@ -2,7 +2,7 @@
 
 A 3D Wild-West **pinball + mini-golf** hybrid that runs entirely in the browser — no build step, no dependencies beyond Three.js. Putt the ball through pinball chaos (flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops, teleport portals) and mini-golf wackiness (ramps, jumps, funnels, multi-tier greens) across 20 hand-built holes, then **build your own levels** in a full 2D + 3D editor.
 
-Everything is procedurally rendered (Three.js geometry + a 2D canvas HUD) — there are no image assets to load.
+The game itself is procedurally rendered (Three.js geometry + a 2D canvas HUD) — the playfield needs no image assets. A cowboy-themed **landing page** (`index.html`) is the front door; the game lives in `game.html`.
 
 ## ▶ Play it
 
@@ -10,10 +10,11 @@ It's a static site. Serve the folder over HTTP and open it:
 
 ```bash
 python3 -m http.server 8754
-# then visit http://localhost:8754
+# then visit http://localhost:8754   (landing page → click PLAY)
+# the game directly:  http://localhost:8754/game.html
 ```
 
-(Opening `index.html` via `file://` won't work because the ES font / module loads need HTTP.)
+(Opening via `file://` won't work because the font / asset loads need HTTP.)
 
 ## 🎮 Controls
 
@@ -24,6 +25,8 @@ python3 -m http.server 8754
 **Power-ups** — roll over them to grab: **Magnet** (pulls you to the cup), **Shield** (blocks the next hazard), **Slow-mo** (bullet-time through gates), **Gem** (bonus points), **Jump** (hop over walls).
 
 Buttons (top-left in game): **Level Editor**, **Levels** (pick/skip any hole), **Skip**.
+
+**Sound & music** — tap the 🔊 speaker (bottom-right) for the audio panel: independent **Master / Music / SFX** volume sliders, a mute toggle, and a track-skip for the Wild-West soundtrack. Everything defaults to **50%** (never full-blast) and your levels are remembered between sessions.
 
 ## 🛠 Level Editor
 
@@ -38,7 +41,11 @@ Buttons (top-left in game): **Level Editor**, **Levels** (pick/skip any hole), *
 
 ## 🧱 Tech
 
-Single-file engine in [`js/pingolf.js`](js/pingolf.js): a fixed-timestep 3D heightfield golf/pinball simulation, a `builder()` DSL for holes, and a self-contained DOM/canvas editor. Rendering via [Three.js](https://threejs.org/) (`vendor/three.min.js`, MIT).
+Single-file engine in [`js/pingolf.js`](js/pingolf.js): a fixed-timestep 3D heightfield golf/pinball simulation, a `builder()` DSL for holes, a self-contained DOM/canvas editor, and a small Web-Audio mixer (master/music/SFX gains) driving a looping soundtrack. Rendering via [Three.js](https://threejs.org/) (`vendor/three.min.js`, MIT). `index.html` is the landing page, `game.html` hosts the engine.
+
+## 🎨 Art & audio
+
+The branded **Gunslingers** artwork, backgrounds and music are **not bundled** in this repo (they're the author's IP, and the soundtrack is large). The game is fully playable without them — the playfield is procedural, and the landing page / soundtrack **degrade gracefully** when the assets are absent (a CSS Western theme stands in for the hero art, and the game simply runs without music). Drop your own `assets/` in to re-skin it.
 
 ## 📄 License
 
