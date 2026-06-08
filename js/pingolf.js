@@ -1553,9 +1553,10 @@
   // never let the player stare at a stale cached build: poll the published version, offer a one-tap reload
   function versionWatch() {
     var sc = document.querySelector('script[src*="pingolf.js"]'); var cur = (sc && (sc.src.match(/[?&]v=(\d+)/) || [])[1]) || '0', shown = false;
+    var self = (location.pathname.split('/').pop() || 'game.html'); // poll THIS page (the game), not the landing
     setInterval(function () {
       if (shown) return;
-      fetch('index.html?vchk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      fetch(self + '?vchk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = t.match(/pingolf\.js\?v=(\d+)/);
         if (m && m[1] !== cur) {
           shown = true;
