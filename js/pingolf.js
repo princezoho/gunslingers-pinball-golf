@@ -34,13 +34,13 @@
   };
   var KD = {}; (function () { for (var k in K) KD[k] = K[k]; })();   // pristine defaults
   var THEMES = {
-    grass: { name: 'Grass (normal)', turf: 0x54ad44, g: 2200, rollFric: 1100, groundE: 0.32, wallE: 0.66, bumpKick: 1750, vMax: 6200 },
-    ice: { name: 'Ice ❄ (slides)', turf: 0xbfe6f0, g: 2200, rollFric: 230, groundE: 0.45, wallE: 0.9, bumpKick: 1950, vMax: 7000 },
-    moon: { name: 'Moon 🌙 (low-G)', turf: 0x9b94aa, g: 780, rollFric: 600, groundE: 0.74, wallE: 0.84, bumpKick: 1650, vMax: 6200 },
-    mud: { name: 'Mud 🟤 (sticky)', turf: 0x7a5a30, g: 2200, rollFric: 2550, groundE: 0.12, wallE: 0.4, bumpKick: 1500, vMax: 6200 },
-    rubber: { name: 'Rubber 🔴 (bouncy)', turf: 0xc0392b, g: 2200, rollFric: 950, groundE: 0.92, wallE: 0.97, bumpKick: 2150, vMax: 7000 },
-    speed: { name: 'Speedway ⚡ (fast)', turf: 0xf0a830, g: 2200, rollFric: 470, groundE: 0.35, wallE: 0.7, bumpKick: 2050, vMax: 7400 },
-    sand: { name: 'Sand 🏜 (drag)', turf: 0xd9c08a, g: 2200, rollFric: 1900, groundE: 0.2, wallE: 0.5, bumpKick: 1600, vMax: 6000 }
+    grass: { name: 'Grass (normal)', turf: 0x54ad44, sky: 0xc9a06a, g: 2200, rollFric: 1100, groundE: 0.32, wallE: 0.66, bumpKick: 1750, vMax: 6200 },
+    ice: { name: 'Ice ❄ (slides)', turf: 0xbfe6f0, sky: 0xaccfe0, g: 2200, rollFric: 230, groundE: 0.45, wallE: 0.9, bumpKick: 1950, vMax: 7000 },
+    moon: { name: 'Moon 🌙 (low-G)', turf: 0x9b94aa, sky: 0x2b2746, g: 780, rollFric: 600, groundE: 0.74, wallE: 0.84, bumpKick: 1650, vMax: 6200 },
+    mud: { name: 'Mud 🟤 (sticky)', turf: 0x7a5a30, sky: 0x8f7848, g: 2200, rollFric: 2550, groundE: 0.12, wallE: 0.4, bumpKick: 1500, vMax: 6200 },
+    rubber: { name: 'Rubber 🔴 (bouncy)', turf: 0xc0392b, sky: 0xb56550, g: 2200, rollFric: 950, groundE: 0.92, wallE: 0.97, bumpKick: 2150, vMax: 7000 },
+    speed: { name: 'Speedway ⚡ (fast)', turf: 0xf0a830, sky: 0xdfa83e, g: 2200, rollFric: 470, groundE: 0.35, wallE: 0.7, bumpKick: 2050, vMax: 7400 },
+    sand: { name: 'Sand 🏜 (drag)', turf: 0xd9c08a, sky: 0xe7c486, g: 2200, rollFric: 1900, groundE: 0.2, wallE: 0.5, bumpKick: 1600, vMax: 6000 }
   };
   var PHYS_KEYS = ['g', 'rollFric', 'groundE', 'wallE', 'cupR', 'shotMax', 'bumpKick', 'flipKick', 'vMax'];
   function applyPhys(phys) { PHYS_KEYS.forEach(function (k) { K[k] = (phys && phys[k] != null) ? phys[k] : KD[k]; }); }
@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 42 · MAGNET BEAM';
+  var BUILD = 'BUILD 43 · THEME SKIES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -398,7 +398,8 @@
     if (!R3.ready) return;
     if (R3.group) R3.scene.remove(R3.group);
     R3.group = new T.Group(); R3.scene.add(R3.group);
-    R3.scene.background = new T.Color(0xc9a06a);
+    var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
+    R3.scene.background = new T.Color(skyC); if (R3.scene.fog) R3.scene.fog.color.setHex(skyC);
     var bn = hole.bounds, midZ = (bn.minZ + bn.maxZ) / 2, spanX = bn.maxX - bn.minX + 600, spanZ = bn.maxZ - bn.minZ + 600;
     // terrain mesh
     var segX = 70, segZ = Math.round(spanZ / 30), geo = new T.PlaneGeometry(spanX, spanZ, segX, segZ);
@@ -409,7 +410,7 @@
     var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ color: hole.turf, roughness: hole.theme === 'ice' ? .35 : 1, metalness: hole.theme === 'ice' ? .2 : 0 }) : new T.MeshStandardMaterial({ map: turfTex(), roughness: 1 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // skirt
-    var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ color: 0x9a6a3e, roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ color: new T.Color(skyC).multiplyScalar(0.6), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
     // walls
     var wm = new T.MeshStandardMaterial({ color: 0x8a5a32, roughness: .8 }), capm = new T.MeshStandardMaterial({ color: 0xe6b878, roughness: .55 });
     hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ color: s.c, roughness: .8 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); });
