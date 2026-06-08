@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 47 · RUBBER RIPPLES';
+  var BUILD = 'BUILD 48 · SHOCKWAVES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -396,6 +396,7 @@
   function flipperShape(L) { var r0 = 16, r1 = 7, sh = new T.Shape(), phi = Math.asin((r0 - r1) / L); sh.absarc(0, 0, r0, PI / 2 + phi, 1.5 * PI - phi, false); sh.absarc(L, 0, r1, -PI / 2 - phi, PI / 2 + phi, false); return sh; }
   function buildScene(hole) {
     if (!R3.ready) return;
+    St.shocks = [];
     if (R3.group) R3.scene.remove(R3.group);
     R3.group = new T.Group(); R3.scene.add(R3.group);
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
@@ -618,21 +619,21 @@
     for (i = 0; i < hole.lasers.length; i++) collideLaser(b, hole.lasers[i], gy);
     // boosters
     if (b.boostCd > 0) b.boostCd -= dt;
-    for (i = 0; i < hole.boosters.length; i++) { var z = hole.boosters[i]; if (b.boostCd <= 0 && b.y < gy + 70 && hyp(b.x - z.x, b.z - z.z) < z.r) { b.vx = z.dx * z.spd; b.vz = z.dz * z.spd; b.boostCd = K.boostCd; z.flash = .3; St.shake = Math.min(11, St.shake + 7); pop3d(z.x, z.z, gy, 'TURBO!', COL.blue); spark(z.x, gy + 16, z.z, 16); sfx('boost'); break; } }
+    for (i = 0; i < hole.boosters.length; i++) { var z = hole.boosters[i]; if (b.boostCd <= 0 && b.y < gy + 70 && hyp(b.x - z.x, b.z - z.z) < z.r) { b.vx = z.dx * z.spd; b.vz = z.dz * z.spd; b.boostCd = K.boostCd; z.flash = .3; St.shake = Math.min(11, St.shake + 7); pop3d(z.x, z.z, gy, 'TURBO!', COL.blue); spark(z.x, gy + 16, z.z, 16); spawnShock(z.x, gy, z.z, COL.blue); sfx('boost'); break; } }
     // loop-de-loop (enter from either side with enough speed; ball rides the vertical loop, exits boosted)
     var lps = hole.loops || [];
-    for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 46) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 1050 && sp2 > 1150) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(sp2, 4200), gy: hole.terrain(lo2.x, lo2.z) }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
+    for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 46) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 1050 && sp2 > 1150) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(sp2, 4200), gy: hole.terrain(lo2.x, lo2.z) }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); spawnShock(lo2.x, hole.terrain(lo2.x, lo2.z), lo2.z, COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
     // drop holes / warps — roll in, fall to the linked exit (lower tier)
     if (b.warpCd > 0) b.warpCd -= dt;
     var wps = hole.warps || [];
-    for (i = 0; i < wps.length; i++) { var wp = wps[i]; if (b.warpCd <= 0 && !b.air && hyp(b.x - wp.x, b.z - wp.z) < wp.r) { wp.flash = .3; b.x = wp.ex; b.z = wp.ez; b.y = hole.terrain(wp.ex, wp.ez) + K.R + 240; b.vx *= 0.3; b.vz *= 0.3; b.vy = 0; b.air = true; b.warpCd = 0.8; b.stillT = 0; b.settled = false; pop3d(wp.x, wp.z, hole.terrain(wp.x, wp.z), 'DROP!', COL.blue); spark(wp.x, hole.terrain(wp.x, wp.z) + 12, wp.z, 14); St.shake = Math.min(10, St.shake + 6); sfx('boost'); return; } }
+    for (i = 0; i < wps.length; i++) { var wp = wps[i]; if (b.warpCd <= 0 && !b.air && hyp(b.x - wp.x, b.z - wp.z) < wp.r) { wp.flash = .3; b.x = wp.ex; b.z = wp.ez; b.y = hole.terrain(wp.ex, wp.ez) + K.R + 240; b.vx *= 0.3; b.vz *= 0.3; b.vy = 0; b.air = true; b.warpCd = 0.8; b.stillT = 0; b.settled = false; pop3d(wp.x, wp.z, hole.terrain(wp.x, wp.z), 'DROP!', COL.blue); spark(wp.x, hole.terrain(wp.x, wp.z) + 12, wp.z, 14); spawnShock(wp.x, hole.terrain(wp.x, wp.z), wp.z, COL.blue); St.shake = Math.min(10, St.shake + 6); sfx('boost'); return; } }
     // portals — teleport to the linked twin, keeping speed & direction
     if (b.portalCd > 0) b.portalCd -= dt;
     var prt = hole.portals || [];
-    for (i = 0; i < prt.length; i++) { var po = prt[i]; if (b.portalCd <= 0 && !b.air && hyp(b.x - po.x, b.z - po.z) < po.r) { po.flash = .3; var exs = po.exits || [{ x: po.ex, z: po.ez }], ex = exs[Math.floor(Math.random() * exs.length)], psp = hyp(b.vx, b.vz) || 1, ux = b.vx / psp, uz = b.vz / psp; b.x = ex.x + ux * (po.r + K.R + 14); b.z = ex.z + uz * (po.r + K.R + 14); b.y = hole.terrain(b.x, b.z) + K.R; b.portalCd = 0.5; pop3d(ex.x, ex.z, hole.terrain(ex.x, ex.z), exs.length > 1 ? '⁇ WARP!' : 'WARP!', '#c45cff'); spark(ex.x, hole.terrain(ex.x, ex.z) + 14, ex.z, 12); St.shake = Math.min(9, St.shake + 4); sfx('boost'); return; } }
+    for (i = 0; i < prt.length; i++) { var po = prt[i]; if (b.portalCd <= 0 && !b.air && hyp(b.x - po.x, b.z - po.z) < po.r) { po.flash = .3; var exs = po.exits || [{ x: po.ex, z: po.ez }], ex = exs[Math.floor(Math.random() * exs.length)], psp = hyp(b.vx, b.vz) || 1, ux = b.vx / psp, uz = b.vz / psp; b.x = ex.x + ux * (po.r + K.R + 14); b.z = ex.z + uz * (po.r + K.R + 14); b.y = hole.terrain(b.x, b.z) + K.R; b.portalCd = 0.5; pop3d(ex.x, ex.z, hole.terrain(ex.x, ex.z), exs.length > 1 ? '⁇ WARP!' : 'WARP!', '#c45cff'); spark(ex.x, hole.terrain(ex.x, ex.z) + 14, ex.z, 12); spawnShock(ex.x, hole.terrain(ex.x, ex.z), ex.z, '#c45cff'); St.shake = Math.min(9, St.shake + 4); sfx('boost'); return; } }
     // ring of fire — a VERTICAL flaming hoop; jump the ball through the opening for points
     var frs = hole.firerings || [];
-    for (i = 0; i < frs.length; i++) { var fr = frs[i]; if (fr.passedCd <= 0 && Math.abs(b.z - fr.z) < K.R + 12) { var cyf = hole.terrain(fr.x, fr.z) + fr.h, dxr = b.x - fr.x, dyr = b.y - cyf, rr = Math.sqrt(dxr * dxr + dyr * dyr); if (rr < fr.r - K.R * 0.5 && b.air) { fr.passed = true; fr.flash = .6; fr.passedCd = 0.9; St.points = (St.points || 0) + fr.points; St.combo = (St.combo || 0) + 1; pop3d(fr.x, fr.z, cyf, 'RING +' + fr.points + '!', COL.gold); spark(fr.x, cyf, fr.z, 18); St.shake = Math.min(10, St.shake + 5); b.vx *= 1.12; b.vz *= 1.12; sfx('boost'); } } }
+    for (i = 0; i < frs.length; i++) { var fr = frs[i]; if (fr.passedCd <= 0 && Math.abs(b.z - fr.z) < K.R + 12) { var cyf = hole.terrain(fr.x, fr.z) + fr.h, dxr = b.x - fr.x, dyr = b.y - cyf, rr = Math.sqrt(dxr * dxr + dyr * dyr); if (rr < fr.r - K.R * 0.5 && b.air) { fr.passed = true; fr.flash = .6; fr.passedCd = 0.9; St.points = (St.points || 0) + fr.points; St.combo = (St.combo || 0) + 1; pop3d(fr.x, fr.z, cyf, 'RING +' + fr.points + '!', COL.gold); spark(fr.x, cyf, fr.z, 18); spawnShock(fr.x, cyf, fr.z, COL.gold); St.shake = Math.min(10, St.shake + 5); b.vx *= 1.12; b.vz *= 1.12; sfx('boost'); } } }
     // enemies — effect on contact: knockback / reset (back to shot) / stun
     var ens = hole.enemies || [];
     for (i = 0; i < ens.length; i++) { var en = ens[i]; var dxe = b.x - en.cx, dze = b.z - en.cz, de = hyp(dxe, dze), Re = K.R + en.r; if (de < Re && b.y < gy + 90) { if (b.hzCd > 0) continue; var nex = de > .01 ? dxe / de : 0, nez = de > .01 ? dze / de : 1; b.x = en.cx + nex * Re; b.z = en.cz + nez * Re; en.flash = .3; St.shake = Math.min(12, St.shake + 7); spark(en.cx, gy + 24, en.cz, 14); sfx('bump'); if (b.shield) { b.shield = false; b.hzCd = 0.5; var vneS = b.vx * nex + b.vz * nez; if (vneS < 0) { b.vx -= 2 * vneS * nex; b.vz -= 2 * vneS * nez; } pop3d(en.cx, en.cz, gy, 'BLOCKED!', '#33b6ff'); continue; } if (en.effect === 'reset') { var vne0 = b.vx * nex + b.vz * nez; if (vne0 < 0) { b.vx -= 2.4 * vne0 * nex; b.vz -= 2.4 * vne0 * nez; } b.vx *= 0.28; b.vz *= 0.28; b.hzCd = 0.3; pop3d(en.cx, en.cz, gy, 'REPEL!', COL.red); return; } else if (en.effect === 'stun') { b.vx *= 0.1; b.vz *= 0.1; b.hzCd = 0.2; pop3d(en.cx, en.cz, gy, 'STUN!', COL.red); } else { var vne = b.vx * nex + b.vz * nez; if (vne < 0) { b.vx -= 1.9 * vne * nex; b.vz -= 1.9 * vne * nez; } b.vx += nex * 1700; b.vz += nez * 1700; pop3d(en.cx, en.cz, gy, 'POW!', COL.red); } } }
@@ -802,6 +803,7 @@
   /* ================================================================ fx + audio */
   function spark(x, y, z, n) { for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 50 + Math.random() * 180; St.fx.push({ x: x, y: y, z: z, vx: Math.cos(a) * s, vy: 80 + Math.random() * 200, vz: Math.sin(a) * s, life: .5, max: .5 }); } }
   function sparkBurst(x, z, n) { var y = St.hole.terrain(x, z); for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 100 + Math.random() * 240; St.fx.push({ x: x, y: y + 12, z: z, vx: Math.cos(a) * s, vy: 200 + Math.random() * 280, vz: Math.sin(a) * s, life: 1, max: 1, gold: true }); } }
+  function spawnShock(x, gy, z, col) { (St.shocks || (St.shocks = [])).push({ x: x, y: gy + 4, z: z, t: 0, max: 0.45, col: col || COL.gold }); }  // expanding ground-ring shockwave (drawn projected in drawHUD)
   function pop3d(x, z, gy, text, col) { St.pops.push({ x: x, y: gy + 70, z: z, text: text, col: col, life: .85, max: .85 }); if (St.pops.length > 8) St.pops.shift(); }
   // --- AUDIO: master / music / sfx volumes (default 50%, never full), music soundtrack, persisted ---
   var AU = { ctx: null, on: true, master: 0.5, music: 0.5, sfx: 0.5, masterGain: null, sfxGain: null, musicEl: null, tracks: ['assets/audio/music1.mp3', 'assets/audio/music2.mp3', 'assets/audio/music3.mp3'], ti: 0, started: false, buf: {} };
@@ -881,6 +883,7 @@
     var i, b = primeBall();
     if (St.trail.length > 1) { c.lineCap = 'round'; for (i = 1; i < St.trail.length; i++) { var ta = project(St.trail[i - 1].x, St.trail[i - 1].y, St.trail[i - 1].z), tb = project(St.trail[i].x, St.trail[i].y, St.trail[i].z); if (!ta.vis || !tb.vis) continue; var al = i / St.trail.length; c.strokeStyle = 'rgba(255,240,180,' + (al * .5).toFixed(2) + ')'; c.lineWidth = al * 11; c.beginPath(); c.moveTo(ta.x, ta.y); c.lineTo(tb.x, tb.y); c.stroke(); } }
     if (St.magnetT > 0 && b) drawMagnetPull(c, b);
+    if (St.shocks) for (i = 0; i < St.shocks.length; i++) { var sw = St.shocks[i], sf = sw.t / sw.max, wr = 14 + sf * 165, ccs = project(sw.x, sw.y, sw.z), exs = project(sw.x + wr, sw.y, sw.z), ezs = project(sw.x, sw.y, sw.z + wr); if (!ccs.vis) continue; var rx = hyp(exs.x - ccs.x, exs.y - ccs.y), rz = hyp(ezs.x - ccs.x, ezs.y - ccs.y); c.globalAlpha = clamp(1 - sf, 0, 1) * 0.65; c.strokeStyle = sw.col; c.lineWidth = 2 + (1 - sf) * 3; c.beginPath(); if (c.ellipse) c.ellipse(ccs.x, ccs.y, Math.max(rx, 1), Math.max(rz, 1), 0, 0, TAU); else c.arc(ccs.x, ccs.y, Math.max(rx, 1), 0, TAU); c.stroke(); } c.globalAlpha = 1;
     for (i = 0; i < St.fx.length; i++) { var p = St.fx[i], s = project(p.x, p.y, p.z); if (!s.vis) continue; c.globalAlpha = clamp(p.life / p.max, 0, 1); c.fillStyle = p.col || (p.gold ? COL.gold : '#fff0c0'); c.beginPath(); c.arc(s.x, s.y, p.r || (p.gold ? 4 : 2.4), 0, TAU); c.fill(); } c.globalAlpha = 1;
     c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 26px Wantedo, Georgia'; c.lineWidth = 4; c.strokeStyle = COL.ink; c.strokeText(q.text, qs.x, qs.y); c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); } c.globalAlpha = 1;
     if (St.state === 'aim' && b) drawAim(c, b);
@@ -1568,6 +1571,7 @@
     if (St.state === 'aim' && !St.drag) St.aimYaw = St.camYaw;
     if (St.coinPulse > 0) St.coinPulse = Math.max(0, St.coinPulse - dt);
     for (var i = St.fx.length - 1; i >= 0; i--) { var p = St.fx[i]; p.life -= dt; if (p.life <= 0) { St.fx.splice(i, 1); continue; } p.vy -= 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
+    if (St.shocks) for (var si = St.shocks.length - 1; si >= 0; si--) { St.shocks[si].t += dt; if (St.shocks[si].t >= St.shocks[si].max) St.shocks.splice(si, 1); }
     for (i = St.pops.length - 1; i >= 0; i--) { var q = St.pops[i]; q.life -= dt; q.y += 60 * dt; if (q.life <= 0) St.pops.splice(i, 1); }
     var b = primeBall(); if (b && St.state === 'roll' && hyp(b.vx, b.vz) > 220) { St.trail.push({ x: b.x, y: b.y, z: b.z }); if (St.trail.length > 16) St.trail.shift(); } else if (St.trail.length) St.trail.shift();
     if (St.shake > 0) St.shake = Math.max(0, St.shake - dt * 36);
@@ -1647,7 +1651,7 @@
   /* test hooks */
   PG.game = St; PG.K = K; PG.HOLES = HOLES;
   PG.__tick = tick; PG.__render = drawHUD; PG.__load = loadHole; PG.__St = St; PG.__HOLES = HOLES; PG.__K = K;
-  PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU; PG.__sfx = function (k) { sfx(k); }; PG.__sfxLoadAll = function () { sfxLoadAll(); };
+  PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU; PG.__sfx = function (k) { sfx(k); }; PG.__sfxLoadAll = function () { sfxLoadAll(); }; PG.__spawnShock = function (x, gy, z, col) { spawnShock(x, gy, z, col); };
   // headless beatability bot: plays hole `hi` up to `tries` times, each as multiple aimed strokes from the ball's live position toward the cup; returns {sunk, tries, strokes}. Test-only; leaves St on hole hi (caller should reload).
   PG.__beatN = function (hi, tries, maxStrokes) {
     tries = tries || 16; maxStrokes = maxStrokes || 14;
