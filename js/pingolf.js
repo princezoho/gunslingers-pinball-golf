@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 50 · COMBO METER';
+  var BUILD = 'BUILD 51 · COIN CHIME';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -828,6 +828,11 @@
   function musicNext() { if (!AU.musicEl) return; AU.ti = (AU.ti + 1) % AU.tracks.length; AU.musicEl.src = AU.tracks[AU.ti]; if (AU.on && AU.master > 0 && AU.music > 0) AU.musicEl.play().catch(function () { }); audioApply(); }
   function sfx(kind) {
     if (!AU.on || !AU.ctx || AU.master <= 0 || AU.sfx <= 0) return;
+    if (kind === 'coin') {   // bright 2-note "bling-bling" arpeggio so coins feel distinct & rewarding
+      var t0 = AU.ctx.currentTime, dest0 = AU.sfxGain || AU.ctx.destination, notes = [988, 1319];   // B5 -> E6
+      for (var ni = 0; ni < notes.length; ni++) { var oc = AU.ctx.createOscillator(), gc = AU.ctx.createGain(), tn = t0 + ni * 0.07; oc.type = 'triangle'; oc.frequency.setValueAtTime(notes[ni], tn); gc.gain.setValueAtTime(0.0001, tn); gc.gain.exponentialRampToValueAtTime(0.42, tn + 0.012); gc.gain.exponentialRampToValueAtTime(0.0008, tn + 0.17); oc.connect(gc); gc.connect(dest0); oc.start(tn); oc.stop(tn + 0.21); }
+      return;
+    }
     var names = SFXMAP[kind];
     if (names) { // prefer the comic POW/BAM sample when it's decoded
       var nm = names.length > 1 ? names[(Math.random() * names.length) | 0] : names[0], b = AU.buf[nm];
