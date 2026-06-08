@@ -2,6 +2,8 @@
 
 A 3D Wild-West **pinball + mini-golf** hybrid that runs entirely in the browser — no build step, no dependencies beyond Three.js. Putt the ball through pinball chaos (flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops, teleport portals) and mini-golf wackiness (ramps, jumps, funnels, multi-tier greens) across 20 hand-built holes, then **build your own levels** in a full 2D + 3D editor.
 
+Play against golf par — birdies, bogeys, hole-in-ones — with your **best score saved per hole** (across sessions), bumper-chain **combos**, and an end-of-round **scorecard**. Each terrain has its own look and physics, and hits land with juicy feedback: shockwaves, particle bursts, a Wild-West soundtrack and comic-book sound effects.
+
 The game itself is procedurally rendered (Three.js geometry + a 2D canvas HUD) — the playfield needs no image assets. A cowboy-themed **landing page** (`index.html`) is the front door; the game lives in `game.html`.
 
 ## ▶ Play it
