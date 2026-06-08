@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 48 · SHOCKWAVES';
+  var BUILD = 'BUILD 49 · SINK RINGS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -723,6 +723,7 @@
     var great = (over <= -1) || St.strokes === 1, cx = St.hole.cup.x, cz = St.hole.cup.z, gy = St.hole.terrain(cx, cz);
     St.shake = great ? 22 : (over <= 0 ? 14 : 9);
     sparkBurst(cx, cz, great ? 60 : over === 0 ? 38 : 22);
+    spawnShock(cx, gy, cz, COL.gold, great ? 320 : 210, 0.62); spawnShock(cx, gy, cz, '#fff0c8', great ? 210 : 140, 0.5);   // celebratory cup rings
     if (great) {   // colourful confetti fountain for birdie-or-better
       var cols = ['#f5c542', '#df3b32', '#3aa0ff', '#86d85f', '#c45cff', '#ff8a2a', '#ffffff'];
       for (var k = 0; k < 70; k++) { var a = Math.random() * TAU, sp = 120 + Math.random() * 360; St.fx.push({ x: cx, y: gy + 16, z: cz, vx: Math.cos(a) * sp, vy: 280 + Math.random() * 420, vz: Math.sin(a) * sp, life: 1.1 + Math.random() * 0.7, max: 1.8, col: cols[(Math.random() * cols.length) | 0], r: 3 + Math.random() * 3 }); }
@@ -803,7 +804,7 @@
   /* ================================================================ fx + audio */
   function spark(x, y, z, n) { for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 50 + Math.random() * 180; St.fx.push({ x: x, y: y, z: z, vx: Math.cos(a) * s, vy: 80 + Math.random() * 200, vz: Math.sin(a) * s, life: .5, max: .5 }); } }
   function sparkBurst(x, z, n) { var y = St.hole.terrain(x, z); for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 100 + Math.random() * 240; St.fx.push({ x: x, y: y + 12, z: z, vx: Math.cos(a) * s, vy: 200 + Math.random() * 280, vz: Math.sin(a) * s, life: 1, max: 1, gold: true }); } }
-  function spawnShock(x, gy, z, col) { (St.shocks || (St.shocks = [])).push({ x: x, y: gy + 4, z: z, t: 0, max: 0.45, col: col || COL.gold }); }  // expanding ground-ring shockwave (drawn projected in drawHUD)
+  function spawnShock(x, gy, z, col, rmax, dur) { (St.shocks || (St.shocks = [])).push({ x: x, y: gy + 4, z: z, t: 0, max: dur || 0.45, col: col || COL.gold, rmax: rmax || 165 }); }  // expanding ground-ring shockwave (drawn projected in drawHUD)
   function pop3d(x, z, gy, text, col) { St.pops.push({ x: x, y: gy + 70, z: z, text: text, col: col, life: .85, max: .85 }); if (St.pops.length > 8) St.pops.shift(); }
   // --- AUDIO: master / music / sfx volumes (default 50%, never full), music soundtrack, persisted ---
   var AU = { ctx: null, on: true, master: 0.5, music: 0.5, sfx: 0.5, masterGain: null, sfxGain: null, musicEl: null, tracks: ['assets/audio/music1.mp3', 'assets/audio/music2.mp3', 'assets/audio/music3.mp3'], ti: 0, started: false, buf: {} };
@@ -883,7 +884,7 @@
     var i, b = primeBall();
     if (St.trail.length > 1) { c.lineCap = 'round'; for (i = 1; i < St.trail.length; i++) { var ta = project(St.trail[i - 1].x, St.trail[i - 1].y, St.trail[i - 1].z), tb = project(St.trail[i].x, St.trail[i].y, St.trail[i].z); if (!ta.vis || !tb.vis) continue; var al = i / St.trail.length; c.strokeStyle = 'rgba(255,240,180,' + (al * .5).toFixed(2) + ')'; c.lineWidth = al * 11; c.beginPath(); c.moveTo(ta.x, ta.y); c.lineTo(tb.x, tb.y); c.stroke(); } }
     if (St.magnetT > 0 && b) drawMagnetPull(c, b);
-    if (St.shocks) for (i = 0; i < St.shocks.length; i++) { var sw = St.shocks[i], sf = sw.t / sw.max, wr = 14 + sf * 165, ccs = project(sw.x, sw.y, sw.z), exs = project(sw.x + wr, sw.y, sw.z), ezs = project(sw.x, sw.y, sw.z + wr); if (!ccs.vis) continue; var rx = hyp(exs.x - ccs.x, exs.y - ccs.y), rz = hyp(ezs.x - ccs.x, ezs.y - ccs.y); c.globalAlpha = clamp(1 - sf, 0, 1) * 0.65; c.strokeStyle = sw.col; c.lineWidth = 2 + (1 - sf) * 3; c.beginPath(); if (c.ellipse) c.ellipse(ccs.x, ccs.y, Math.max(rx, 1), Math.max(rz, 1), 0, 0, TAU); else c.arc(ccs.x, ccs.y, Math.max(rx, 1), 0, TAU); c.stroke(); } c.globalAlpha = 1;
+    if (St.shocks) for (i = 0; i < St.shocks.length; i++) { var sw = St.shocks[i], sf = sw.t / sw.max, wr = 14 + sf * (sw.rmax || 165), ccs = project(sw.x, sw.y, sw.z), exs = project(sw.x + wr, sw.y, sw.z), ezs = project(sw.x, sw.y, sw.z + wr); if (!ccs.vis) continue; var rx = hyp(exs.x - ccs.x, exs.y - ccs.y), rz = hyp(ezs.x - ccs.x, ezs.y - ccs.y); c.globalAlpha = clamp(1 - sf, 0, 1) * 0.65; c.strokeStyle = sw.col; c.lineWidth = 2 + (1 - sf) * 3; c.beginPath(); if (c.ellipse) c.ellipse(ccs.x, ccs.y, Math.max(rx, 1), Math.max(rz, 1), 0, 0, TAU); else c.arc(ccs.x, ccs.y, Math.max(rx, 1), 0, TAU); c.stroke(); } c.globalAlpha = 1;
     for (i = 0; i < St.fx.length; i++) { var p = St.fx[i], s = project(p.x, p.y, p.z); if (!s.vis) continue; c.globalAlpha = clamp(p.life / p.max, 0, 1); c.fillStyle = p.col || (p.gold ? COL.gold : '#fff0c0'); c.beginPath(); c.arc(s.x, s.y, p.r || (p.gold ? 4 : 2.4), 0, TAU); c.fill(); } c.globalAlpha = 1;
     c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 26px Wantedo, Georgia'; c.lineWidth = 4; c.strokeStyle = COL.ink; c.strokeText(q.text, qs.x, qs.y); c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); } c.globalAlpha = 1;
     if (St.state === 'aim' && b) drawAim(c, b);
