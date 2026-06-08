@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 38 · EDITOR CONSISTENCY';
+  var BUILD = 'BUILD 39 · SHIELD BUBBLE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -487,12 +487,14 @@
     var pole = new T.Mesh(new T.CylinderGeometry(3, 3, 220, 8), new T.MeshStandardMaterial({ color: 0xeeeeee })); pole.position.set(cu.x, cy + 110, cu.z); pole.castShadow = true; R3.group.add(pole);
     R3.flag = new T.Mesh(new T.PlaneGeometry(80, 50), new T.MeshStandardMaterial({ color: 0xdf3b32, side: T.DoubleSide })); R3.flag.position.set(cu.x + 42, cy + 190, cu.z); R3.group.add(R3.flag);
     // balls
-    R3.ballMeshes = []; R3.bsh = [];
+    R3.ballMeshes = []; R3.bsh = []; R3.shieldMeshes = [];
   }
   function ensureBallMeshes() {
+    if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
       var m = new T.Mesh(new T.SphereGeometry(K.R, 22, 16), new T.MeshStandardMaterial({ map: ballTex(), roughness: .35 })); m.castShadow = true; R3.group.add(m); R3.ballMeshes.push(m);
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
+      var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
   }
 
@@ -648,6 +650,7 @@
     while (R3.ballMeshes.length > n) {
       var m = R3.ballMeshes.pop(); if (m) { if (R3.group) R3.group.remove(m); if (m.geometry) m.geometry.dispose(); }
       var sh = R3.bsh.pop(); if (sh) { if (R3.group) R3.group.remove(sh); if (sh.geometry) sh.geometry.dispose(); }
+      if (R3.shieldMeshes) { var bb = R3.shieldMeshes.pop(); if (bb) { if (R3.group) R3.group.remove(bb); if (bb.geometry) bb.geometry.dispose(); } }
     }
   }
   function clearBallMeshes() { trimBallMeshes(0); }
@@ -775,8 +778,8 @@
   /* ================================================================ sync + HUD */
   function syncMeshes() {
     ensureBallMeshes(); var hole = St.hole;
-    for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i]; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); }
-    for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; } }
+    for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
+    for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; if (R3.shieldMeshes && R3.shieldMeshes[i]) R3.shieldMeshes[i].visible = false; } }
     for (i = 0; i < hole.bumpers.length; i++) { var bm = hole.bumpers[i]; if (bm.mesh) { var fl = Math.max(0, bm.flash || 0), s2 = 1 + fl * 1.4; bm.mesh.scale.set(s2, 1, s2); if (bm.litMat) bm.litMat.emissiveIntensity = fl * 3.4; if (bm.glow) bm.glow.material.opacity = fl * 1.7; } }
     for (i = 0; i < hole.flippers.length; i++) if (hole.flippers[i].mesh) hole.flippers[i].mesh.rotation.y = -hole.flippers[i].ang;
     for (i = 0; i < hole.windmills.length; i++) { var wmm = hole.windmills[i]; if (wmm.mesh) wmm.mesh.rotation.z = wmm.ang; if (wmm.flash > 0) wmm.flash -= 0.04; }
