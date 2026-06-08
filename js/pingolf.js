@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 41 · COMIC SFX';
+  var BUILD = 'BUILD 42 · MAGNET BEAM';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -834,6 +834,7 @@
     syncMeshes(); placeCam(); R3.r.render(R3.scene, R3.cam);
     var i, b = primeBall();
     if (St.trail.length > 1) { c.lineCap = 'round'; for (i = 1; i < St.trail.length; i++) { var ta = project(St.trail[i - 1].x, St.trail[i - 1].y, St.trail[i - 1].z), tb = project(St.trail[i].x, St.trail[i].y, St.trail[i].z); if (!ta.vis || !tb.vis) continue; var al = i / St.trail.length; c.strokeStyle = 'rgba(255,240,180,' + (al * .5).toFixed(2) + ')'; c.lineWidth = al * 11; c.beginPath(); c.moveTo(ta.x, ta.y); c.lineTo(tb.x, tb.y); c.stroke(); } }
+    if (St.magnetT > 0 && b) drawMagnetPull(c, b);
     for (i = 0; i < St.fx.length; i++) { var p = St.fx[i], s = project(p.x, p.y, p.z); if (!s.vis) continue; c.globalAlpha = clamp(p.life / p.max, 0, 1); c.fillStyle = p.col || (p.gold ? COL.gold : '#fff0c0'); c.beginPath(); c.arc(s.x, s.y, p.r || (p.gold ? 4 : 2.4), 0, TAU); c.fill(); } c.globalAlpha = 1;
     c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 26px Wantedo, Georgia'; c.lineWidth = 4; c.strokeStyle = COL.ink; c.strokeText(q.text, qs.x, qs.y); c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); } c.globalAlpha = 1;
     if (St.state === 'aim' && b) drawAim(c, b);
@@ -880,6 +881,21 @@
       if (Math.sqrt(vx * vx + vz * vz) < 45 && y <= surf + 1) break;
     }
     return pts;
+  }
+  // magnet power-up: pulsing "tractor beam" from the ball to the cup so the pull is visible in-world (not just the HUD badge)
+  function drawMagnetPull(c, b) {
+    if (St.magnetT <= 0 || !b || !St.hole) return;
+    var cup = St.hole.cup, bs = project(b.x, b.y + 10, b.z), cs = project(cup.x, St.hole.terrain(cup.x, cup.z) + 8, cup.z);
+    if (!bs.vis || !cs.vis) return;
+    var pulse = 0.5 + 0.5 * Math.sin(St.t * 7);
+    c.save(); c.lineCap = 'round';
+    c.strokeStyle = 'rgba(255,68,119,' + (0.4 + pulse * 0.4).toFixed(2) + ')'; c.lineWidth = 3 + pulse * 2.2;
+    c.setLineDash([9, 13]); c.lineDashOffset = -St.t * 70;            // dashes stream toward the cup
+    c.beginPath(); c.moveTo(bs.x, bs.y); c.lineTo(cs.x, cs.y); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = 'rgba(255,68,119,' + (0.28 + pulse * 0.4).toFixed(2) + ')';   // pulsing ring on the cup
+    c.beginPath(); c.arc(cs.x, cs.y, 7 + pulse * 7, 0, TAU); c.fill();
+    c.restore();
   }
   function drawAim(c, b) {
     var bs = project(b.x, b.y, b.z); if (!bs.vis) return;
