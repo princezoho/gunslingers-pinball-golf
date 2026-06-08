@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 45 · SPEEDWAY ARROWS';
+  var BUILD = 'BUILD 46 · ICE CRACKS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -430,6 +430,19 @@
         var tx = bx + sdx * chL * 0.5, tz = bz + sdz * chL * 0.5, b1x = bx - sdx * chL * 0.5 + spx * chW, b1z = bz - sdz * chL * 0.5 + spz * chW, b2x = bx - sdx * chL * 0.5 - spx * chW, b2z = bz - sdz * chL * 0.5 - spz * chW;
         var cg = new T.BufferGeometry(); cg.setAttribute('position', new T.BufferAttribute(new Float32Array([tx, sgy, tz, b1x, sgy, b1z, b2x, sgy, b2z]), 3)); cg.setIndex([0, 1, 2]); cg.computeVertexNormals();
         R3.group.add(new T.Mesh(cg, chMat));
+      }
+    }
+    // ICE — dark "shattered" crack-stars on the pale-blue turf (thin tapered slivers radiating from a few points; flat decals, no collision)
+    if (hole.theme === 'ice') {
+      var iprnd = function (n) { var x = Math.sin(n * 91.7 + 2.3) * 43758.5453; return x - Math.floor(x); };
+      var crackMat = new T.MeshBasicMaterial({ color: 0x244150, transparent: true, opacity: 0.5, side: T.DoubleSide, depthWrite: false });
+      for (var ist = 0; ist < 4; ist++) {
+        var icx = bn.minX + 90 + iprnd(ist * 5) * (bn.maxX - bn.minX - 180), icz = bn.minZ + 90 + iprnd(ist * 5 + 1) * (bn.maxZ - bn.minZ - 180), igy = hole.terrain(icx, icz) + 2, irays = 3 + Math.floor(iprnd(ist * 5 + 2) * 3);
+        for (var ir = 0; ir < irays; ir++) {
+          var iang = ir / irays * TAU + iprnd(ist * 5 + 3 + ir) * 0.7, ilen = 70 + iprnd(ist * 7 + ir) * 130, idx = Math.sin(iang), idz = Math.cos(iang), ipx = -idz, ipz = idx;
+          var icg = new T.BufferGeometry(); icg.setAttribute('position', new T.BufferAttribute(new Float32Array([icx + idx * ilen, igy, icz + idz * ilen, icx + ipx * 5, igy, icz + ipz * 5, icx - ipx * 5, igy, icz - ipz * 5]), 3)); icg.setIndex([0, 1, 2]); icg.computeVertexNormals();
+          R3.group.add(new T.Mesh(icg, crackMat));
+        }
       }
     }
     // walls
