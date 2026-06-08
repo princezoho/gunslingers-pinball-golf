@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 49 · SINK RINGS';
+  var BUILD = 'BUILD 50 · COMBO METER';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -554,7 +554,7 @@
 
   /* ================================================================ PHYSICS */
   function collideWall(b, s, gy) { if (b.y > gy + s.h - 4) return; var c = nearestOnSeg(b.x, b.z, s.ax, s.az, s.bx, s.bz); var dx = b.x - c.x, dz = b.z - c.z, d = hyp(dx, dz), R = K.R + K.wallHalf; if (d >= R) return; var nx, nz; if (d > 1e-4) { nx = dx / d; nz = dz / d; } else { nx = 0; nz = -1; d = .01; } b.x = c.x + nx * R; b.z = c.z + nz * R; var vn = b.vx * nx + b.vz * nz; if (vn < 0) { b.vx -= (1 + s.e) * vn * nx; b.vz -= (1 + s.e) * vn * nz; if (vn < -700) { sfx('tick'); } } }
-  function collideBumper(b, bm, gy) { if (b.y > gy + 110) return; var dx = b.x - bm.x, dz = b.z - bm.z, d = hyp(dx, dz) || .001, R = K.R + bm.r; if (d >= R) return; var nx = dx / d, nz = dz / d; b.x = bm.x + nx * R; b.z = bm.z + nz * R; var vn = b.vx * nx + b.vz * nz; if (vn < 0) { b.vx -= 2.0 * vn * nx; b.vz -= 2.0 * vn * nz; } var bk = bm.kick || K.bumpKick; b.vx += nx * bk; b.vz += nz * bk; bm.flash = .25; St.combo = (St.combo || 0) + 1; St.shake = Math.min(12, St.shake + 6 + Math.min(St.combo, 6)); spark(bm.x, gy + 40, bm.z, 12 + Math.min(St.combo * 2, 14)); pop3d(bm.x, bm.z, gy, St.combo > 1 ? 'POP x' + St.combo + '!' : 'POP!', St.combo >= 4 ? COL.red : COL.gold); sfx('bump'); }
+  function collideBumper(b, bm, gy) { if (b.y > gy + 110) return; var dx = b.x - bm.x, dz = b.z - bm.z, d = hyp(dx, dz) || .001, R = K.R + bm.r; if (d >= R) return; var nx = dx / d, nz = dz / d; b.x = bm.x + nx * R; b.z = bm.z + nz * R; var vn = b.vx * nx + b.vz * nz; if (vn < 0) { b.vx -= 2.0 * vn * nx; b.vz -= 2.0 * vn * nz; } var bk = bm.kick || K.bumpKick; b.vx += nx * bk; b.vz += nz * bk; bm.flash = .25; St.combo = (St.combo || 0) + 1; St.comboPulse = 0.6; St.shake = Math.min(12, St.shake + 6 + Math.min(St.combo, 6)); spark(bm.x, gy + 40, bm.z, 12 + Math.min(St.combo * 2, 14)); pop3d(bm.x, bm.z, gy, St.combo > 1 ? 'POP x' + St.combo + '!' : 'POP!', St.combo >= 4 ? COL.red : COL.gold); sfx('bump'); }
   function windmillBlades(wm) { var segs = []; for (var i = 0; i < wm.n; i++) { var a = wm.ang + i / wm.n * TAU; segs.push({ ax: wm.x, az: wm.z, bx: wm.x + Math.cos(a) * wm.r, bz: wm.z + Math.sin(a) * wm.r, a: a }); } return segs; }
   function collideWindmill(b, wm, gy) {
     // VERTICAL Dutch windmill: blades sweep down across the passage at z=wm.z. Blocked when a blade is near straight-down.
@@ -633,7 +633,7 @@
     for (i = 0; i < prt.length; i++) { var po = prt[i]; if (b.portalCd <= 0 && !b.air && hyp(b.x - po.x, b.z - po.z) < po.r) { po.flash = .3; var exs = po.exits || [{ x: po.ex, z: po.ez }], ex = exs[Math.floor(Math.random() * exs.length)], psp = hyp(b.vx, b.vz) || 1, ux = b.vx / psp, uz = b.vz / psp; b.x = ex.x + ux * (po.r + K.R + 14); b.z = ex.z + uz * (po.r + K.R + 14); b.y = hole.terrain(b.x, b.z) + K.R; b.portalCd = 0.5; pop3d(ex.x, ex.z, hole.terrain(ex.x, ex.z), exs.length > 1 ? '⁇ WARP!' : 'WARP!', '#c45cff'); spark(ex.x, hole.terrain(ex.x, ex.z) + 14, ex.z, 12); spawnShock(ex.x, hole.terrain(ex.x, ex.z), ex.z, '#c45cff'); St.shake = Math.min(9, St.shake + 4); sfx('boost'); return; } }
     // ring of fire — a VERTICAL flaming hoop; jump the ball through the opening for points
     var frs = hole.firerings || [];
-    for (i = 0; i < frs.length; i++) { var fr = frs[i]; if (fr.passedCd <= 0 && Math.abs(b.z - fr.z) < K.R + 12) { var cyf = hole.terrain(fr.x, fr.z) + fr.h, dxr = b.x - fr.x, dyr = b.y - cyf, rr = Math.sqrt(dxr * dxr + dyr * dyr); if (rr < fr.r - K.R * 0.5 && b.air) { fr.passed = true; fr.flash = .6; fr.passedCd = 0.9; St.points = (St.points || 0) + fr.points; St.combo = (St.combo || 0) + 1; pop3d(fr.x, fr.z, cyf, 'RING +' + fr.points + '!', COL.gold); spark(fr.x, cyf, fr.z, 18); spawnShock(fr.x, cyf, fr.z, COL.gold); St.shake = Math.min(10, St.shake + 5); b.vx *= 1.12; b.vz *= 1.12; sfx('boost'); } } }
+    for (i = 0; i < frs.length; i++) { var fr = frs[i]; if (fr.passedCd <= 0 && Math.abs(b.z - fr.z) < K.R + 12) { var cyf = hole.terrain(fr.x, fr.z) + fr.h, dxr = b.x - fr.x, dyr = b.y - cyf, rr = Math.sqrt(dxr * dxr + dyr * dyr); if (rr < fr.r - K.R * 0.5 && b.air) { fr.passed = true; fr.flash = .6; fr.passedCd = 0.9; St.points = (St.points || 0) + fr.points; St.combo = (St.combo || 0) + 1; St.comboPulse = 0.6; pop3d(fr.x, fr.z, cyf, 'RING +' + fr.points + '!', COL.gold); spark(fr.x, cyf, fr.z, 18); spawnShock(fr.x, cyf, fr.z, COL.gold); St.shake = Math.min(10, St.shake + 5); b.vx *= 1.12; b.vz *= 1.12; sfx('boost'); } } }
     // enemies — effect on contact: knockback / reset (back to shot) / stun
     var ens = hole.enemies || [];
     for (i = 0; i < ens.length; i++) { var en = ens[i]; var dxe = b.x - en.cx, dze = b.z - en.cz, de = hyp(dxe, dze), Re = K.R + en.r; if (de < Re && b.y < gy + 90) { if (b.hzCd > 0) continue; var nex = de > .01 ? dxe / de : 0, nez = de > .01 ? dze / de : 1; b.x = en.cx + nex * Re; b.z = en.cz + nez * Re; en.flash = .3; St.shake = Math.min(12, St.shake + 7); spark(en.cx, gy + 24, en.cz, 14); sfx('bump'); if (b.shield) { b.shield = false; b.hzCd = 0.5; var vneS = b.vx * nex + b.vz * nez; if (vneS < 0) { b.vx -= 2 * vneS * nex; b.vz -= 2 * vneS * nez; } pop3d(en.cx, en.cz, gy, 'BLOCKED!', '#33b6ff'); continue; } if (en.effect === 'reset') { var vne0 = b.vx * nex + b.vz * nez; if (vne0 < 0) { b.vx -= 2.4 * vne0 * nex; b.vz -= 2.4 * vne0 * nez; } b.vx *= 0.28; b.vz *= 0.28; b.hzCd = 0.3; pop3d(en.cx, en.cz, gy, 'REPEL!', COL.red); return; } else if (en.effect === 'stun') { b.vx *= 0.1; b.vz *= 0.1; b.hzCd = 0.2; pop3d(en.cx, en.cz, gy, 'STUN!', COL.red); } else { var vne = b.vx * nex + b.vz * nez; if (vne < 0) { b.vx -= 1.9 * vne * nex; b.vz -= 1.9 * vne * nez; } b.vx += nex * 1700; b.vz += nez * 1700; pop3d(en.cx, en.cz, gy, 'POW!', COL.red); } } }
@@ -906,6 +906,8 @@
     if (St.slowT > 0) badges.push(['SLOW-MO ' + St.slowT.toFixed(1) + 's', '#9b6bff']);
     if (pball && pball.shield) badges.push(['SHIELD', '#33b6ff']);
     if (badges.length) { var by = (narrow && ((St.coins || 0) > 0 || (St.points || 0) > 0)) ? 114 : 96; badges.forEach(function (bd, bi) { var bw = 132, bx = w / 2 - bw / 2; panel(c, bx, by + bi * 26, bw, 22); c.textAlign = 'center'; c.fillStyle = bd[1]; c.font = '900 12px Wantedo, Georgia'; c.fillText('✦ ' + bd[0], w / 2, by + bi * 26 + 16); }); }
+    // bumper-combo meter — pulsing multiplier while the ball racks up hits this shot
+    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 26 : 34) + 'px Wantedo, Georgia'; c.lineWidth = 5; c.strokeStyle = COL.ink; c.strokeText(ctxt, 0, 0); c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = COL.gold; c.font = '900 14px Georgia'; c.fillText(BUILD, 18, h - 26);
     if (St.state === 'aim') powerMeter(c, w, h);
     if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '42px Wantedo, Georgia'; c.fillStyle = COL.ink; c.fillText(St.banner, w / 2 + 2, h * .4 + 2); c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
@@ -1571,6 +1573,7 @@
   function stepVisuals(dt) {
     if (St.state === 'aim' && !St.drag) St.aimYaw = St.camYaw;
     if (St.coinPulse > 0) St.coinPulse = Math.max(0, St.coinPulse - dt);
+    if (St.comboPulse > 0) St.comboPulse = Math.max(0, St.comboPulse - dt * 2.2);
     for (var i = St.fx.length - 1; i >= 0; i--) { var p = St.fx[i]; p.life -= dt; if (p.life <= 0) { St.fx.splice(i, 1); continue; } p.vy -= 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
     if (St.shocks) for (var si = St.shocks.length - 1; si >= 0; si--) { St.shocks[si].t += dt; if (St.shocks[si].t >= St.shocks[si].max) St.shocks.splice(si, 1); }
     for (i = St.pops.length - 1; i >= 0; i--) { var q = St.pops[i]; q.life -= dt; q.y += 60 * dt; if (q.life <= 0) St.pops.splice(i, 1); }
