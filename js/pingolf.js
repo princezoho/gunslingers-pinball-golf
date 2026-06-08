@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 40 · SOUNDTRACK + VOLUME';
+  var BUILD = 'BUILD 41 · COMIC SFX';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -758,11 +758,15 @@
   function sparkBurst(x, z, n) { var y = St.hole.terrain(x, z); for (var i = 0; i < n; i++) { var a = Math.random() * TAU, s = 100 + Math.random() * 240; St.fx.push({ x: x, y: y + 12, z: z, vx: Math.cos(a) * s, vy: 200 + Math.random() * 280, vz: Math.sin(a) * s, life: 1, max: 1, gold: true }); } }
   function pop3d(x, z, gy, text, col) { St.pops.push({ x: x, y: gy + 70, z: z, text: text, col: col, life: .85, max: .85 }); if (St.pops.length > 8) St.pops.shift(); }
   // --- AUDIO: master / music / sfx volumes (default 50%, never full), music soundtrack, persisted ---
-  var AU = { ctx: null, on: true, master: 0.5, music: 0.5, sfx: 0.5, masterGain: null, sfxGain: null, musicEl: null, tracks: ['assets/audio/music1.mp3', 'assets/audio/music2.mp3', 'assets/audio/music3.mp3'], ti: 0, started: false };
+  var AU = { ctx: null, on: true, master: 0.5, music: 0.5, sfx: 0.5, masterGain: null, sfxGain: null, musicEl: null, tracks: ['assets/audio/music1.mp3', 'assets/audio/music2.mp3', 'assets/audio/music3.mp3'], ti: 0, started: false, buf: {} };
+  // comic POW/BAM one-shots (assets/audio/*.wav); each kind → wav name(s). Falls back to the synth beep below if a sample is missing/loading.
+  var SFXMAP = { hit: ['12-whack'], bump: ['03-pow', '18-bam', '28-powie'], flip: ['21-sock'], tick: ['02-thunk'], boost: ['10-zam'], sink: ['07-kapwa'] };
+  function sfxLoad(name) { if (!AU.ctx || AU.buf[name] !== undefined) return; AU.buf[name] = 'loading'; fetch('assets/audio/' + name + '.wav').then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(function (ab) { return AU.ctx.decodeAudioData(ab); }).then(function (b) { AU.buf[name] = b; }).catch(function () { AU.buf[name] = 'fail'; }); }
+  function sfxLoadAll() { for (var k in SFXMAP) { for (var i = 0; i < SFXMAP[k].length; i++) sfxLoad(SFXMAP[k][i]); } }
   function audioLoadPrefs() { try { var p = JSON.parse(localStorage.getItem('pg_audio') || 'null'); if (p) { if (typeof p.master === 'number') AU.master = clamp(p.master, 0, 1); if (typeof p.music === 'number') AU.music = clamp(p.music, 0, 1); if (typeof p.sfx === 'number') AU.sfx = clamp(p.sfx, 0, 1); if (typeof p.on === 'boolean') AU.on = p.on; } } catch (e) { } }
   function audioSavePrefs() { try { localStorage.setItem('pg_audio', JSON.stringify({ master: AU.master, music: AU.music, sfx: AU.sfx, on: AU.on })); } catch (e) { } }
   function audioApply() { if (AU.masterGain) AU.masterGain.gain.value = AU.on ? AU.master : 0; if (AU.sfxGain) AU.sfxGain.gain.value = AU.sfx; if (AU.musicEl) AU.musicEl.volume = clamp((AU.on ? 1 : 0) * AU.master * AU.music, 0, 1); }
-  function audioInit() { if (AU.ctx) return; try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); AU.masterGain = AU.ctx.createGain(); AU.sfxGain = AU.ctx.createGain(); AU.sfxGain.connect(AU.masterGain); AU.masterGain.connect(AU.ctx.destination); } catch (e) { } audioApply(); }
+  function audioInit() { if (AU.ctx) return; try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); AU.masterGain = AU.ctx.createGain(); AU.sfxGain = AU.ctx.createGain(); AU.sfxGain.connect(AU.masterGain); AU.masterGain.connect(AU.ctx.destination); sfxLoadAll(); } catch (e) { } audioApply(); }
   function musicStart() { // begin the soundtrack on first user gesture (browser autoplay policy); cycles tracks; silent if assets absent
     if (AU.started) return; AU.started = true;
     try {
@@ -773,7 +777,17 @@
     } catch (e) { AU.started = false; }
   }
   function musicNext() { if (!AU.musicEl) return; AU.ti = (AU.ti + 1) % AU.tracks.length; AU.musicEl.src = AU.tracks[AU.ti]; if (AU.on && AU.master > 0 && AU.music > 0) AU.musicEl.play().catch(function () { }); audioApply(); }
-  function sfx(kind) { if (!AU.on || !AU.ctx || AU.master <= 0 || AU.sfx <= 0) return; var t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); var m = ({ hit: [190, 'sawtooth', .12], bump: [520, 'square', .07], flip: [360, 'triangle', .05], tick: [200, 'square', .04], boost: [320, 'sawtooth', .2], sink: [660, 'sine', .25], coin: [780, 'triangle', .09] })[kind] || [200, 'square', .04]; o.type = m[1]; o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[0] * (kind === 'sink' || kind === 'coin' ? 1.7 : .6), t + m[2]); g.gain.setValueAtTime(.46, t); g.gain.exponentialRampToValueAtTime(.001, t + m[2]); o.connect(g); g.connect(AU.sfxGain || AU.ctx.destination); o.start(t); o.stop(t + m[2] + .02); }
+  function sfx(kind) {
+    if (!AU.on || !AU.ctx || AU.master <= 0 || AU.sfx <= 0) return;
+    var names = SFXMAP[kind];
+    if (names) { // prefer the comic POW/BAM sample when it's decoded
+      var nm = names.length > 1 ? names[(Math.random() * names.length) | 0] : names[0], b = AU.buf[nm];
+      if (b === undefined) sfxLoad(nm);
+      else if (b && b !== 'loading' && b !== 'fail') {
+        try { var src = AU.ctx.createBufferSource(); src.buffer = b; var bg = AU.ctx.createGain(); bg.gain.value = (kind === 'tick' ? 0.4 : kind === 'flip' ? 0.7 : 0.95); src.connect(bg); bg.connect(AU.sfxGain || AU.ctx.destination); src.start(); return; } catch (e) { }
+      }
+    } // ...else fall through to the synth beep (sample missing, still loading, or no mapping)
+    var t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); var m = ({ hit: [190, 'sawtooth', .12], bump: [520, 'square', .07], flip: [360, 'triangle', .05], tick: [200, 'square', .04], boost: [320, 'sawtooth', .2], sink: [660, 'sine', .25], coin: [780, 'triangle', .09] })[kind] || [200, 'square', .04]; o.type = m[1]; o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[0] * (kind === 'sink' || kind === 'coin' ? 1.7 : .6), t + m[2]); g.gain.setValueAtTime(.46, t); g.gain.exponentialRampToValueAtTime(.001, t + m[2]); o.connect(g); g.connect(AU.sfxGain || AU.ctx.destination); o.start(t); o.stop(t + m[2] + .02); }
 
   /* ================================================================ camera */
   function placeCam() {
@@ -1571,7 +1585,7 @@
   /* test hooks */
   PG.game = St; PG.K = K; PG.HOLES = HOLES;
   PG.__tick = tick; PG.__render = drawHUD; PG.__load = loadHole; PG.__St = St; PG.__HOLES = HOLES; PG.__K = K;
-  PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU;
+  PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU; PG.__sfx = function (k) { sfx(k); }; PG.__sfxLoadAll = function () { sfxLoadAll(); };
   PG.__edSerialize = function () { return edSerialize(); }; PG.__edDeserialize = function (o) { return edDeserialize(o); };
   PG.__edDown = function (px, py, shift) { edDown({ x: px, y: py }, !!shift); }; PG.__edMove = function (px, py) { edMove({ x: px, y: py }); }; PG.__edUp = function () { edUp(); };
   PG.__project = function (x, y, z) { return project(x, y, z); }; PG.__ed3dWorld = function (px, py) { return ed3DToWorld({ x: px, y: py }); }; PG.__orbitCam = function () { orbitCam(); }; PG.__edSel = function () { return ED.sel; };
