@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 51 · COIN CHIME';
+  var BUILD = 'BUILD 52 · FLIPPER CLICK';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -546,7 +546,7 @@
   }
 
   /* ================================================================ FLIPPERS */
-  function flipPress(side, down) { St.hole.flippers.forEach(function (f) { if (f.side === side) { if (down) { f.held = true; f.holdT = K.flipHold; } else f.held = false; } }); }
+  function flipPress(side, down) { var rising = false; St.hole.flippers.forEach(function (f) { if (f.side === side) { if (down) { if (!f.held) rising = true; f.held = true; f.holdT = K.flipHold; } else f.held = false; } }); if (down && rising) sfx('flipclick'); }   // soft mechanical click on each fresh press
   function flipRest(f) { return (f.side === 'L' ? -0.5 : PI + 0.5) + (f.rot || 0); }
   function flipUp(f) { var r = flipRest(f); return f.side === 'L' ? r + K.flipSweep : r - K.flipSweep; }
   function stepFlipper(f, dt) { var driving = f.held || f.holdT > 0; if (f.holdT > 0) f.holdT = Math.max(0, f.holdT - dt); var rest = flipRest(f), up = flipUp(f), target = driving ? up : rest, sp = (f.speed || 1), ms = (driving ? K.flipUpSpd : K.flipDnSpd) * sp * dt, prev = f.ang; f.ang += clamp(target - f.ang, -ms, ms); f.om = (f.ang - prev) / dt; var towardUp = (up - rest) >= 0 ? (f.om > K.flipLiveOm) : (f.om < -K.flipLiveOm); f.live = driving && towardUp; }
@@ -831,6 +831,10 @@
     if (kind === 'coin') {   // bright 2-note "bling-bling" arpeggio so coins feel distinct & rewarding
       var t0 = AU.ctx.currentTime, dest0 = AU.sfxGain || AU.ctx.destination, notes = [988, 1319];   // B5 -> E6
       for (var ni = 0; ni < notes.length; ni++) { var oc = AU.ctx.createOscillator(), gc = AU.ctx.createGain(), tn = t0 + ni * 0.07; oc.type = 'triangle'; oc.frequency.setValueAtTime(notes[ni], tn); gc.gain.setValueAtTime(0.0001, tn); gc.gain.exponentialRampToValueAtTime(0.42, tn + 0.012); gc.gain.exponentialRampToValueAtTime(0.0008, tn + 0.17); oc.connect(gc); gc.connect(dest0); oc.start(tn); oc.stop(tn + 0.21); }
+      return;
+    }
+    if (kind === 'flipclick') {   // soft, short mechanical "tock" on flipper press
+      var tk = AU.ctx.currentTime, ok = AU.ctx.createOscillator(), gk = AU.ctx.createGain(); ok.type = 'triangle'; ok.frequency.setValueAtTime(300, tk); ok.frequency.exponentialRampToValueAtTime(150, tk + 0.04); gk.gain.setValueAtTime(0.16, tk); gk.gain.exponentialRampToValueAtTime(0.001, tk + 0.05); ok.connect(gk); gk.connect(AU.sfxGain || AU.ctx.destination); ok.start(tk); ok.stop(tk + 0.06);
       return;
     }
     var names = SFXMAP[kind];
