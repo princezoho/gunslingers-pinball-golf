@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 32 · FAIR HAZARDS';
+  var BUILD = 'BUILD 33 · BEST SCORES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -660,10 +660,14 @@
     St.strokes++; St.state = 'roll'; St.shake = 2; St.combo = 0; sfx('hit');
   }
   function aimDir() { return { x: Math.sin(St.aimYaw), z: Math.cos(St.aimYaw) }; }
+  function bestStore() { try { return JSON.parse(localStorage.getItem('pg_best') || '{}'); } catch (e) { return {}; } }
+  function holeKey() { return St.hi >= 0 ? ('h' + St.hi) : ('c:' + (St.customName || (St.hole && St.hole.name) || '?')); }
   function holeSunk() {
     St.state = 'sunk'; sfx('sink');
     St.scores[St.hi] = St.strokes; St.parDone = (St.parDone || 0) + St.hole.par; var over = St.strokes - St.hole.par;
     var word = St.strokes === 1 ? 'HOLE IN ONE!' : over <= -2 ? 'EAGLE!' : over === -1 ? 'BIRDIE!' : over === 0 ? 'PAR' : over === 1 ? 'BOGEY' : '+' + over;
+    // personal-best per hole (persists across sessions/builds) — not while testing a draft
+    if (!St.testing) { var bk = holeKey(), bs = bestStore(); St.newBest = (bs[bk] == null || St.strokes < bs[bk]); if (St.newBest) { bs[bk] = St.strokes; try { localStorage.setItem('pg_best', JSON.stringify(bs)); } catch (e) { } } St.holeBest = bs[bk]; if (St.newBest && St.strokes !== 1 && over > -2) word = word + ' · ★ BEST'; }
     St.banner = word; St.bannerT = 3.2;
     var great = (over <= -1) || St.strokes === 1, cx = St.hole.cup.x, cz = St.hole.cup.z, gy = St.hole.terrain(cx, cz);
     St.shake = great ? 22 : (over <= 0 ? 14 : 9);
@@ -681,6 +685,7 @@
     St.hole = HOLES[hi](); applyPhys(St.hole.phys); buildScene(St.hole); clearBallMeshes();
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
+    St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -690,6 +695,7 @@
     St.hole = d; St.hole.par = d.par; St.customName = customName || null;
     var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); clearBallMeshes();
     St.strokes = 0; St.combo = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.magnetT = 0; St.slowT = 0;
+    St.testing = false; St.newBest = false; St.holeBest = bestStore()['c:' + (customName || d.name)];
     var hy = Math.atan2(d.cup.x - t.x, d.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = banner; St.bannerT = 2.0;
   }
@@ -781,6 +787,7 @@
     panel(c, 12, 12, lw, 58); c.textAlign = 'left'; c.fillStyle = COL.gold; c.font = '900 10px Wantedo, Georgia';
     var topLine = St.hi >= 0 ? ('HOLE ' + (St.hi + 1) + ' / ' + HOLES.length + (narrow ? '' : ('  ·  ' + St.hole.name)) + '  ·  PAR ' + St.hole.par) : ('★ ' + (St.customName || St.hole.name));
     c.fillText(topLine, 24, 30); c.fillStyle = COL.cream; c.font = 'bold 22px Georgia'; c.fillText(St.strokes + (St.strokes === 1 ? ' STROKE' : ' STROKES'), 24, 54);
+    if (St.holeBest != null) { c.textAlign = 'right'; c.fillStyle = COL.gold; c.font = 'bold 11px Georgia'; c.fillText('★ BEST ' + St.holeBest, 12 + lw - 11, 50); c.textAlign = 'left'; }
     panel(c, w - rw - 12, 12, rw, 58); c.textAlign = 'right'; c.fillStyle = COL.gold; c.font = '900 10px Wantedo, Georgia'; c.fillText('TO PIN', w - 24, 30); var dp = b ? Math.round(hyp(b.x - St.hole.cup.x, b.z - St.hole.cup.z)) : 0; c.fillStyle = COL.cream; c.font = 'bold ' + (narrow ? 18 : 22) + 'px Georgia'; c.fillText(dp + ' yd', w - 24, 54);
     // running to-par score (progression) — only when there's room between the two side panels
     var tot = St.scores.reduce(function (a, cv) { return a + (cv || 0); }, 0), tp = tot - (St.parDone || 0);
@@ -1078,7 +1085,7 @@
     ED.flash = { x: pts[0].x, z: pts[0].z, t: 0.35 }; edPanel();
   }
   function edDelete() { var s = ED.sel; if (!s || s.kind === 'tee' || s.kind === 'cup') return; edSnapshot(); if (s.kind === 'wallgroup') { var d = ED.draft; s.items.forEach(function (g) { var idx = d.walls.indexOf(g); if (idx >= 0) d.walls.splice(idx, 1); }); } else if (s.arr) s.arr.splice(s.idx, 1); ED.sel = null; edPanel(); }
-  function edPlay() { var d = ED.draft; applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures); rebuildBox(d); (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); (d.firerings || []).forEach(function (f) { f.passed = false; f.passedCd = 0; }); St.hole = d; St.hi = 0; St.hole.par = d.par; var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); St.strokes = 0; St.combo = 0; St.scores = []; St.parDone = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.magnetT = 0; St.slowT = 0; var hy = Math.atan2(d.cup.x - t.x, d.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.camOrbit = 0; St.power = 0.5; St.state = 'aim'; St.banner = 'TEST · ' + d.name; St.bannerT = 1.6; ED.on = false; edShow(false); }
+  function edPlay() { var d = ED.draft; applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures); rebuildBox(d); (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); (d.firerings || []).forEach(function (f) { f.passed = false; f.passedCd = 0; }); St.hole = d; St.hi = 0; St.hole.par = d.par; var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); St.strokes = 0; St.combo = 0; St.scores = []; St.parDone = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.magnetT = 0; St.slowT = 0; var hy = Math.atan2(d.cup.x - t.x, d.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.camOrbit = 0; St.power = 0.5; St.state = 'aim'; St.testing = true; St.holeBest = null; St.banner = 'TEST · ' + d.name; St.bannerT = 1.6; ED.on = false; edShow(false); }
   function icon(c, kind, s, sel, item) {
     c.save();
     var SC = ED.scale || 0.1, it = item || {};
