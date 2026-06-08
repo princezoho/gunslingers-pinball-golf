@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 43 · THEME SKIES';
+  var BUILD = 'BUILD 44 · MOON CRATERS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -411,6 +411,16 @@
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // skirt
     var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ color: new T.Color(skyC).multiplyScalar(0.6), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    // MOON CRATERS — flat decorative craters scattered on the pale lunar ground (purely visual, no collision; deterministic so they don't jitter on editor rebuilds)
+    if (hole.theme === 'moon') {
+      var prnd = function (n) { var x = Math.sin(n * 127.1 + 0.7) * 43758.5453; return x - Math.floor(x); };
+      var cFloorMat = new T.MeshStandardMaterial({ color: 0x5e5775, roughness: 1 }), cRimMat = new T.MeshStandardMaterial({ color: 0x423d54, roughness: 1 });
+      for (var ci = 0; ci < 12; ci++) {
+        var ccx = bn.minX + 50 + prnd(ci * 3) * (bn.maxX - bn.minX - 100), ccz = bn.minZ + 50 + prnd(ci * 3 + 1) * (bn.maxZ - bn.minZ - 100), ccr = 38 + prnd(ci * 3 + 2) * 92, cgy = hole.terrain(ccx, ccz);
+        var cRim = new T.Mesh(new T.RingGeometry(ccr, ccr * 1.13, 26), cRimMat); cRim.rotation.x = -PI / 2; cRim.position.set(ccx, cgy + 1.0, ccz); R3.group.add(cRim);
+        var cFloor = new T.Mesh(new T.CircleGeometry(ccr, 22), cFloorMat); cFloor.rotation.x = -PI / 2; cFloor.position.set(ccx, cgy + 1.4, ccz); cFloor.receiveShadow = true; R3.group.add(cFloor);
+      }
+    }
     // walls
     var wm = new T.MeshStandardMaterial({ color: 0x8a5a32, roughness: .8 }), capm = new T.MeshStandardMaterial({ color: 0xe6b878, roughness: .55 });
     hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ color: s.c, roughness: .8 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); });
