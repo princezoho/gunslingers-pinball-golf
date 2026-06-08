@@ -1,0 +1,33 @@
+# OS / editor cruft
+.DS_Store
+*.log
+
+# Claude Code local config + session data (never publish)
+.claude/
+
+# Old prototype iterations (superseded by js/pingolf.js)
+_archive/
+
+# Design reference material (may be third-party / copyrighted)
+reference/
+
+# Proprietary "Gunslingers" brand art — NOT used by the game (it is fully procedural).
+# Kept locally for other projects; excluded from the open-source repo.
+assets/*.png
+assets/*.svg
+assets/audio/
+
+# Superseded prototype scripts — only js/pingolf.js is loaded by index.html
+js/scene3d.js
+js/util.js
+js/game.js
+js/golf.js
+js/powerups.js
+js/wildwest.js
+js/audio.js
+js/characters.js
+js/golf3d.js
+js/generator.js
+js/gpg.js
+js/assets.js
+js/level.js
