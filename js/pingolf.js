@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 34 · SCORECARD';
+  var BUILD = 'BUILD 35 · CUP GLOW';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -483,6 +483,7 @@
     var cu = hole.cup, cy = hole.terrain(cu.x, cu.z);
     var cup = new T.Mesh(new T.CylinderGeometry(K.cupR, K.cupR * .8, 70, 22), new T.MeshStandardMaterial({ color: 0x07050a, roughness: 1 })); cup.position.set(cu.x, cy - 30, cu.z); R3.group.add(cup);
     var rim = new T.Mesh(new T.TorusGeometry(K.cupR, 4, 8, 22), new T.MeshStandardMaterial({ color: 0xf5c542, emissive: 0x4a3a10, roughness: .4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 1, cu.z); R3.group.add(rim);
+    R3.cupGlow = new T.Mesh(new T.RingGeometry(K.cupR + 7, K.cupR + 34, 30), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .45, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 2.5, cu.z); R3.group.add(R3.cupGlow);   // pulsing target marker
     var pole = new T.Mesh(new T.CylinderGeometry(3, 3, 220, 8), new T.MeshStandardMaterial({ color: 0xeeeeee })); pole.position.set(cu.x, cy + 110, cu.z); pole.castShadow = true; R3.group.add(pole);
     R3.flag = new T.Mesh(new T.PlaneGeometry(80, 50), new T.MeshStandardMaterial({ color: 0xdf3b32, side: T.DoubleSide })); R3.flag.position.set(cu.x + 42, cy + 190, cu.z); R3.group.add(R3.flag);
     // balls
@@ -792,6 +793,7 @@
     for (i = 0; i < (hole.enemies || []).length; i++) { var en = hole.enemies[i]; if (en.mesh) { en.mesh.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); en.mesh.rotation.y = St.t * 2.4; var ws = en.flash > 0 ? 1 + en.flash : 1; en.mesh.scale.set(ws, ws, ws); if (en.flash > 0) en.flash -= 0.04; } }
     for (i = 0; i < (hole.portals || []).length; i++) { var po = hole.portals[i]; if (po.flash > 0) po.flash -= 0.04; }
     if (R3.flag) R3.flag.rotation.y = Math.sin(St.t * 1.5) * .3;
+    if (R3.cupGlow) { var pu = 0.5 + 0.5 * Math.sin(St.t * 2.3); R3.cupGlow.scale.set(1 + pu * 0.55, 1 + pu * 0.55, 1); R3.cupGlow.material.opacity = 0.2 + pu * 0.34; }
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
   function panel(c, x, y, w, h) { var g = c.createLinearGradient(x, y, x, y + h); g.addColorStop(0, '#5c3c23'); g.addColorStop(1, '#321e10'); rrect(c, x, y, w, h, 10); c.fillStyle = g; c.fill(); c.strokeStyle = COL.gold; c.lineWidth = 3; c.stroke(); }
