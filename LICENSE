@@ -22,6 +22,15 @@ SOFTWARE.
 
 ---
 
+Scope: the MIT license above applies to the SOURCE CODE of this project
+(js/, the HTML/CSS, and build/config files).
+
+Game art & music — the "Gunslingers" artwork, characters, backgrounds, and
+music under assets/ (including assets/audio/) are © 2026 princezoho, all rights
+reserved. They are bundled so the game is playable and viewable, but are NOT
+covered by the MIT license and may not be reused, redistributed, or sold
+without the author's permission.
+
 Third-party / bundled assets:
 - vendor/three.min.js — Three.js, (c) Three.js Authors, MIT License.
 - assets/fonts/Wantedo.ttf — "Wantedo" display font, included for the Western

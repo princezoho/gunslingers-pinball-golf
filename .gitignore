@@ -11,11 +11,8 @@ _archive/
 # Design reference material (may be third-party / copyrighted)
 reference/
 
-# Proprietary "Gunslingers" brand art — NOT used by the game (it is fully procedural).
-# Kept locally for other projects; excluded from the open-source repo.
-assets/*.png
-assets/*.svg
-assets/audio/
+# Held back: the "CAW" eagle mascot is flagged as not the author's IP
+assets/mascot.png
 
 # Superseded prototype scripts — only js/pingolf.js is loaded by index.html
 js/scene3d.js
