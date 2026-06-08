@@ -1586,6 +1586,30 @@
   PG.game = St; PG.K = K; PG.HOLES = HOLES;
   PG.__tick = tick; PG.__render = drawHUD; PG.__load = loadHole; PG.__St = St; PG.__HOLES = HOLES; PG.__K = K;
   PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU; PG.__sfx = function (k) { sfx(k); }; PG.__sfxLoadAll = function () { sfxLoadAll(); };
+  // headless beatability bot: plays hole `hi` up to `tries` times, each as multiple aimed strokes from the ball's live position toward the cup; returns {sunk, tries, strokes}. Test-only; leaves St on hole hi (caller should reload).
+  PG.__beatN = function (hi, tries, maxStrokes) {
+    tries = tries || 16; maxStrokes = maxStrokes || 14;
+    loadHole(hi); St.testing = true;
+    var cup = St.hole.cup, sunk = false, used = 0, bestStrokes = 99;
+    for (var t = 0; t < tries && !sunk; t++) {
+      used = t + 1; newShotBall(); St.strokes = 0;
+      var scale = 0.78 + (t % 5) * 0.11, strokes = 0;
+      while (strokes < maxStrokes) {
+        if (St.state !== 'aim') break;
+        var b = primeBall(); if (!b) break;
+        var dx = cup.x - b.x, dz = cup.z - b.z, dist = hyp(dx, dz);
+        St.aimYaw = Math.atan2(dx, dz) + (Math.random() * 2 - 1) * (0.03 + (t / tries) * 0.55);
+        St.camYaw = St.aimYaw;
+        St.power = clamp(Math.sqrt(dist / 2600) * scale + (Math.random() * 2 - 1) * 0.12, 0.1, 1);
+        shoot(); strokes++;
+        var settled = false;
+        for (var s = 0; s < 1100; s++) { tick(1 / 60); var pb = primeBall(); if (St.state === 'sunk' || (pb && pb.sunk)) { sunk = true; break; } if (St.state === 'aim') { settled = true; break; } }
+        if (sunk) { bestStrokes = Math.min(bestStrokes, strokes); break; }
+        if (!settled) break; // timed out mid-roll → abandon this try
+      }
+    }
+    return { hi: hi, sunk: sunk, tries: used, strokes: sunk ? bestStrokes : null };
+  };
   PG.__edSerialize = function () { return edSerialize(); }; PG.__edDeserialize = function (o) { return edDeserialize(o); };
   PG.__edDown = function (px, py, shift) { edDown({ x: px, y: py }, !!shift); }; PG.__edMove = function (px, py) { edMove({ x: px, y: py }); }; PG.__edUp = function () { edUp(); };
   PG.__project = function (x, y, z) { return project(x, y, z); }; PG.__ed3dWorld = function (px, py) { return ed3DToWorld({ x: px, y: py }); }; PG.__orbitCam = function () { orbitCam(); }; PG.__edSel = function () { return ED.sel; };
