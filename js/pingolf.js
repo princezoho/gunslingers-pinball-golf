@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 35 · CUP GLOW';
+  var BUILD = 'BUILD 36 · EDITOR CLEAR';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -920,6 +920,12 @@
     if (ED.dom.btnPanel) ED.dom.btnPanel.style.background = ED.panelOpen ? 'linear-gradient(180deg,#6a4628,#3a2614)' : 'linear-gradient(180deg,#2a2a2a,#161616)';
   }
   function edToolbarLabels() { var icon = (St.w || window.innerWidth) < 820; (ED.dom.topBtns || []).forEach(function (b) { var nt = icon ? b._icon : b._full; if (b.textContent !== nt) b.textContent = nt; }); }   // icon-only toolbar on narrow screens so every button (incl Exit) fits
+  function edClearAll() {   // wipe all placed obstacles/items but keep the level shape (walls), tee, cup, bounds, theme
+    edSnapshot(); var d = ED.draft;
+    ['bumpers', 'boosters', 'flippers', 'windmills', 'lasers', 'loops', 'warps', 'portals', 'firerings', 'enemies', 'coins', 'powerups'].forEach(function (k) { d[k] = []; });
+    d.terrainFeatures = d.terrainFeatures.filter(function (t) { return t.kind === 'slope'; });
+    ED.sel = null; edHi(); edPanel(); edToast('Cleared all items');
+  }
   function edW2S(x, z) { var bn = ED.draft.bounds; return { x: ED.ox + (x - bn.minX) * ED.scale, y: ED.oz + (bn.maxZ - z) * ED.scale }; }
   function edS2W(sx, sy) { var bn = ED.draft.bounds; return { x: (sx - ED.ox) / ED.scale + bn.minX, z: bn.maxZ - (sy - ED.oz) / ED.scale }; }
   function edItems() {
@@ -1232,6 +1238,7 @@
     ED.dom.btnPanel = mk('◨', function () { edTogglePanel('panel'); }); ED.dom.btnPanel.title = 'Show / hide the inspector panel';
     mk('↶', edUndo); mk('↷', edRedo);
     mk('＋ New', function () { edConfirm('Start a new blank level? Unsaved work is lost.', function () { edSnapshot(); ED.draft = newDraft(); ED.sel = null; edPanel(); edToast('New level'); }); });
+    mk('🗑 Clear', function () { edConfirm('Clear all placed items? Keeps the level shape, tee, cup and theme.', edClearAll); });
     mk('⬡ Shapes', edShapes, 'linear-gradient(180deg,#5a4a8a,#2f2350)');
     mk('💾 Save', edSave, 'linear-gradient(180deg,#3a8a30,#1f5018)'); mk('📚 Levels', edLevels); mk('⇪ Export', edExport); mk('⇩ Import', edImport);
     mk('📝 Notes', edNotes, 'linear-gradient(180deg,#b06a1a,#6a3c08)');
