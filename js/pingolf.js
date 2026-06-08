@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 33 · BEST SCORES';
+  var BUILD = 'BUILD 34 · SCORECARD';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -679,8 +679,31 @@
     setTimeout(nextHole, 3000);
   }
   function nextHole() { if (St.hi >= HOLES.length - 1) { finishGame(); return; } loadHole(St.hi + 1); }
-  function finishGame() { St.total = St.scores.reduce(function (a, c) { return a + (c || 0); }, 0); St.state = 'done'; St.banner = 'COURSE DONE · ' + St.total; St.bannerT = 999; }
+  function finishGame() { St.total = St.scores.reduce(function (a, c) { return a + (c || 0); }, 0); St.state = 'done'; St.banner = 'COURSE COMPLETE'; St.bannerT = 2.5; showScorecard(); }
+  function showScorecard() {
+    var old = document.getElementById('pg-scorecard'); if (old) old.remove();
+    var ov = elt('div', 'position:fixed;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.82);', null, document.body); ov.id = 'pg-scorecard';
+    var box = elt('div', 'width:430px;max-width:94%;max-height:88%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:14px;padding:18px;box-shadow:0 10px 50px rgba(0,0,0,.7);', null, ov); box.className = 'edscroll';
+    elt('div', 'font:900 22px Wantedo, Georgia;color:#f5c542;text-align:center;', '🏆 COURSE COMPLETE', box);
+    var bs = bestStore(), totPar = 0, totYou = 0;
+    var hdr = elt('div', 'display:flex;font:700 10px Georgia;color:#f5c542;opacity:.7;margin:8px 0 2px;padding:0 6px;', null, box);
+    ['HOLE', 'PAR', 'YOU', 'BEST'].forEach(function (t, i) { elt('div', i === 0 ? 'flex:1;' : 'width:46px;text-align:right;', t, hdr); });
+    HOLES.forEach(function (hf, i) { var sc = St.scores[i]; if (sc == null) return; var h = hf(), par = h.par; totPar += par; totYou += sc; var over = sc - par;
+      var r = elt('div', 'display:flex;align-items:center;padding:5px 6px;margin:2px 0;background:rgba(245,197,66,.06);border-radius:6px;font:13px Georgia;color:#f5efdc;', null, box);
+      elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', (i + 1) + '. ' + h.name, r);
+      elt('div', 'width:46px;text-align:right;opacity:.7;', String(par), r);
+      var yc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a'; elt('div', 'width:46px;text-align:right;font-weight:700;color:' + yc + ';', sc + (over === 0 ? '' : (over > 0 ? ' +' + over : ' ' + over)), r);
+      elt('div', 'width:46px;text-align:right;color:#f5c542;', bs['h' + i] != null ? ('★' + bs['h' + i]) : '–', r);
+    });
+    var tp = totYou - totPar, tpStr = tp > 0 ? '+' + tp : tp === 0 ? 'EVEN' : String(tp);
+    var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:2px solid #5a3a1a;font:900 15px Georgia;color:#f5c542;', null, box);
+    elt('div', 'flex:1;', 'TOTAL', tr); elt('div', 'width:46px;text-align:right;opacity:.7;', String(totPar), tr); elt('div', 'width:92px;text-align:right;', totYou + ' (' + tpStr + ')', tr);
+    var act = elt('div', 'display:flex;gap:8px;margin-top:14px;', null, box);
+    var pa = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '▶ Play Again', act); pa.onclick = function () { ov.remove(); loadHole(0); };
+    var ls = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:800 13px Georgia;cursor:pointer;', '📋 Level Select', act); ls.onclick = function () { ov.remove(); levelMenu(); };
+  }
   function loadHole(hi) {
+    var scd = document.getElementById('pg-scorecard'); if (scd) scd.remove();
     St.hi = hi;
     St.hole = HOLES[hi](); applyPhys(St.hole.phys); buildScene(St.hole); clearBallMeshes();
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
@@ -1498,6 +1521,7 @@
   PG.__edDown = function (px, py, shift) { edDown({ x: px, y: py }, !!shift); }; PG.__edMove = function (px, py) { edMove({ x: px, y: py }); }; PG.__edUp = function () { edUp(); };
   PG.__project = function (x, y, z) { return project(x, y, z); }; PG.__ed3dWorld = function (px, py) { return ed3DToWorld({ x: px, y: py }); }; PG.__orbitCam = function () { orbitCam(); }; PG.__edSel = function () { return ED.sel; };
   PG.__predictPath = function (power) { var b = primeBall(); return b ? predictPath(b, power == null ? St.power : power) : []; };
+  PG.__finishGame = function (scores) { if (scores) St.scores = scores; finishGame(); };
   PG.__edUndo = function () { edUndo(); }; PG.__edRedo = function () { edRedo(); }; PG.__edStore = function () { return edStore(); }; PG.__edSaveAs = function (nm) { ED.draft.name = nm; var s = edStore(); s[nm] = edSerialize(); localStorage.setItem('pg_levels', JSON.stringify(s)); return Object.keys(s); }; PG.__edDelLevel = function (nm) { var s = edStore(); delete s[nm]; localStorage.setItem('pg_levels', JSON.stringify(s)); return Object.keys(s); };
   PG.__shoot = function (dx, dz, power) { St.aimYaw = Math.atan2(dx, dz); St.camYaw = St.aimYaw; St.power = power; shoot(); };
   PG.__flip = function (side, down) { flipPress(side, down); };
