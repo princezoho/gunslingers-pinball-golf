@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 36 · EDITOR CLEAR';
+  var BUILD = 'BUILD 37 · COIN JUICE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -590,7 +590,7 @@
     for (i = 0; i < ens.length; i++) { var en = ens[i]; var dxe = b.x - en.cx, dze = b.z - en.cz, de = hyp(dxe, dze), Re = K.R + en.r; if (de < Re && b.y < gy + 90) { if (b.hzCd > 0) continue; var nex = de > .01 ? dxe / de : 0, nez = de > .01 ? dze / de : 1; b.x = en.cx + nex * Re; b.z = en.cz + nez * Re; en.flash = .3; St.shake = Math.min(12, St.shake + 7); spark(en.cx, gy + 24, en.cz, 14); sfx('bump'); if (b.shield) { b.shield = false; b.hzCd = 0.5; var vneS = b.vx * nex + b.vz * nez; if (vneS < 0) { b.vx -= 2 * vneS * nex; b.vz -= 2 * vneS * nez; } pop3d(en.cx, en.cz, gy, 'BLOCKED!', '#33b6ff'); continue; } if (en.effect === 'reset') { var vne0 = b.vx * nex + b.vz * nez; if (vne0 < 0) { b.vx -= 2.4 * vne0 * nex; b.vz -= 2.4 * vne0 * nez; } b.vx *= 0.28; b.vz *= 0.28; b.hzCd = 0.3; pop3d(en.cx, en.cz, gy, 'REPEL!', COL.red); return; } else if (en.effect === 'stun') { b.vx *= 0.1; b.vz *= 0.1; b.hzCd = 0.2; pop3d(en.cx, en.cz, gy, 'STUN!', COL.red); } else { var vne = b.vx * nex + b.vz * nez; if (vne < 0) { b.vx -= 1.9 * vne * nex; b.vz -= 1.9 * vne * nez; } b.vx += nex * 1700; b.vz += nez * 1700; pop3d(en.cx, en.cz, gy, 'POW!', COL.red); } } }
     // coins — roll over to collect
     var cns = hole.coins || [];
-    for (i = 0; i < cns.length; i++) { var cn = cns[i]; if (!cn.got && b.y < gy + 130 && hyp(b.x - cn.x, b.z - cn.z) < K.R + 26) { cn.got = true; St.coins = (St.coins || 0) + cn.value; pop3d(cn.x, cn.z, gy + 36, '+' + cn.value, COL.gold); spark(cn.x, gy + 36, cn.z, 9); sfx('tick'); } }
+    for (i = 0; i < cns.length; i++) { var cn = cns[i]; if (!cn.got && b.y < gy + 130 && hyp(b.x - cn.x, b.z - cn.z) < K.R + 26) { cn.got = true; St.coins = (St.coins || 0) + cn.value; St.coinPulse = 0.5; pop3d(cn.x, cn.z, gy + 40, '+' + cn.value, COL.gold); spark(cn.x, gy + 36, cn.z, 14); sfx('coin'); } }
     // power-ups — roll over to grab a beneficial effect
     var pus = hole.powerups || [];
     for (i = 0; i < pus.length; i++) { var pu = pus[i]; if (!pu.got && b.y < gy + 130 && hyp(b.x - pu.x, b.z - pu.z) < K.R + 30) { pu.got = true; pu.flash = .5; applyPowerup(pu.kind, b, gy); } }
@@ -756,7 +756,7 @@
   function pop3d(x, z, gy, text, col) { St.pops.push({ x: x, y: gy + 70, z: z, text: text, col: col, life: .85, max: .85 }); if (St.pops.length > 8) St.pops.shift(); }
   var AU = { ctx: null, on: true };
   function audioInit() { if (AU.ctx) return; try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
-  function sfx(kind) { if (!AU.on || !AU.ctx) return; var t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); var m = ({ hit: [190, 'sawtooth', .12], bump: [520, 'square', .07], flip: [360, 'triangle', .05], tick: [200, 'square', .04], boost: [320, 'sawtooth', .2], sink: [660, 'sine', .25] })[kind] || [200, 'square', .04]; o.type = m[1]; o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[0] * (kind === 'sink' ? 2 : .6), t + m[2]); g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + m[2]); o.connect(g); g.connect(AU.ctx.destination); o.start(t); o.stop(t + m[2] + .02); }
+  function sfx(kind) { if (!AU.on || !AU.ctx) return; var t = AU.ctx.currentTime, o = AU.ctx.createOscillator(), g = AU.ctx.createGain(); var m = ({ hit: [190, 'sawtooth', .12], bump: [520, 'square', .07], flip: [360, 'triangle', .05], tick: [200, 'square', .04], boost: [320, 'sawtooth', .2], sink: [660, 'sine', .25], coin: [780, 'triangle', .09] })[kind] || [200, 'square', .04]; o.type = m[1]; o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[0] * (kind === 'sink' || kind === 'coin' ? 1.7 : .6), t + m[2]); g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + m[2]); o.connect(g); g.connect(AU.ctx.destination); o.start(t); o.stop(t + m[2] + .02); }
 
   /* ================================================================ camera */
   function placeCam() {
@@ -817,7 +817,7 @@
     // running to-par score (progression) — only when there's room between the two side panels
     var tot = St.scores.reduce(function (a, cv) { return a + (cv || 0); }, 0), tp = tot - (St.parDone || 0);
     if (!narrow) { panel(c, w / 2 - 78, 12, 156, 40); c.textAlign = 'center'; c.fillStyle = COL.cream; c.font = 'bold 15px Georgia'; c.fillText('THRU ' + St.hi + '  ·  ' + tot + '  (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 38); }
-    if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpx = narrow ? 12 : (w / 2 - 78), cpw = narrow ? lw : 156, cpy = narrow ? 76 : 56; panel(c, cpx, cpy, cpw, 30); c.textAlign = 'center'; c.fillStyle = COL.gold; c.font = 'bold 14px Georgia'; c.fillText('🪙 ' + (St.coins || 0) + '      ★ ' + (St.points || 0), cpx + cpw / 2, cpy + 20); }
+    if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpx = narrow ? 12 : (w / 2 - 78), cpw = narrow ? lw : 156, cpy = narrow ? 76 : 56; panel(c, cpx, cpy, cpw, 30); c.textAlign = 'center'; var cpz = 1 + (St.coinPulse || 0) * 0.7, ccx = cpx + cpw / 2; c.save(); c.translate(ccx, cpy + 20); c.scale(cpz, cpz); c.fillStyle = (St.coinPulse || 0) > 0.25 ? '#fff0a0' : COL.gold; c.font = 'bold 14px Georgia'; c.fillText('🪙 ' + (St.coins || 0) + '      ★ ' + (St.points || 0), 0, 0); c.restore(); }
     // active power-up badges
     var badges = []; var pball = primeBall();
     if (St.magnetT > 0) badges.push(['MAGNET ' + St.magnetT.toFixed(1) + 's', '#ff4477']);
@@ -1473,6 +1473,7 @@
   /* ================================================================ loop + boot */
   function stepVisuals(dt) {
     if (St.state === 'aim' && !St.drag) St.aimYaw = St.camYaw;
+    if (St.coinPulse > 0) St.coinPulse = Math.max(0, St.coinPulse - dt);
     for (var i = St.fx.length - 1; i >= 0; i--) { var p = St.fx[i]; p.life -= dt; if (p.life <= 0) { St.fx.splice(i, 1); continue; } p.vy -= 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
     for (i = St.pops.length - 1; i >= 0; i--) { var q = St.pops[i]; q.life -= dt; q.y += 60 * dt; if (q.life <= 0) St.pops.splice(i, 1); }
     var b = primeBall(); if (b && St.state === 'roll' && hyp(b.vx, b.vz) > 220) { St.trail.push({ x: b.x, y: b.y, z: b.z }); if (St.trail.length > 16) St.trail.shift(); } else if (St.trail.length) St.trail.shift();
