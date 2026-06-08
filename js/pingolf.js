@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 52 · FLIPPER CLICK';
+  var BUILD = 'BUILD 53 · TIGHTER CUPS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -207,7 +207,7 @@
     b.bumper(-300, 560, 40).bumper(300, 600, 40).bumper(-180, 980, 44).bumper(180, 1040, 44);
     b.coin(-90, 820, 1).coin(90, 880, 1).coin(0, 1240, 2);
     b.bumper(-330, 1560, 42).bumper(330, 1600, 42);
-    b.funnel(0, 1780, 380, 210);                            // ice-rink catcher around the cup
+    b.funnel(0, 1780, 210, 115);                            // ice-rink catcher (tightened: must land near the cup)
     b.booster(0, 320, PI / 2, 130, 2600);
     return finish(b, 'FROZEN POND', 4, { x: 0, z: 120 }, { x: 0, z: 1780 }, -500, 500, -60, 2080);
   }
@@ -221,7 +221,7 @@
     b.firering(0, 1080, 150, 175, 150, 2.6);                // soar through for a bonus
     b.coin(-120, 820, 1).coin(120, 820, 1).coin(0, 1320, 2);
     b.bumper(-300, 1520, 44).bumper(300, 1560, 44);
-    b.funnel(0, 2020, 320, 180);
+    b.funnel(0, 2020, 165, 95);
     b.powerup(180, 1300, 'gem');                            // low-G loot
     return finish(b, 'MOON CRATERS', 4, { x: 0, z: 120 }, { x: 0, z: 2020 }, -490, 490, -60, 2200);
   }
@@ -232,7 +232,7 @@
     b.portal(0, 980, [{ x: -300, z: 1500 }, { x: 0, z: 1560 }, { x: 300, z: 1500 }], 56);   // 3-exit random teleport
     b.coin(-90, 760, 1).coin(90, 760, 1).coin(0, 1300, 2);
     b.bumper(-380, 1760, 40).bumper(380, 1760, 40);     // pushed to the rails — cup lane stays open
-    b.funnel(0, 2000, 380, 210);
+    b.funnel(0, 2000, 150, 85);
     b.booster(0, 320, PI / 2, 130, 3000);
     return finish(b, 'GHOST TOWN PORTALS', 4, { x: 0, z: 120 }, { x: 0, z: 2000 }, -530, 530, -60, 2180);
   }
@@ -246,7 +246,7 @@
     b.loopde(0, 1520, 150);
     b.coin(0, 560, 1).coin(0, 900, 1).coin(0, 1360, 2);
     b.bumper(-250, 1840, 44).bumper(250, 1880, 44);
-    b.funnel(0, 2030, 300, 170);
+    b.funnel(0, 2030, 150, 85);
     b.powerup(150, 1700, 'gem');                            // bonus past the loops
     return finish(b, 'LOOP-DE-LOOP CITY', 4, { x: 0, z: 120 }, { x: 0, z: 2030 }, -470, 470, -60, 2200);
   }
@@ -272,7 +272,7 @@
     b.enemy(0, 1560, 60, 1560, 40, 0.7, 'blob', 'chase', 'knockback');     // a slow chaser
     b.coin(-150, 720, 1).coin(150, 1060, 1).coin(0, 1420, 2);
     b.booster(0, 320, PI / 2, 130, 3000);
-    b.funnel(0, 2020, 320, 180);
+    b.funnel(0, 2020, 150, 85);
     return finish(b, 'VARMINT VALLEY', 5, { x: 0, z: 120 }, { x: 0, z: 2020 }, -530, 530, -60, 2200);
   }
   function H16() { // COIN RUSH — speedway turf; grab the loot trail and ride the jump
@@ -284,7 +284,7 @@
     b.ramp(1240, 1480, 140, 9999, 999999);                  // jump to the upper green
     b.coin(0, 1340, 2).coin(-120, 1700, 1).coin(120, 1700, 1).coin(0, 1880, 3);
     b.bumper(-300, 1640, 42).bumper(300, 1680, 42);
-    b.funnel(0, 2020, 320, 190);
+    b.funnel(0, 2020, 170, 100);
     b.booster(0, 320, PI / 2, 130, 3400);
     b.powerup(0, 1560, 'gem');                              // the big one
     return finish(b, 'COIN RUSH', 4, { x: 0, z: 120 }, { x: 0, z: 2020 }, -480, 480, -60, 2240);
@@ -299,7 +299,7 @@
     b.firering(0, 1240, 150, 200, 200, 2.2);                // big-points fire hoop
     b.coin(0, 1560, 2);
     b.bumper(-280, 1740, 42).bumper(280, 1780, 42);
-    b.funnel(0, 2060, 300, 180);
+    b.funnel(0, 2060, 150, 85);
     b.powerup(-160, 640, 'jump');                           // optional early hop
     return finish(b, 'FIRE LEAP CANYON', 4, { x: 0, z: 120 }, { x: 0, z: 2060 }, -460, 460, -60, 2280);
   }
@@ -312,7 +312,7 @@
     b.warp(0, 1180, 0, 1700, 56);                           // drop-hole express to the green
     b.coin(-120, 940, 1).coin(120, 940, 1).coin(0, 1500, 2);
     b.bumper(-280, 1640, 42).bumper(280, 1680, 42);
-    b.funnel(0, 1860, 320, 200);
+    b.funnel(0, 1860, 150, 85);
     b.booster(0, 320, PI / 2, 130, 3000);
     b.powerup(0, 1400, 'magnet');                           // reel into the lower green
     return finish(b, 'DOUBLE DECKER', 5, { x: 0, z: 120 }, { x: 0, z: 1860 }, -500, 500, -60, 2200);
@@ -325,7 +325,7 @@
     b.bumper(-230, 1040, 46).bumper(230, 1080, 46);         // a middle pair — the lane stays open between
     b.bumper(-330, 1380, 44).bumper(330, 1420, 44);
     b.coin(0, 540, 1).coin(0, 880, 1).coin(0, 1220, 1);
-    b.funnel(0, 1760, 400, 240);                            // big catcher
+    b.funnel(0, 1760, 225, 125);                            // springy catcher (tightened)
     b.booster(0, 300, PI / 2, 120, 2400);
     return finish(b, 'RUBBER ROOM', 5, { x: 0, z: 120 }, { x: 0, z: 1760 }, -500, 500, -60, 2060);
   }
@@ -346,7 +346,7 @@
     b.powerup(0, 2240, 'magnet');                           // suck into the final cup
     b.coin(0, 660, 1).coin(0, 1760, 2).coin(0, 2420, 3);
     b.bumper(-340, 2560, 42).bumper(340, 2600, 42);
-    b.funnel(0, 2680, 360, 210);
+    b.funnel(0, 2680, 160, 90);
     return finish(b, 'THE LAST STAND', 6, { x: 0, z: 130 }, { x: 0, z: 2680 }, -550, 550, -60, 2840);
   }
   function finish(b, name, par, tee, cup, minX, maxX, minZ, maxZ) {
