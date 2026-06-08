@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 44 · MOON CRATERS';
+  var BUILD = 'BUILD 45 · SPEEDWAY ARROWS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -419,6 +419,17 @@
         var ccx = bn.minX + 50 + prnd(ci * 3) * (bn.maxX - bn.minX - 100), ccz = bn.minZ + 50 + prnd(ci * 3 + 1) * (bn.maxZ - bn.minZ - 100), ccr = 38 + prnd(ci * 3 + 2) * 92, cgy = hole.terrain(ccx, ccz);
         var cRim = new T.Mesh(new T.RingGeometry(ccr, ccr * 1.13, 26), cRimMat); cRim.rotation.x = -PI / 2; cRim.position.set(ccx, cgy + 1.0, ccz); R3.group.add(cRim);
         var cFloor = new T.Mesh(new T.CircleGeometry(ccr, 22), cFloorMat); cFloor.rotation.x = -PI / 2; cFloor.position.set(ccx, cgy + 1.4, ccz); cFloor.receiveShadow = true; R3.group.add(cFloor);
+      }
+    }
+    // SPEEDWAY chevrons — racing arrows on the ground pointing tee->cup (flat decals, no collision; explicit world verts avoid rotation confusion)
+    if (hole.theme === 'speed') {
+      var stee = hole.tee, scup = hole.cup, sdx = scup.x - stee.x, sdz = scup.z - stee.z, sdl = Math.sqrt(sdx * sdx + sdz * sdz) || 1; sdx /= sdl; sdz /= sdl;
+      var spx = -sdz, spz = sdx, chMat = new T.MeshBasicMaterial({ color: 0x4a2f12, transparent: true, opacity: 0.62, side: T.DoubleSide, depthWrite: false }), nCh = 7, chL = 130, chW = 46;
+      for (var chi = 0; chi < nCh; chi++) {
+        var f = (chi + 1) / (nCh + 1), bx = stee.x + (scup.x - stee.x) * f, bz = stee.z + (scup.z - stee.z) * f, sgy = hole.terrain(bx, bz) + 2;
+        var tx = bx + sdx * chL * 0.5, tz = bz + sdz * chL * 0.5, b1x = bx - sdx * chL * 0.5 + spx * chW, b1z = bz - sdz * chL * 0.5 + spz * chW, b2x = bx - sdx * chL * 0.5 - spx * chW, b2z = bz - sdz * chL * 0.5 - spz * chW;
+        var cg = new T.BufferGeometry(); cg.setAttribute('position', new T.BufferAttribute(new Float32Array([tx, sgy, tz, b1x, sgy, b1z, b2x, sgy, b2z]), 3)); cg.setIndex([0, 1, 2]); cg.computeVertexNormals();
+        R3.group.add(new T.Mesh(cg, chMat));
       }
     }
     // walls
