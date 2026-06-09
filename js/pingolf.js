@@ -25,8 +25,8 @@
   var K = {
     R: 15, hz: 360, g: 2200,
     rollFric: 1100, airDrag: 0.05, groundE: 0.32,
-    wallE: 0.66, wallHalf: 9, settle: 26, settleT: 0.26, vMax: 6200,
-    shotMin: 260, shotMax: 5200, pullPx: 240,     // power CURVE (squared) => gentle putts + big drives
+    wallE: 0.66, wallHalf: 9, settle: 26, settleT: 0.26, vMax: 7800,
+    shotMin: 325, shotMax: 6500, pullPx: 240,     // power CURVE (squared) => gentle putts + big drives
     cupR: 44, holeSpd: 1500,
     // FAST flippers
     flipSweep: 1.45, flipUpSpd: 95, flipDnSpd: 28, flipHold: 0.05, flipKick: 2400, flipE: 0.5, flipHalf: 16, flipLiveOm: 6,
@@ -34,13 +34,13 @@
   };
   var KD = {}; (function () { for (var k in K) KD[k] = K[k]; })();   // pristine defaults
   var THEMES = {
-    grass: { name: 'Grass (normal)', turf: 0x54ad44, sky: 0xc9a06a, g: 2200, rollFric: 1100, groundE: 0.32, wallE: 0.66, bumpKick: 1750, vMax: 6200 },
-    ice: { name: 'Ice ❄ (slides)', turf: 0xbfe6f0, sky: 0xaccfe0, g: 2200, rollFric: 230, groundE: 0.45, wallE: 0.9, bumpKick: 1950, vMax: 7000 },
-    moon: { name: 'Moon 🌙 (low-G)', turf: 0x9b94aa, sky: 0x2b2746, g: 780, rollFric: 600, groundE: 0.74, wallE: 0.84, bumpKick: 1650, vMax: 6200 },
-    mud: { name: 'Mud 🟤 (sticky)', turf: 0x7a5a30, sky: 0x8f7848, g: 2200, rollFric: 2550, groundE: 0.12, wallE: 0.4, bumpKick: 1500, vMax: 6200 },
-    rubber: { name: 'Rubber 🔴 (bouncy)', turf: 0xc0392b, sky: 0xb56550, g: 2200, rollFric: 950, groundE: 0.92, wallE: 0.97, bumpKick: 2150, vMax: 7000 },
-    speed: { name: 'Speedway ⚡ (fast)', turf: 0xf0a830, sky: 0xdfa83e, g: 2200, rollFric: 470, groundE: 0.35, wallE: 0.7, bumpKick: 2050, vMax: 7400 },
-    sand: { name: 'Sand 🏜 (drag)', turf: 0xd9c08a, sky: 0xe7c486, g: 2200, rollFric: 1900, groundE: 0.2, wallE: 0.5, bumpKick: 1600, vMax: 6000 }
+    grass: { name: 'Grass (normal)', turf: 0x54ad44, sky: 0xc9a06a, g: 2200, rollFric: 1100, groundE: 0.32, wallE: 0.66, bumpKick: 1750, vMax: 7800 },
+    ice: { name: 'Ice ❄ (slides)', turf: 0xbfe6f0, sky: 0xaccfe0, g: 2200, rollFric: 230, groundE: 0.45, wallE: 0.9, bumpKick: 1950, vMax: 8800 },
+    moon: { name: 'Moon 🌙 (low-G)', turf: 0x9b94aa, sky: 0x2b2746, g: 780, rollFric: 600, groundE: 0.74, wallE: 0.84, bumpKick: 1650, vMax: 7800 },
+    mud: { name: 'Mud 🟤 (sticky)', turf: 0x7a5a30, sky: 0x8f7848, g: 2200, rollFric: 2550, groundE: 0.12, wallE: 0.4, bumpKick: 1500, vMax: 7800 },
+    rubber: { name: 'Rubber 🔴 (bouncy)', turf: 0xc0392b, sky: 0xb56550, g: 2200, rollFric: 950, groundE: 0.92, wallE: 0.97, bumpKick: 2150, vMax: 8800 },
+    speed: { name: 'Speedway ⚡ (fast)', turf: 0xf0a830, sky: 0xdfa83e, g: 2200, rollFric: 470, groundE: 0.35, wallE: 0.7, bumpKick: 2050, vMax: 9250 },
+    sand: { name: 'Sand 🏜 (drag)', turf: 0xd9c08a, sky: 0xe7c486, g: 2200, rollFric: 1900, groundE: 0.2, wallE: 0.5, bumpKick: 1600, vMax: 7500 }
   };
   var PHYS_KEYS = ['g', 'rollFric', 'groundE', 'wallE', 'cupR', 'shotMax', 'bumpKick', 'flipKick', 'vMax'];
   function applyPhys(phys) { PHYS_KEYS.forEach(function (k) { K[k] = (phys && phys[k] != null) ? phys[k] : KD[k]; }); }
@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 53 · TIGHTER CUPS';
+  var BUILD = 'BUILD 54 · FASTER + MORE STUFF';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -64,7 +64,7 @@
       walls: [], bumpers: [], boosters: [], flippers: [], windmills: [], lasers: [], loops: [], warps: [], portals: [], firerings: [], enemies: [], coins: [], powerups: [], spinners: [], multiball: null,
       terrainFeatures: [], noBox: false,
       wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32 }); return this; },   // editor can raise height up to 240
-      box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); return this; },
+      box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
       ring: function (cx, cz, r, n, o, a0, a1) { a0 = a0 || 0; a1 = a1 == null ? TAU : a1; n = n || 22; var prev = null; for (var i = 0; i <= n; i++) { var a = a0 + (a1 - a0) * i / n, p = { x: cx + Math.cos(a) * r, z: cz + Math.sin(a) * r }; if (prev) this.wall(prev.x, prev.z, p.x, p.z, o); prev = p; } return this; },
       spiral: function (cx, cz, r0, r1, turns, n, o) { var prevIn = null, prevOut = null, w = (r1 - r0) * 0.18 + 60; for (var i = 0; i <= n; i++) { var t = i / n, a = t * turns * TAU, r = lerp(r1, r0, t); var inn = { x: cx + Math.cos(a) * (r - w / 2), z: cz + Math.sin(a) * (r - w / 2) }, out = { x: cx + Math.cos(a) * (r + w / 2), z: cz + Math.sin(a) * (r + w / 2) }; if (prevIn) { this.wall(prevIn.x, prevIn.z, inn.x, inn.z, o); this.wall(prevOut.x, prevOut.z, out.x, out.z, o); } prevIn = inn; prevOut = out; } return this; },
       bumper: function (x, z, r) { this.bumpers.push({ x: x, z: z, r: r || 40, flash: 0 }); return this; },
@@ -107,13 +107,14 @@
 
   /* ================================================================ THE 9 HOLES */
   // every hole gets a bottom flipper V near the tee (where the ball drains back to you, like a real pinball table)
-  function botFlip(b, tz, sp) { sp = sp || 165; b.flip('L', -sp, tz + 160, 150).flip('R', sp, tz + 160, 150); return b; }
+  function botFlip(b, tz) { var hw = b.hw || 410, px = hw - 50, fz = tz + 60; b.flip('L', -px, fz, 150).flip('R', px, fz, 150); return b; }
   function H1() { // GREENHORN GULCH — learn it: slingshots, a bumper cluster, a speed pad
     var b = builder().box(-410, -40, 410, 1660, { h: 52 });
     botFlip(b, 110);
     b.bumper(-250, 520, 38).bumper(250, 560, 38);            // slingshots off the flippers
     b.bumper(0, 840, 50).bumper(-175, 1090, 44).bumper(175, 1130, 44);
     b.booster(0, 1300, PI / 2, 130, 2800);
+    b.bumper(-130, 700, 34).bumper(130, 740, 34);
     return finish(b, 'GREENHORN GULCH', 3, { x: 0, z: 110 }, { x: 0, z: 1520 }, -470, 470, -60, 1680);
   }
   function H2() { // BUMPER BARN — a dense pinball field you ricochet through
@@ -124,6 +125,7 @@
     rows.forEach(function (r, ri) { var n = r[0], z = r[1]; for (var i = 0; i < n; i++) { var x = (i - (n - 1) / 2) * 235; b.bumper(x + (ri % 2 ? 64 : -64), z, 46); } });
     b.booster(0, 1700, PI / 2, 130, 2900);
     b.powerup(0, 700, 'shield');                            // tank the bumper chaos
+    b.bumper(-380, 1090, 40).bumper(380, 1130, 40);
     return finish(b, 'BUMPER BARN', 4, { x: 0, z: 120 }, { x: 0, z: 1830 }, -530, 530, -60, 2000);
   }
   function H3() { // SLOPE SALOON — banked S-curve, gravity curls your roll
@@ -132,6 +134,7 @@
     b.hill(290, 720, 360, 160).hill(-290, 1240, 360, 160);  // two banks form an S
     b.bumper(0, 980, 48).bumper(-150, 560, 38).bumper(170, 1360, 40);
     b.booster(-260, 360, PI / 2, 130, 2800);
+    b.bumper(160, 560, 34).bumper(-180, 1540, 36);
     return finish(b, 'SLOPE SALOON', 3, { x: -290, z: 130 }, { x: 290, z: 1780 }, -550, 550, -60, 1940);
   }
   function H4() { // THE BIG JUMP — blast up the ramp and fly to the green
@@ -142,6 +145,7 @@
     b.ramp(780, 1060, 155, 330, 52);                        // launch ramp + lip
     b.bumper(-210, 1560, 44).bumper(210, 1600, 44).bumper(0, 1700, 46);
     b.powerup(-150, 480, 'jump');                           // hop before the launch ramp
+    b.bumper(-150, 680, 34).bumper(150, 700, 34);
     return finish(b, 'THE BIG JUMP', 3, { x: 0, z: 120 }, { x: 0, z: 1990 }, -450, 450, -60, 2140);
   }
   function H5() { // WINDMILL RUN — time the spinning blades, then finish past the bumpers
@@ -151,6 +155,7 @@
     b.windmill(0, 1080, 250, 4, 1.9);
     b.bumper(-300, 1480, 40).bumper(300, 1520, 40);
     b.booster(0, 360, PI / 2, 130, 3000);
+    b.bumper(-340, 1080, 36).bumper(340, 1080, 36).bumper(0, 1720, 40);
     return finish(b, 'WINDMILL RUN', 4, { x: 0, z: 120 }, { x: 0, z: 1860 }, -470, 470, -60, 2040);
   }
   function H6() { // SPIRAL FUNNEL — run into a round arena; the funnel curls the ball to the centre cup
@@ -162,6 +167,7 @@
     b.bumper(-370, 1120, 46).bumper(370, 1120, 46).bumper(0, 1520, 46).bumper(-200, 820, 40).bumper(200, 860, 40);
     b.booster(0, 250, PI / 2, 150, 3500);
     b.powerup(0, 700, 'magnet');                            // help curl into the centre cup
+    b.bumper(-500, 980, 44).bumper(500, 1280, 44);
     return finish(b, 'SPIRAL FUNNEL', 4, { x: 0, z: 120 }, { x: 0, z: 1120 }, -800, 800, -60, 1920);
   }
   function H7() { // LASER GAUNTLET — time your run through the beams
@@ -173,6 +179,7 @@
     b.bumper(-250, 1740, 42).bumper(250, 1780, 42);
     b.booster(0, 640, PI / 2, 140, 3400);
     b.powerup(0, 760, 'shield');                            // block one laser zap
+    b.bumper(-300, 1150, 40).bumper(300, 1150, 40); b.laser(-400, 1180, 400, 1180, 2.8, 0.34, 0.7);
     return finish(b, 'LASER GAUNTLET', 4, { x: 0, z: 120 }, { x: 0, z: 1990 }, -450, 450, -60, 2140);
   }
   function H8() { // HIGHRISE — blast up two ramps to a top-tier green
@@ -183,6 +190,7 @@
     b.bumper(-190, 1110, 42).bumper(190, 1150, 42);
     b.ramp(1340, 1620, 150, 9999, 999999);                  // climb to tier 2
     b.booster(0, 460, PI / 2, 150, 4200).booster(0, 1190, PI / 2, 150, 4400);
+    b.bumper(-150, 1380, 40).bumper(150, 1420, 40);
     return finish(b, 'HIGHRISE', 4, { x: 0, z: 120 }, { x: 0, z: 2180 }, -450, 450, -60, 2290);
   }
   function H9() { // THE GAUNTLET — twin windmills, a laser, dense bumpers: the finale
@@ -195,6 +203,7 @@
     b.bumper(-210, 1870, 42).bumper(210, 1900, 42);
     b.booster(-290, 360, PI / 2, 120, 3300).booster(290, 390, PI / 2, 120, 3300);
     b.powerup(0, 700, 'slow');                              // bullet-time the gauntlet
+    b.bumper(-300, 1440, 40).bumper(300, 1470, 40);
     return finish(b, 'THE GAUNTLET', 5, { x: 0, z: 120 }, { x: 0, z: 2190 }, -570, 570, -60, 2340);
   }
   // give a hole a terrain theme (turf colour + physics); ov overrides individual phys keys for beatability
@@ -209,6 +218,7 @@
     b.bumper(-330, 1560, 42).bumper(330, 1600, 42);
     b.funnel(0, 1780, 210, 115);                            // ice-rink catcher (tightened: must land near the cup)
     b.booster(0, 320, PI / 2, 130, 2600);
+    b.bumper(-210, 1300, 40).bumper(210, 1340, 40);
     return finish(b, 'FROZEN POND', 4, { x: 0, z: 120 }, { x: 0, z: 1780 }, -500, 500, -60, 2080);
   }
   function H11() { // MOON CRATERS — low-G floaty bounces; boost up the ramp and leap the fire hoop
@@ -223,6 +233,7 @@
     b.bumper(-300, 1520, 44).bumper(300, 1560, 44);
     b.funnel(0, 2020, 165, 95);
     b.powerup(180, 1300, 'gem');                            // low-G loot
+    b.bumper(-190, 1760, 40).bumper(190, 1800, 40);
     return finish(b, 'MOON CRATERS', 4, { x: 0, z: 120 }, { x: 0, z: 2020 }, -490, 490, -60, 2200);
   }
   function H12() { // GHOST TOWN PORTALS — step into the portal, get spat out one of THREE random ways
@@ -234,6 +245,7 @@
     b.bumper(-380, 1760, 40).bumper(380, 1760, 40);     // pushed to the rails — cup lane stays open
     b.funnel(0, 2000, 150, 85);
     b.booster(0, 320, PI / 2, 130, 3000);
+    b.bumper(-370, 1300, 40).bumper(370, 1340, 40);
     return finish(b, 'GHOST TOWN PORTALS', 4, { x: 0, z: 120 }, { x: 0, z: 2000 }, -530, 530, -60, 2180);
   }
   function H13() { // LOOP-DE-LOOP CITY — Sonic-style loops and speed boosters down the strip
@@ -248,6 +260,7 @@
     b.bumper(-250, 1840, 44).bumper(250, 1880, 44);
     b.funnel(0, 2030, 150, 85);
     b.powerup(150, 1700, 'gem');                            // bonus past the loops
+    b.bumper(-300, 720, 38).bumper(300, 1520, 38);
     return finish(b, 'LOOP-DE-LOOP CITY', 4, { x: 0, z: 120 }, { x: 0, z: 2030 }, -470, 470, -60, 2200);
   }
   function H14() { // DUTCH WINDMILL ROW — time three turning gates, each spinning a different way
@@ -260,6 +273,7 @@
     b.windmill(0, 1860, 230, 3, 2.5);
     b.coin(-150, 720, 1).coin(150, 1140, 1).coin(-150, 1620, 1);
     b.booster(0, 320, PI / 2, 130, 3200);
+    b.bumper(-330, 1140, 38).bumper(330, 1620, 38);
     return finish(b, 'DUTCH WINDMILL ROW', 5, { x: 0, z: 120 }, { x: 0, z: 2140 }, -440, 440, -60, 2300);
   }
   function H15() { // VARMINT VALLEY — dodge the critters patrolling (and one that chases) the fairway
@@ -273,6 +287,7 @@
     b.coin(-150, 720, 1).coin(150, 1060, 1).coin(0, 1420, 2);
     b.booster(0, 320, PI / 2, 130, 3000);
     b.funnel(0, 2020, 150, 85);
+    b.bumper(-340, 1060, 38).bumper(340, 1420, 38); b.enemy(-340, 700, 340, 700, 40, 1.0, 'spiky', 'patrol', 'knockback');
     return finish(b, 'VARMINT VALLEY', 5, { x: 0, z: 120 }, { x: 0, z: 2020 }, -530, 530, -60, 2200);
   }
   function H16() { // COIN RUSH — speedway turf; grab the loot trail and ride the jump
@@ -287,6 +302,7 @@
     b.funnel(0, 2020, 170, 100);
     b.booster(0, 320, PI / 2, 130, 3400);
     b.powerup(0, 1560, 'gem');                              // the big one
+    b.bumper(-330, 1340, 40).bumper(330, 1380, 40);
     return finish(b, 'COIN RUSH', 4, { x: 0, z: 120 }, { x: 0, z: 2020 }, -480, 480, -60, 2240);
   }
   function H17() { // FIRE LEAP CANYON — boost up the ramp and soar through the ring of fire
@@ -301,6 +317,7 @@
     b.bumper(-280, 1740, 42).bumper(280, 1780, 42);
     b.funnel(0, 2060, 150, 85);
     b.powerup(-160, 640, 'jump');                           // optional early hop
+    b.bumper(-170, 760, 34).bumper(170, 800, 34);
     return finish(b, 'FIRE LEAP CANYON', 4, { x: 0, z: 120 }, { x: 0, z: 2060 }, -460, 460, -60, 2280);
   }
   function H18() { // DOUBLE DECKER — climb to the upper deck, dive the drop-hole down to the green
@@ -315,6 +332,7 @@
     b.funnel(0, 1860, 150, 85);
     b.booster(0, 320, PI / 2, 130, 3000);
     b.powerup(0, 1400, 'magnet');                           // reel into the lower green
+    b.bumper(-150, 1040, 38).bumper(150, 1080, 38);
     return finish(b, 'DOUBLE DECKER', 5, { x: 0, z: 120 }, { x: 0, z: 1860 }, -500, 500, -60, 2200);
   }
   function H19() { // RUBBER ROOM — everything is springy; ricochet your way into the catcher
@@ -327,6 +345,7 @@
     b.coin(0, 540, 1).coin(0, 880, 1).coin(0, 1220, 1);
     b.funnel(0, 1760, 225, 125);                            // springy catcher (tightened)
     b.booster(0, 300, PI / 2, 120, 2400);
+    b.bumper(-330, 860, 42).bumper(330, 1200, 42);
     return finish(b, 'RUBBER ROOM', 5, { x: 0, z: 120 }, { x: 0, z: 1760 }, -500, 500, -60, 2060);
   }
   function H20() { // THE LAST STAND — the whole arsenal: loop, windmill, fire, portal, varmint, drop-hole
@@ -347,6 +366,7 @@
     b.coin(0, 660, 1).coin(0, 1760, 2).coin(0, 2420, 3);
     b.bumper(-340, 2560, 42).bumper(340, 2600, 42);
     b.funnel(0, 2680, 160, 90);
+    b.bumper(-340, 1900, 40).bumper(340, 1940, 40);
     return finish(b, 'THE LAST STAND', 6, { x: 0, z: 130 }, { x: 0, z: 2680 }, -550, 550, -60, 2840);
   }
   function finish(b, name, par, tee, cup, minX, maxX, minZ, maxZ) {
@@ -1449,7 +1469,7 @@
     row(p, 'wall bounce', ph.wallE, 0, 1, 0.05, function (v) { ph.wallE = v; });
     row(p, 'default bumper kick', ph.bumpKick, 600, 3000, 50, function (v) { ph.bumpKick = v; });
     row(p, 'default flip power', ph.flipKick, 800, 4000, 100, function (v) { ph.flipKick = v; });
-    row(p, 'max drive', ph.shotMax, 2500, 7500, 100, function (v) { ph.shotMax = v; });
+    row(p, 'max drive', ph.shotMax, 2500, 9000, 100, function (v) { ph.shotMax = v; });
     row(p, 'cup size', ph.cupR, 30, 80, 2, function (v) { ph.cupR = v; edLiveRefresh(); });
   }
   function edShow(on) { if (!on) { ED.view3d = false; ED.camDrag = null; ED.moving3d = false; if (ED.dom.btn3d) ED.dom.btn3d.style.background = 'linear-gradient(180deg,#6a4628,#3a2614)'; } if (ED.dom.root) ED.dom.root.style.display = on ? 'block' : 'none'; if (ED.dom.modal) ED.dom.modal.style.display = 'none'; var ws = document.getElementById('cam'), sn = document.getElementById('snd'); if (ws) ws.style.display = on ? 'none' : ''; if (sn) sn.style.display = on ? 'none' : ''; (ED.dom.gameBtns || []).forEach(function (b) { b.style.display = on ? 'none' : ''; }); if (on) { edToolbarLabels(); edHi(); edPanel(); } }
