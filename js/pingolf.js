@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 54 · FASTER + MORE STUFF';
+  var BUILD = 'BUILD 55 · EDITOR: EDIT+SAVE LEVELS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -774,10 +774,17 @@
     var pa = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '▶ Play Again', act); pa.onclick = function () { ov.remove(); loadHole(0); };
     var ls = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:800 13px Georgia;cursor:pointer;', '📋 Level Select', act); ls.onclick = function () { ov.remove(); levelMenu(); };
   }
+  // saved edits to the built-in campaign holes (persist across reloads) — keyed by hole index
+  function overStore() { try { return JSON.parse(localStorage.getItem('pg_over') || '{}'); } catch (e) { return {}; } }
+  function saveOver(i, ser) { var o = overStore(); o['' + i] = ser; try { localStorage.setItem('pg_over', JSON.stringify(o)); return true; } catch (e) { return false; } }
+  function clearOver(i) { var o = overStore(); delete o['' + i]; try { localStorage.setItem('pg_over', JSON.stringify(o)); } catch (e) { } }
+  function hasOver(i) { return overStore()['' + i] != null; }
+  // the hole the campaign actually plays at index hi: a saved edit if one exists, else the pristine built-in
+  function builtinHole(hi) { var ov = overStore()['' + hi]; if (ov) { try { var d = edDeserialize(ov); d.terrain = terrainFn(d.terrainFeatures); if (d.par == null) d.par = HOLES[hi]().par; d._ov = hi; return d; } catch (e) { } } return HOLES[hi](); }
   function loadHole(hi) {
     var scd = document.getElementById('pg-scorecard'); if (scd) scd.remove();
     St.hi = hi;
-    St.hole = HOLES[hi](); applyPhys(St.hole.phys); buildScene(St.hole); clearBallMeshes();
+    St.hole = builtinHole(hi); applyPhys(St.hole.phys); buildScene(St.hole); clearBallMeshes();
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
@@ -797,7 +804,7 @@
   function loadCustomLevel(name) { var o = edStore()[name]; if (!o) return false; St.hi = -1; playDraftInGame(edDeserialize(o), name, name); return true; }
   function skipLevel() { if (St.state === 'load') return; loadHole(St.hi < 0 ? 0 : (St.hi + 1) % HOLES.length); }
   function openEditorWith(d) { ED.draft = d; ED.undo = []; ED.redo = []; ED.sel = null; ED.on = true; edShow(true); }
-  function editBuiltin(i) { var d = HOLES[i](); d.theme = d.theme || 'grass'; d.phys = d.phys || themePhys(d.theme || 'grass'); d.turf = d.turf != null ? d.turf : (THEMES[d.theme || 'grass'] || THEMES.grass).turf; openEditorWith(d); }
+  function editBuiltin(i) { var ov = overStore()['' + i], d = null; if (ov) { try { d = edDeserialize(ov); } catch (e) { } } if (!d) d = HOLES[i](); d.theme = d.theme || 'grass'; d.phys = d.phys || themePhys(d.theme || 'grass'); d.turf = d.turf != null ? d.turf : (THEMES[d.theme || 'grass'] || THEMES.grass).turf; d._ov = i; openEditorWith(d); }
   function editCustom(name) { var o = edStore()[name]; if (o) openEditorWith(edDeserialize(o)); }
   function levelMenu() {
     var ov = ED.dom.lvlmenu;
@@ -1035,7 +1042,7 @@
   function edRedo() { if (!ED.redo.length) return; ED.undo.push(JSON.stringify(edSerialize())); edApply(ED.redo.pop()); }
   function selectItem(it) { var L = edItems(); for (var i = 0; i < L.length; i++) if (L[i].item === it) { ED.sel = L[i]; edPanel(); return; } }
   function edDuplicate() { if (!ED.sel || !ED.sel.arr) return; edSnapshot(); var src = ED.sel.item, copy = JSON.parse(JSON.stringify(src)); if (copy.x != null) copy.x += 40; if (copy.z != null) copy.z += 40; if (copy.px != null) { copy.px += 40; copy.pz += 40; } if (copy.ax != null) { copy.ax += 40; copy.bx += 40; copy.az += 40; copy.bz += 40; } ED.sel.arr.push(copy); selectItem(copy); }
-  var ED_TOOLS = [['select', 'Select / Move'], ['draw', '✏ DRAW LEVEL SHAPE'], ['erase', '🧽 Eraser (drag)'], ['tee', 'Tee'], ['cup', 'Cup'], ['wall', 'Wall (2 clicks)'], ['shape', 'Shape (click corners)'], ['bumper', 'Bumper'], ['booster', 'Booster'], ['flipL', 'Flipper L'], ['flipR', 'Flipper R'], ['windmill', 'Windmill'], ['loop', 'Loop-de-loop'], ['warp', 'Drop hole ⭳'], ['portal', 'Portal (teleport)'], ['firering', 'Fire Hoop 🔥'], ['enemy', 'Enemy 👾'], ['coin', 'Coin 🪙'], ['powerup', 'Power-up ✦'], ['laser', 'Laser (2 clicks)'], ['hill', 'Hill / Bank'], ['funnel', 'Funnel'], ['ramp', 'Ramp'], ['tier', 'Tier / Step ⤓'], ['raise', '⤒ Paint terrain UP'], ['lower', '⤓ Paint terrain DOWN']];
+  var ED_TOOLS = [['select', 'Select / Move'], ['draw', '✏ DRAW LEVEL SHAPE'], ['erase', '🧽 Eraser (drag)'], ['tee', 'Tee'], ['cup', 'Cup'], ['wall', 'Wall ✐ click pts · Shift 45°'], ['shape', 'Shape (click corners)'], ['bumper', 'Bumper'], ['booster', 'Booster'], ['flipL', 'Flipper L'], ['flipR', 'Flipper R'], ['windmill', 'Windmill'], ['loop', 'Loop-de-loop'], ['warp', 'Drop hole ⭳'], ['portal', 'Portal (teleport)'], ['firering', 'Fire Hoop 🔥'], ['enemy', 'Enemy 👾'], ['coin', 'Coin 🪙'], ['powerup', 'Power-up ✦'], ['laser', 'Laser (2 clicks)'], ['hill', 'Hill / Bank'], ['funnel', 'Funnel'], ['ramp', 'Ramp'], ['tier', 'Tier / Step ⤓'], ['raise', '⤒ Paint terrain UP'], ['lower', '⤓ Paint terrain DOWN']];
   var ED_PARAMS = { bumper: [['r', 'radius', 20, 90, 2], ['kick', 'bounce power', 600, 3200, 50]], booster: [['ang', 'angle', -3.14, 3.14, 0.05], ['spd', 'speed', 1200, 6000, 100], ['r', 'radius', 60, 260, 10]], flipper: [['len', 'length', 90, 220, 5], ['rot', 'rotation', -3.14, 3.14, 0.1], ['speed', 'paddle speed', 0.3, 3, 0.1], ['power', 'flip power', 800, 4000, 100]], windmill: [['r', 'radius', 90, 360, 10], ['n', 'blades', 2, 8, 1], ['speed', 'spin', -3, 3, 0.1]], laser: [['period', 'period', 0.8, 5, 0.1], ['onFrac', 'on-frac', 0.1, 0.9, 0.05], ['phase', 'phase', 0, 2, 0.1]], loop: [['r', 'radius', 80, 220, 10], ['ang', 'angle', -3.14, 3.14, 0.05]], warp: [['r', 'radius', 30, 90, 4]], portal: [['r', 'radius', 30, 80, 4]], firering: [['r', 'radius', 60, 200, 10], ['h', 'height off ground', 60, 320, 10], ['points', 'points', 10, 500, 10]], enemy: [['type', 'type', 'select', ['spiky', 'blob', 'ghost']], ['behavior', 'behavior', 'select', ['patrol', 'chase', 'static']], ['effect', 'on hit', 'select', ['knockback', 'reset', 'stun']], ['r', 'size', 24, 90, 4], ['speed', 'speed', 0.2, 2.5, 0.1]], coin: [['value', 'coin value', 1, 20, 1]], powerup: [['kind', 'effect', 'select', ['magnet', 'shield', 'slow', 'gem', 'jump']]], wall: [['e', 'bounce', 0, 1, 0.05], ['h', 'height', 20, 240, 4]], hill: [['rad', 'radius', 120, 800, 20], ['h', 'height', -300, 300, 10]], funnel: [['rad', 'radius', 120, 900, 20], ['depth', 'depth', 40, 400, 10]], ramp: [['z0', 'start-z', -40, 3200, 20], ['z1', 'end-z', -40, 3200, 20], ['h', 'height', 40, 260, 10]], tier: [['h', 'step height (− lower)', -320, 320, 10]] };
   var ED_INFO = { bumper: { n: 'BUMPER', a: 'Kicks the ball away and builds a combo. Higher bounce power = bigger launch.' }, booster: { n: 'BOOSTER', a: 'Flings the ball in a fixed direction at a set speed. Place one before a loop or jump.' }, flipper: { n: 'FLIPPER', a: 'Tap your side of the screen while rolling to flip. ROTATE it to aim any way (even horizontal levels), set paddle SPEED and flip POWER.' }, windmill: { n: 'WINDMILL', a: 'Spinning blades swat the ball. More blades or faster spin = harder to pass.' }, loop: { n: 'LOOP-DE-LOOP', a: 'Ball rides up and over a vertical loop, exits boosted. Needs speed to enter.' }, warp: { n: 'DROP HOLE ⭳', a: 'Roll the ball in and it falls out the linked GREEN exit — drag the green ring to a lower tier to build two-level holes.' }, warpExit: { n: 'DROP EXIT', a: 'Where the drop hole spits the ball out. Drag it onto the lower tier / cup area.' }, portal: { n: 'PORTAL', a: 'Teleports the ball, keeping its speed. Add 2+ exits and it pops out a RANDOM one each time — drag each exit anywhere, even other tiers.' }, portalExit: { n: 'PORTAL EXIT', a: 'One possible exit. With 2+ exits the ball comes out a random one. Drag it; use +add exit / −remove to change how many.' }, firering: { n: 'FIRE HOOP 🔥', a: 'A vertical flaming ring up in the air — JUMP the ball through the opening (off a ramp, loop or booster) to score its points. Set its height + points.' }, enemy: { n: 'ENEMY 👾', a: 'Pick its TYPE (spiky/blob/ghost), BEHAVIOR (patrol / chase the ball / hold still) and EFFECT on hit: knockback (pings you away), reset (hard repel — knocks you back the way you came), or stun (brief freeze). None of them send you back to the start. Drag the red marker to set its patrol path.' }, enemyEnd: { n: 'ENEMY PATH END', a: 'The far end of the enemy patrol. Drag to set how far it roams.' }, coin: { n: 'COIN 🪙', a: 'Roll over it to grab it — worth its value. Lay trails of coins for a Sonic-style rush.' }, powerup: { n: 'POWER-UP ✦', a: 'Roll over it to grab a beneficial effect. Pick the KIND: magnet (pulls you to the cup), shield (blocks the next hazard), slow-mo (bullet-time through gates), gem (bonus points), or jump (pops the ball up to hop walls).' }, tier: { n: 'TIER / STEP ⤓', a: 'Drops (negative height) or raises (positive) the whole green PAST this line — makes a lower or upper level. Drop a hole to fall onto it, or a ramp to climb back up. Drag to move the line.' }, laser: { n: 'LASER GATE', a: 'A TIMED GATE. You always see it (it flickers as it charges up); when the beam is ON it is a solid barrier that bounces the ball back. Time your run through the OFF window. period = cycle length, on-frac = how much of the cycle it is ON, phase = offset (stagger multiple lasers).' }, wall: { n: 'WALL', a: 'A solid barrier. Bounce sets how lively it is; height blocks airborne balls.' }, hill: { n: 'HILL / BANK', a: 'Bumps the ground up (or down with negative height) so the ball rolls off the slope.' }, funnel: { n: 'FUNNEL', a: 'A bowl that draws the ball toward its center — a tricky approach to the cup.' }, ramp: { n: 'RAMP / JUMP', a: 'A raised plateau across the lane between start-z and end-z — launch the ball over a gap.' }, tee: { n: 'TEE (start)', a: 'Where the ball starts each shot. Drag to reposition.' }, cup: { n: 'CUP (hole)', a: 'Sink the ball here to finish the level. Cup size is in the Physics panel.' } };
   function rebuildBox(d) { d.walls = d.walls.filter(function (w) { return !w._bnd; }); if (d.noBox) return; var bn = d.bounds, bh = d.wallH || 52;[[bn.minX, bn.minZ, bn.maxX, bn.minZ], [bn.maxX, bn.minZ, bn.maxX, bn.maxZ], [bn.maxX, bn.maxZ, bn.minX, bn.maxZ], [bn.minX, bn.maxZ, bn.minX, bn.minZ]].forEach(function (s) { d.walls.push({ ax: s[0], az: s[1], bx: s[2], bz: s[3], e: K.wallE, h: bh, c: 0x8a5a32, _bnd: true }); }); }
@@ -1123,9 +1130,23 @@
     if (closed) { d.wall(sm[sm.length - 1].x, sm[sm.length - 1].z, sm[0].x, sm[0].z, { e: e, h: h }); newItems.push(d.walls[d.walls.length - 1]); }
     ED.sel.items = newItems; ED.sel.handles = computeHandles(newItems);
   }
+  // rebuild the selected wall path from its ORIGINAL points: first SHARPEN (simplify, Douglas–Peucker), then ROUND (Chaikin). Both 0 = exact freehand.
+  function applyPathShape() {
+    if (!ED.sel || ED.sel.kind !== 'wallgroup' || !ED.sel.base) return;
+    var d = ED.draft, base = ED.sel.base, closed = ED.sel.baseClosed, e = ED.sel.baseE, h = ED.sel.baseH;
+    var simp = ED.sel.simplifyAmt || 0, level = ED.sel.smoothLevel || 0;
+    ED.sel.items.forEach(function (g) { var idx = d.walls.indexOf(g); if (idx >= 0) d.walls.splice(idx, 1); });
+    var pts = base.slice();
+    if (simp > 0 && pts.length > 2) { pts = rdp(pts, simp * simp * 7); }
+    if (level > 0 && pts.length > 1) { pts = closed ? chaikinClosed(pts, level) : chaikin(pts, level); }
+    if (pts.length > 140) pts = simplifyPath(pts, 26);
+    var newItems = [], i; for (i = 0; i < pts.length - 1; i++) { d.wall(pts[i].x, pts[i].z, pts[i + 1].x, pts[i + 1].z, { e: e, h: h }); newItems.push(last(d.walls)); }
+    if (closed && pts.length > 2) { d.wall(pts[pts.length - 1].x, pts[pts.length - 1].z, pts[0].x, pts[0].z, { e: e, h: h }); newItems.push(last(d.walls)); }
+    ED.sel.items = newItems; ED.sel.handles = computeHandles(newItems);
+  }
   function selectWallGroupAt(wx, wz, shift) {
     var hit = edHit(wx, wz); if (!hit) { ED.sel = null; return; }
-    if (hit.kind === 'wall' && !shift) { var grp = wallGroup(hit.item), oc = orderedChain(grp); ED.sel = { kind: 'wallgroup', items: grp, x: wx, z: wz, arr: ED.draft.walls, handles: computeHandles(grp), base: oc.pts, baseClosed: oc.closed, baseE: oc.e, baseH: oc.h, smoothLevel: 0, snapped: false }; }
+    if (hit.kind === 'wall' && !shift) { var grp = wallGroup(hit.item), oc = orderedChain(grp); ED.sel = { kind: 'wallgroup', items: grp, x: wx, z: wz, arr: ED.draft.walls, handles: computeHandles(grp), base: oc.pts, baseClosed: oc.closed, baseE: oc.e, baseH: oc.h, smoothLevel: 0, simplifyAmt: 0, snapped: false }; }
     else ED.sel = hit;   // shift-click (or non-wall) selects just the one item/segment
   }
   function edPlace(wx, wz) {
@@ -1181,7 +1202,14 @@
     var w = edS2W(p.x, p.y); w.x = edSnap(w.x); w.z = edSnap(w.z);
     if (ED.brush === 'wall' || ED.brush === 'laser') {
       if (!ED.seg) { ED.seg = { sx: w.x, sz: w.z }; }
-      else { var d = ED.draft; edSnapshot(); if (ED.brush === 'wall') { d.wall(ED.seg.sx, ED.seg.sz, w.x, w.z, { e: K.wallE, h: 80 }); selectWallGroupAt(w.x, w.z, false); edPanel(); } else { d.lasers.push({ ax: ED.seg.sx, az: ED.seg.sz, bx: w.x, bz: w.z, period: 2.2, onFrac: 0.45, phase: 0, on: false }); } ED.seg = null; ED.flash = { x: w.x, z: w.z, t: 0.35 }; }
+      else {
+        if (shift) { var aa = snapAngle(ED.seg.sx, ED.seg.sz, w.x, w.z); w.x = edSnap(aa.x); w.z = edSnap(aa.z); }
+        if (hyp(w.x - ED.seg.sx, w.z - ED.seg.sz) < 16 / ED.scale) { ED.seg = null; ED.flash = { x: w.x, z: w.z, t: 0.2 }; return; }   // click the last point again to finish the line
+        var d = ED.draft; edSnapshot();
+        if (ED.brush === 'wall') { d.wall(ED.seg.sx, ED.seg.sz, w.x, w.z, { e: K.wallE, h: ED.draft.wallH || 80 }); selectWallGroupAt(w.x, w.z, false); edPanel(); ED.seg = { sx: w.x, sz: w.z }; }   // CHAIN: keep going — click again for a connected diagonal/straight segment
+        else { d.lasers.push({ ax: ED.seg.sx, az: ED.seg.sz, bx: w.x, bz: w.z, period: 2.2, onFrac: 0.45, phase: 0, on: false }); ED.seg = null; }
+        ED.flash = { x: w.x, z: w.z, t: 0.35 };
+      }
       return;
     }
     if (ED.brush === 'shape') {
@@ -1298,6 +1326,7 @@
     if (ED.poly && ED.poly.length) { c.strokeStyle = '#ffd24a'; c.fillStyle = '#ffd24a'; c.lineWidth = 4; c.lineCap = 'round'; c.beginPath(); var p0 = edW2S(ED.poly[0].x, ED.poly[0].z); c.moveTo(p0.x, p0.y); for (var pi = 1; pi < ED.poly.length; pi++) { var pp = edW2S(ED.poly[pi].x, ED.poly[pi].z); c.lineTo(pp.x, pp.y); } if (ED.curS) c.lineTo(ED.curS.x, ED.curS.y); c.stroke(); ED.poly.forEach(function (v) { var s = edW2S(v.x, v.z); c.beginPath(); c.arc(s.x, s.y, 4, 0, TAU); c.fill(); }); c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(p0.x, p0.y, 8, 0, TAU); c.stroke(); }
     if (ED.flash && ED.flash.t > 0) { var fs = edW2S(ED.flash.x, ED.flash.z), rr = (0.35 - ED.flash.t) / 0.35 * 30 + 6; c.strokeStyle = 'rgba(245,197,66,' + (ED.flash.t / 0.35).toFixed(2) + ')'; c.lineWidth = 3; c.beginPath(); c.arc(fs.x, fs.y, rr, 0, TAU); c.stroke(); ED.flash.t -= 0.016; }
     var inField = ED.curS && ED.curS.x > 208 && ED.curS.x < w - 210 && ED.curS.y > 54 && ED.curS.y < h - 6;
+    if ((ED.brush === 'wall' || ED.brush === 'laser') && ED.seg && ED.curS && !ED.view3d) { var ss = edW2S(ED.seg.sx, ED.seg.sz); c.strokeStyle = ED.brush === 'laser' ? 'rgba(255,58,74,.85)' : 'rgba(255,210,74,.9)'; c.lineWidth = 4; c.lineCap = 'round'; c.setLineDash([9, 6]); c.beginPath(); c.moveTo(ss.x, ss.y); c.lineTo(ED.curS.x, ED.curS.y); c.stroke(); c.setLineDash([]); c.fillStyle = '#ffd24a'; c.beginPath(); c.arc(ss.x, ss.y, 5, 0, TAU); c.fill(); }
     if (inField && ED.brush !== 'select') {
       var gx = ED.curS.x, gyy = ED.curS.y;
       c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1; c.beginPath(); c.moveTo(gx - 11, gyy); c.lineTo(gx + 11, gyy); c.moveTo(gx, gyy - 11); c.lineTo(gx, gyy + 11); c.stroke();
@@ -1415,9 +1444,11 @@
     if (ED.sel && ED.sel.kind === 'wallgroup') {
       var gi = ED.sel.items, gcard = elt('div', 'background:rgba(245,197,66,.12);border:1px solid #f5c542;border-radius:8px;padding:8px;margin-bottom:10px;', null, p);
       elt('div', 'font:800 13px Georgia;color:#f5c542;', '✦ WALL PATH', gcard);
-      elt('div', 'font-size:10px;line-height:1.35;opacity:.9;margin:3px 0 7px;', gi.length + ' segments. Drag the SMOOTHNESS slider below to round the line — you\'ll see it curve as you drag. Drag white dots to bend corners; drag the line to move it; Shift-click for one segment.', gcard);
-      elt('div', 'font:800 11px Georgia;color:#7affb0;margin-bottom:1px;', '✨ SMOOTHNESS — drag this →', gcard);
-      row(gcard, 'rounding', ED.sel.smoothLevel || 0, 0, 4, 1, function (v) { if (!ED.sel.snapped) { edSnapshot(); ED.sel.snapped = true; } ED.sel.smoothLevel = v; applyPathSmooth(v); });
+      elt('div', 'font-size:10px;line-height:1.35;opacity:.9;margin:3px 0 7px;', gi.length + ' segments. ROUND it into perfect curves, or SHARPEN it into clean straight/diagonal corners (like Illustrator). Drag white dots to bend corners; drag the line to move it; Shift-click for one segment.', gcard);
+      elt('div', 'font:800 11px Georgia;color:#7affb0;margin-bottom:1px;', '✨ ROUND — perfect curves →', gcard);
+      row(gcard, 'rounding', ED.sel.smoothLevel || 0, 0, 4, 1, function (v) { if (!ED.sel.snapped) { edSnapshot(); ED.sel.snapped = true; } ED.sel.smoothLevel = v; applyPathShape(); });
+      elt('div', 'font:800 11px Georgia;color:#7ad0ff;margin:6px 0 1px;', '✂ SHARPEN — fewer, cleaner corners →', gcard);
+      row(gcard, 'simplify', ED.sel.simplifyAmt || 0, 0, 6, 1, function (v) { if (!ED.sel.snapped) { edSnapshot(); ED.sel.snapped = true; } ED.sel.simplifyAmt = v; applyPathShape(); });
       row(gcard, 'bounce', gi[0] && gi[0].e != null ? gi[0].e : K.wallE, 0, 1, 0.05, function (v) { ED.sel.items.forEach(function (g) { g.e = v; }); edLiveRefresh(); });
       row(gcard, 'height (taller blocks airborne balls)', gi[0] && gi[0].h ? gi[0].h : 80, 20, 240, 4, function (v) { ED.sel.items.forEach(function (g) { g.h = v; }); edLiveRefresh(); });
       var gdl = elt('button', 'display:block;width:100%;margin-top:8px;padding:7px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕ Delete this path', gcard); gdl.onclick = edDelete;
@@ -1451,6 +1482,8 @@
     row(p, 'width', ED.draft.bounds.maxX - ED.draft.bounds.minX, 400, 1600, 20, function (v) { ED.draft.bounds.minX = -v / 2; ED.draft.bounds.maxX = v / 2; rebuildBox(ED.draft); edLiveRefresh(); });
     row(p, 'length', ED.draft.bounds.maxZ - ED.draft.bounds.minZ, 800, 3200, 20, function (v) { ED.draft.bounds.maxZ = ED.draft.bounds.minZ + v; rebuildBox(ED.draft); edLiveRefresh(); });
     row(p, 'border wall height', ED.draft.wallH || 52, 30, 240, 4, function (v) { ED.draft.wallH = v; rebuildBox(ED.draft); edLiveRefresh(); });
+    var rwl = elt('button', 'display:block;width:100%;margin:3px 0 6px;padding:6px;border:2px solid #160d06;border-radius:7px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '⬆ Taller walls (whole level)', p);
+    rwl.onclick = function () { edSnapshot(); var nh = Math.min(240, Math.max(120, (ED.draft.wallH || 52) + 50)); ED.draft.wallH = nh; ED.draft.walls.forEach(function (w) { if (!w._bnd) w.h = Math.max(w.h || 52, nh); }); rebuildBox(ED.draft); edLiveRefresh(); edPanel(); };
     var sf = null, tf = ED.draft.terrainFeatures; for (var si = 0; si < tf.length; si++) if (tf[si].kind === 'slope') sf = tf[si]; if (!sf) { sf = { kind: 'slope', perX: 0, perZ: 0 }; tf.push(sf); }
     row(p, 'tilt L→R', sf.perX || 0, -0.2, 0.2, 0.01, function (v) { sf.perX = v; });
     row(p, 'tilt tee→cup', sf.perZ || 0, -0.15, 0.15, 0.01, function (v) { sf.perZ = v; });
@@ -1510,6 +1543,9 @@
   }
   function chaikin(pts, iters) { for (var k = 0; k < iters; k++) { var out = [pts[0]]; for (var i = 0; i < pts.length - 1; i++) { var p = pts[i], q = pts[i + 1]; out.push({ x: p.x * .75 + q.x * .25, z: p.z * .75 + q.z * .25 }); out.push({ x: p.x * .25 + q.x * .75, z: p.z * .25 + q.z * .75 }); } out.push(pts[pts.length - 1]); pts = out; } return pts; }
   function chaikinClosed(pts, iters) { for (var k = 0; k < iters; k++) { var out = []; for (var i = 0; i < pts.length; i++) { var p = pts[i], q = pts[(i + 1) % pts.length]; out.push({ x: p.x * .75 + q.x * .25, z: p.z * .75 + q.z * .25 }); out.push({ x: p.x * .25 + q.x * .75, z: p.z * .25 + q.z * .75 }); } pts = out; } return pts; }
+  function ptSegDist(p, a, b) { var dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz; if (L2 < 1e-6) return hyp(p.x - a.x, p.z - a.z); var t = clamp(((p.x - a.x) * dx + (p.z - a.z) * dz) / L2, 0, 1); return hyp(p.x - (a.x + dx * t), p.z - (a.z + dz * t)); }
+  function rdp(pts, tol) { if (pts.length < 3) return pts.slice(); var dmax = 0, idx = 0, end = pts.length - 1, i; for (i = 1; i < end; i++) { var d = ptSegDist(pts[i], pts[0], pts[end]); if (d > dmax) { dmax = d; idx = i; } } if (dmax > tol) { var l = rdp(pts.slice(0, idx + 1), tol), r = rdp(pts.slice(idx), tol); return l.slice(0, -1).concat(r); } return [pts[0], pts[end]]; }   // Douglas–Peucker: drop redundant points, keep sharp corners (Illustrator-style simplify)
+  function snapAngle(ax, az, bx, bz) { var dx = bx - ax, dz = bz - az, d = hyp(dx, dz); if (d < 1) return { x: bx, z: bz }; var st = PI / 4, a = Math.round(Math.atan2(dz, dx) / st) * st; return { x: ax + Math.cos(a) * d, z: az + Math.sin(a) * d }; }   // constrain to 0/45/90° for clean straight + diagonal lines
   function smoothWalls() {
     var d = ED.draft, src = d.walls.filter(function (w) { return !w._bnd; }), bnd = d.walls.filter(function (w) { return w._bnd; });
     if (src.length < 2) { ED.flash = { x: ED.draft.tee.x, z: ED.draft.tee.z, t: 0.35 }; return; }
@@ -1570,6 +1606,14 @@
       var nin = elt('input', 'width:100%;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, box); nin.value = ED.draft.name || 'MY LEVEL';
       var sb = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '💾 Save to my levels', box);
       sb.onclick = function () { var nm = (nin.value || '').trim(); if (!nm) { edToast('Enter a name', false); return; } ED.draft.name = nm; var s = edStore(); s[nm] = edSerialize(); try { localStorage.setItem('pg_levels', JSON.stringify(s)); close(); edToast('Saved "' + nm + '" ✓'); edPanel(); } catch (e) { edToast('Save failed: storage full', false); } };
+      if (ED.draft._ov != null) {
+        var oi = ED.draft._ov, bn = (HOLES[oi] && HOLES[oi]().name) || ('#' + (oi + 1));
+        elt('div', 'border-top:1px solid #5a3a1a;margin:13px 0 9px;', null, box);
+        elt('div', 'font-size:11px;opacity:.85;margin-bottom:6px;line-height:1.4;', 'This is campaign Level #' + (oi + 1) + ' · ' + bn + '. Save your edits straight back into it — it\'ll play this version every time, even after a reload:', box);
+        var ob = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#b8862a,#6a4a10);color:#fff;font:800 13px Georgia;cursor:pointer;', '⭳ Save into Level #' + (oi + 1) + ' (campaign)', box);
+        ob.onclick = function () { if (saveOver(oi, edSerialize())) { close(); edToast('Saved into Level #' + (oi + 1) + ' ✓ — plays every time'); } else edToast('Save failed: storage full', false); };
+        if (hasOver(oi)) { var rvb = elt('button', 'width:100%;margin-top:6px;padding:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '↺ Revert Level #' + (oi + 1) + ' to original', box); rvb.onclick = function () { edConfirm('Revert Level #' + (oi + 1) + ' to the original built-in? Your saved edits for it are removed.', function () { clearOver(oi); close(); edToast('Reverted to original'); }); }; }
+      }
       setTimeout(function () { nin.focus(); nin.select(); }, 40);
     });
   }
@@ -1654,7 +1698,8 @@
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
     edInit();
     var BTNCSS = 'position:fixed;left:12px;z-index:30;padding:7px 11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;';
-    var eb = elt('button', BTNCSS + 'top:80px;', '🔧 LEVEL EDITOR', document.body); eb.onclick = edEnter;
+    var eb = elt('button', BTNCSS + 'top:80px;', '✎ EDIT THIS LEVEL', document.body);
+    eb.onclick = function () { if (St.testing && ED.draft) { edEnter(); return; } if (St.hole && St.hi >= 0) { editBuiltin(St.hi); return; } if (St.hole && St.hi < 0 && St.customName) { editCustom(St.customName); return; } edEnter(); };
     var lb = elt('button', BTNCSS + 'top:116px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
     var sk = elt('button', BTNCSS + 'top:152px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
     ED.dom.gameBtns = [eb, lb, sk];
@@ -1719,4 +1764,9 @@
   PG.__flip = function (side, down) { flipPress(side, down); };
   PG.__ed = ED; PG.__edEnter = edEnter; PG.__edPlay = edPlay; PG.__edPlace = function (brush, x, z) { ED.brush = brush; edPlace(x, z); }; PG.__edDraft = function () { return ED.draft; };
   PG.__R3 = R3; PG.__sync = syncMeshes; PG.__edShape = function (k) { applyShape(k); }; PG.__edTest = function () { edPlay(); }; PG.__edFit = function () { edFit(); }; PG.__edW2S = function (x, z) { return edW2S(x, z); }; PG.__themePhys = function (t) { return themePhys(t); }; PG.__THEMES = THEMES; PG.__levelMenu = function () { levelMenu(); }; PG.__loadCustom = function (n) { return loadCustomLevel(n); }; PG.__ed3d = function (on) { if (on) edEnter3D(); else edExit3D(); }; PG.__orb = function () { return ED.orb; }; PG.__skip = function () { skipLevel(); }; PG.__editBuiltin = function (i) { editBuiltin(i); };
+  // campaign-override + path-shape hooks (edit/save built-in levels; smooth/sharpen wall paths)
+  PG.__overGet = function () { return overStore(); }; PG.__overSave = function (i) { return saveOver(i, edSerialize()); }; PG.__overClear = function (i) { if (i == null) { try { localStorage.removeItem('pg_over'); } catch (e) { } } else clearOver(i); };
+  PG.__selectWallAt = function (wx, wz) { selectWallGroupAt(wx, wz, false); return ED.sel ? { kind: ED.sel.kind, segs: ED.sel.items ? ED.sel.items.length : 0, baseLen: ED.sel.base ? ED.sel.base.length : 0, closed: !!ED.sel.baseClosed } : null; };
+  PG.__pathShape = function (simplify, round) { if (!ED.sel || ED.sel.kind !== 'wallgroup') return null; ED.sel.simplifyAmt = simplify || 0; ED.sel.smoothLevel = round || 0; applyPathShape(); return { segs: ED.sel.items.length }; };
+  PG.__snapAngle = function (ax, az, bx, bz) { return snapAngle(ax, az, bx, bz); };
 })();
