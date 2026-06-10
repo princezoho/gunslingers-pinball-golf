@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 60 · HAND-DRAWN WEST';
+  var BUILD = 'BUILD 61 · TRUE GRIT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -427,7 +427,7 @@
       R3.env = pm.fromEquirectangular(t).texture; pm.dispose(); t.dispose();
     } catch (e) { R3.env = null; }
   }
-  var SKYGRAD = { grass: ['#e79cb6', '#f0c08a', '#e0a66a'], ice: ['#7ca6c6', '#a7ccdf', '#b9dbe8'], moon: ['#0c0a1c', '#241f3e', '#2b2746'], mud: ['#b39a72', '#9b8252', '#8f7848'], rubber: ['#cf8d6e', '#bd7257', '#b56550'], speed: ['#f2c46e', '#e6af48', '#dfa83e'], sand: ['#f4dcae', '#ecca90', '#e7c486'] };
+  var SKYGRAD = { grass: ['#7cc0cc', '#b7d8d2', '#eec79e'], ice: ['#e4d4ac', '#e9dcb4', '#dfcba4'], moon: ['#e6deb6', '#d8cdb2', '#bdaec6'], mud: ['#ee9e4a', '#f2b65a', '#f6c97c'], rubber: ['#d9cfa9', '#e0d7b1', '#e8dfbb'], speed: ['#70c2ac', '#8cccb6', '#eaa97c'], sand: ['#cfba82', '#dcc794', '#e8d4a2'] };   // gradient tops continue each painting's sky above the panorama
   function skyTex(theme, fallback) {   // vertical gradient sky (zenith -> warm horizon) instead of a flat color
     var cols = SKYGRAD[theme]; if (!cols) { var hx = '#' + new T.Color(fallback).getHexString(); cols = [hx, hx, hx]; }
     return tex('sky_' + theme, 4, 256, function (x) { var g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, cols[0]); g.addColorStop(0.62, cols[1]); g.addColorStop(1, cols[2]); x.fillStyle = g; x.fillRect(0, 0, 4, 256); });
@@ -454,15 +454,16 @@
   }
   function skirtTex() { return tex('skirt', 256, 256, function (x) { var g = x.createRadialGradient(128, 128, 20, 128, 128, 182); g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#c2c2c2'); g.addColorStop(1, '#4a4a4a'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }); }
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
-  var BGMAP = { grass: 'bg-sunset.jpg', sand: 'bg-canyon.png', mud: 'bg-town.png', speed: 'bg-18.png', rubber: 'bg-12.png', moon: 'bg-5.png', ice: 'bg-16.png' };
-  var GROUNDC = { grass: 0xddb076, sand: 0xc9a08a, mud: 0x8d7a86, speed: 0xd6b58e, rubber: 0x7d2e1c, moon: 0x6a667e, ice: 0x9ab4c4 };
+  var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
+  var GROUNDC = { grass: 0xd0784c, sand: 0xdfae66, mud: 0xd8a0ac, speed: 0xb88484, rubber: 0xcdb682, moon: 0x9e90be, ice: 0xc8a87a };
+  var FOGC = { grass: 0xe09a6e, sand: 0xe5c182, mud: 0xe4aeb4, speed: 0xc89488, rubber: 0xdcc998, moon: 0xb4a6cc, ice: 0xd8bc8c };   // distance haze tuned to each painting's horizon so the skirt melts into the art
   function panoMat(name) {
     var key = 'pano_' + name; if (R3['_' + key]) return R3['_' + key];
     var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a });
     if ('toneMapped' in m) m.toneMapped = false;
     var t = new T.TextureLoader().load('assets/' + name, function () { m.color.set(0xffffff); m.needsUpdate = true; });
     if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
-    t.wrapS = T.RepeatWrapping; t.repeat.set(2, 1); m.map = t;
+    t.wrapS = T.RepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(3, 1.12); t.offset.y = 0.25; m.map = t;   // land band sits at eye level, painted sky fills the band the camera actually sees; clamp extends sky-top above
     R3['_' + key] = m; return m;
   }
   function spriteMat(name) {
@@ -507,9 +508,9 @@
       else rt = new T.WebGLRenderTarget(8, 8);
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, uT: { value: 0 }, uCA: { value: 0.0048 }, uGrain: { value: 0.09 }, uVig: { value: 0.38 }, uDof: { value: 0.005 }, uFocus: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, uT: { value: 0 }, uCA: { value: 0.0032 }, uGrain: { value: 0.05 }, uVig: { value: 0.3 }, uDof: { value: 0.0009 }, uFocus: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
-      R3.post = { on: true, ca: 0.0048, rt: rt, mat: mat, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+      R3.post = { on: true, ca: 0.0032, rt: rt, mat: mat, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
@@ -536,7 +537,7 @@
     if (R3.group) R3.scene.remove(R3.group);
     R3.group = new T.Group(); R3.scene.add(R3.group);
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
-    R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); if (R3.scene.fog) R3.scene.fog.color.setHex(skyC);
+    R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
     R3.scene.environment = (hole.theme === 'moon') ? null : (R3.env || null);   // night scene: no warm desert IBL
     var bn = hole.bounds, midZ = (bn.minZ + bn.maxZ) / 2, spanX = bn.maxX - bn.minX + 600, spanZ = bn.maxZ - bn.minZ + 600;
     // terrain mesh
@@ -551,7 +552,10 @@
     var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
     // GUNSLINGERS PAINTED PANORAMA — the brand background paintings (assets/bg-*.png) wrap the horizon for every theme
     var bgName = BGMAP[hole.theme || 'grass'];
-    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(4300, 4300, 3300, 48, 1, true), panoMat(bgName)); pano.position.set((bn.minX + bn.maxX) / 2, 830, midZ); R3.group.add(pano); }
+    if (bgName) {   // close-in cylinder so the painting actually FILLS the horizon at game camera pitch (radius hugs the table, height tuned to the visible band)
+      var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85;
+      var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 48, 1, true), panoMat(bgName)); pano.position.set((bn.minX + bn.maxX) / 2, pr * 0.23, midZ); R3.group.add(pano);
+    }
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
@@ -589,8 +593,8 @@
           var SPR = [['barrel', 130], ['skull', 84], ['Lantern_2.6_', 96], ['Dynamite_2.1_', 80]];
           var sp = SPR[Math.floor(prnd(k + 61) * SPR.length)], sh2 = sp[1] * (0.85 + prnd(k + 67) * 0.5);
           var bb = new T.Mesh(new T.PlaneGeometry(sh2, sh2), spriteMat(sp[0]));
-          bb.position.set(px, py + sh2 / 2 - 2, pz); bb.rotation.y = PI + (prnd(k + 71) - .5) * 0.7; R3.group.add(bb);
-          var bsh2 = new T.Mesh(new T.CircleGeometry(sh2 * 0.3, 14), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .28 })); bsh2.rotation.x = -PI / 2; bsh2.position.set(px, py + 1.6, pz); R3.group.add(bsh2);
+          bb.position.set(px, py + sh2 / 2 - 8, pz); bb.rotation.y = PI + (prnd(k + 71) - .5) * 0.7; R3.group.add(bb);   // sunk into the dirt so cutouts sit ON the ground, never float
+          var bsh2 = new T.Mesh(new T.CircleGeometry(sh2 * 0.34, 14), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .4 })); bsh2.rotation.x = -PI / 2; bsh2.position.set(px, py + 1.6, pz); R3.group.add(bsh2);
         } else {
           var fg = new T.Group();
           for (var fp = 0; fp < 3; fp++) { var post = new T.Mesh(new T.BoxGeometry(9, 52 + prnd(k + fp) * 14, 9), fenM); post.position.set(fp * 56 - 56, 30, 0); post.castShadow = true; fg.add(post); }
@@ -648,9 +652,29 @@
     // walls
     var wm = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb07840, roughness: .72 }), capm = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .55, roughness: .38, envMapIntensity: .5 });
     hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); outline(body, 1.03); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); });
-    // bumpers (solid grounded barrels)
-    var woodMat = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb58048, roughness: .8 }), hoopMat = new T.MeshStandardMaterial({ color: 0x7a5c34, metalness: .85, roughness: .3, envMapIntensity: 1.1 }), topMat = new T.MeshStandardMaterial({ color: 0xf5c542, emissive: 0x9a6a10, emissiveIntensity: .5, roughness: .3, metalness: .6, envMapIntensity: 1.2 });
-    hole.bumpers.forEach(function (bm) { var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), bh = bm.r * 1.5; var cs = new T.Mesh(new T.CircleGeometry(bm.r * 1.3, 20), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .42 })); cs.rotation.x = -PI / 2; cs.position.set(bm.x, gy + 1.2, bm.z); R3.group.add(cs); var body = new T.Mesh(new T.CylinderGeometry(bm.r * .9, bm.r, bh, 20), woodMat); body.position.y = bh / 2; body.castShadow = true; g.add(body); outline(body, 1.07);[0.28, 0.72].forEach(function (f) { var hp = new T.Mesh(new T.CylinderGeometry(bm.r * .96, bm.r * .96, 7, 20), hoopMat); hp.position.y = bh * f; g.add(hp); }); var litMat = new T.MeshStandardMaterial({ color: 0xf5c542, emissive: 0xffcc33, emissiveIntensity: 0, roughness: .3, metalness: .65, envMapIntensity: 1.2 }); var cap = new T.Mesh(new T.CylinderGeometry(bm.r * .82, bm.r * .9, 10, 20), litMat); cap.position.y = bh + 3; cap.castShadow = true; g.add(cap); bm.litMat = litMat; var glow = new T.Mesh(new T.CylinderGeometry(bm.r * .96, bm.r * .96, 7, 20), new T.MeshBasicMaterial({ color: 0xffe089, transparent: true, opacity: 0 })); glow.position.y = bh * 0.5; g.add(glow); bm.glow = glow; g.position.set(bm.x, gy, bm.z); R3.group.add(g); bm.mesh = g; });
+    // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
+    var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
+    var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xc01822, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0xc01822, metalness: .2, roughness: .3 });
+    var bumpGlass = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xfff2cf, metalness: .05, roughness: .05, transparent: true, opacity: .4, envMapIntensity: 2.0, clearcoat: 1, clearcoatRoughness: .04, side: T.DoubleSide }) : new T.MeshStandardMaterial({ color: 0xfff2cf, transparent: true, opacity: .4, roughness: .08 });
+    hole.bumpers.forEach(function (bm, bmi) {
+      var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r;
+      var cs = new T.Mesh(new T.CircleGeometry(r * 1.4, 24), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .4 })); cs.rotation.x = -PI / 2; cs.position.set(bm.x, gy + 1.2, bm.z); R3.group.add(cs);
+      var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 28), chromeB); base.position.y = 5; base.castShadow = true; g.add(base); outline(base, 1.05);
+      var skirtC = new T.Mesh(new T.CylinderGeometry(r * 0.9, r * 1.04, 18, 28), bumpRed); skirtC.position.y = 19; skirtC.castShadow = true; g.add(skirtC);
+      var coreM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xffb31e, emissiveIntensity: .55, roughness: .35 });
+      var core = new T.Mesh(new T.SphereGeometry(r * 0.46, 18, 14), coreM); core.position.y = 30 + r * 0.16; g.add(core); bm.coreM = coreM;
+      var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 28, 18, 0, TAU, 0, PI * 0.58), bumpGlass); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
+      var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 24), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap); outline(cap, 1.06);   // classic red bumper cap seen from above
+      var btn = new T.Mesh(new T.CylinderGeometry(r * 0.26, r * 0.3, 5, 18), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
+      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 12, 34), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
+      var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 20, 14), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
+      var glow = new T.Mesh(new T.CircleGeometry(r * 1.95, 28), new T.MeshBasicMaterial({ color: 0xffc24e, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); glow.rotation.x = -PI / 2; glow.position.y = 2.6; g.add(glow); bm.glow = glow;
+      bm.idleSeed = bmi * 1.7;
+      g.position.set(bm.x, gy, bm.z); R3.group.add(g); bm.mesh = g;
+    });
+    // one shared flash light — jumps to whichever bumper was just smacked (cheap, reads like the real coil flash)
+    if (!R3.bumpLight) { R3.bumpLight = new T.PointLight(0xffc24e, 0, 1100, 2); R3.scene.add(R3.bumpLight); }
+    R3.bumpLight.intensity = 0;
     // boosters
     hole.boosters.forEach(function (z) { var gy = hole.terrain(z.x, z.z), g = new T.Group(); var pad = new T.Mesh(new T.CircleGeometry(z.r, 28), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466aa, emissiveIntensity: .55, transparent: true, opacity: .5, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.y = 2.5; g.add(pad); var ar = new T.Mesh(new T.ConeGeometry(z.r * .5, z.r * 1.1, 4), new T.MeshStandardMaterial({ color: 0xeafaff, emissive: 0x4ad0ff, emissiveIntensity: .7 })); ar.rotation.x = PI / 2; ar.position.y = 7; g.add(ar); g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g; });
     // flippers
@@ -939,8 +963,8 @@
     var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:2px solid #5a3a1a;font:900 15px Georgia;color:#f5c542;', null, box);
     elt('div', 'flex:1;', 'TOTAL', tr); elt('div', 'width:46px;text-align:right;opacity:.7;', String(totPar), tr); elt('div', 'width:92px;text-align:right;', totYou + ' (' + tpStr + ')', tr);
     var act = elt('div', 'display:flex;gap:8px;margin-top:14px;', null, box);
-    var pa = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '▶ Play Again', act); pa.onclick = function () { ov.remove(); loadHole(0); };
-    var ls = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:800 13px Georgia;cursor:pointer;', '📋 Level Select', act); ls.onclick = function () { ov.remove(); levelMenu(); };
+    var pa = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:3px;background:#2e7a26;color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', '▶ PLAY AGAIN', act); pa.onclick = function () { ov.remove(); loadHole(0); };
+    var ls = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:3px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '📋 LEVEL SELECT', act); ls.onclick = function () { ov.remove(); levelMenu(); };
   }
   // saved edits to the built-in campaign holes (persist across reloads) — keyed by hole index
   function overStore() { try { return JSON.parse(localStorage.getItem('pg_over') || '{}'); } catch (e) { return {}; } }
@@ -1061,7 +1085,20 @@
     ensureBallMeshes(); var hole = St.hole;
     for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
     for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; if (R3.shieldMeshes && R3.shieldMeshes[i]) R3.shieldMeshes[i].visible = false; } }
-    for (i = 0; i < hole.bumpers.length; i++) { var bm = hole.bumpers[i]; if (bm.mesh) { var fl = Math.max(0, bm.flash || 0), s2 = 1 + fl * 1.4; bm.mesh.scale.set(s2, 1, s2); if (bm.litMat) bm.litMat.emissiveIntensity = fl * 3.4; if (bm.glow) bm.glow.material.opacity = fl * 1.7; } }
+    var bigFl = 0, bigBm = null;
+    for (i = 0; i < hole.bumpers.length; i++) {
+      var bm = hole.bumpers[i]; if (!bm.mesh) continue;
+      var fl = Math.max(0, bm.flash || 0), fn = fl / 0.25;   // 1 at impact -> 0
+      var idle = 0.4 + 0.3 * Math.sin(St.t * 2.2 + (bm.idleSeed || 0));   // bulbs breathe even at rest
+      var s2 = 1 + fn * 0.55; bm.mesh.scale.set(s2, 1, s2);
+      if (bm.coreM) bm.coreM.emissiveIntensity = idle + fn * 5.5;
+      if (bm.btnM) bm.btnM.emissiveIntensity = 0.35 + idle * 0.5 + fn * 4;
+      if (bm.halo) bm.halo.material.opacity = fn * 0.8;
+      if (bm.glow) bm.glow.material.opacity = idle * 0.1 + fn * 0.85;
+      if (bm.ring) bm.ring.position.y = bm.ringY0 - fn * 17;   // chrome ring SLAMS down on the coil like the real machine
+      if (fn > bigFl) { bigFl = fn; bigBm = bm; }
+    }
+    if (R3.bumpLight) { if (bigBm && bigFl > 0.02) { R3.bumpLight.position.set(bigBm.x, hole.terrain(bigBm.x, bigBm.z) + 70, bigBm.z); R3.bumpLight.intensity = bigFl * 9; } else R3.bumpLight.intensity = 0; }
     for (i = 0; i < hole.flippers.length; i++) if (hole.flippers[i].mesh) hole.flippers[i].mesh.rotation.y = -hole.flippers[i].ang;
     for (i = 0; i < hole.windmills.length; i++) { var wmm = hole.windmills[i]; if (wmm.mesh) wmm.mesh.rotation.z = wmm.ang; if (wmm.flash > 0) wmm.flash -= 0.04; }
     for (i = 0; i < hole.lasers.length; i++) {
@@ -1080,7 +1117,8 @@
     if (R3.cupGlow) { var pu = 0.5 + 0.5 * Math.sin(St.t * 2.3); R3.cupGlow.scale.set(1 + pu * 0.55, 1 + pu * 0.55, 1); R3.cupGlow.material.opacity = 0.2 + pu * 0.34; }
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
-  function panel(c, x, y, w, h) { var g = c.createLinearGradient(x, y, x, y + h); g.addColorStop(0, '#5c3c23'); g.addColorStop(1, '#321e10'); rrect(c, x, y, w, h, 10); c.fillStyle = g; c.fill(); c.strokeStyle = COL.gold; c.lineWidth = 3; c.stroke(); }
+  // AAA type straight on the glass — big Wantedo with a heavy ink outline, no boxes, no pills
+  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.font = '900 ' + size + 'px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = Math.max(3, size * 0.16); c.strokeStyle = 'rgba(16,8,3,.95)'; c.strokeText(txt, x, y); c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }
   function drawHUD() {
     var c = St.hctx, w = St.w, h = St.h; c.setTransform(St.dpr, 0, 0, St.dpr, 0, 0); c.clearRect(0, 0, w, h);
     if (St.state === 'load') return;
@@ -1092,32 +1130,36 @@
     for (i = 0; i < St.fx.length; i++) { var p = St.fx[i], s = project(p.x, p.y, p.z); if (!s.vis) continue; c.globalAlpha = clamp(p.life / p.max, 0, 1); c.fillStyle = p.col || (p.gold ? COL.gold : '#fff0c0'); c.beginPath(); c.arc(s.x, s.y, p.r || (p.gold ? 4 : 2.4), 0, TAU); c.fill(); } c.globalAlpha = 1;
     c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 26px Wantedo, Georgia'; c.lineWidth = 4; c.strokeStyle = COL.ink; c.strokeText(q.text, qs.x, qs.y); c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); } c.globalAlpha = 1;
     if (St.state === 'aim' && b) drawAim(c, b);
-    // panels
-    // panels — responsive so they never overlap on narrow screens
-    var narrow = w < 720, lw = narrow ? Math.max(150, Math.min(236, w - 142)) : 250, rw = narrow ? 122 : 156;
-    panel(c, 12, 12, lw, 58); c.textAlign = 'left'; c.fillStyle = COL.gold; c.font = '900 10px Wantedo, Georgia';
-    var topLine = St.hi >= 0 ? ('HOLE ' + (St.hi + 1) + ' / ' + HOLES.length + (narrow ? '' : ('  ·  ' + St.hole.name)) + '  ·  PAR ' + St.hole.par) : ('★ ' + (St.customName || St.hole.name));
-    c.fillText(topLine, 24, 30); c.fillStyle = COL.cream; c.font = 'bold 22px Georgia'; c.fillText(St.strokes + (St.strokes === 1 ? ' STROKE' : ' STROKES'), 24, 54);
-    if (St.holeBest != null) { c.textAlign = 'right'; c.fillStyle = COL.gold; c.font = 'bold 11px Georgia'; c.fillText('★ BEST ' + St.holeBest, 12 + lw - 11, 50); c.textAlign = 'left'; }
-    panel(c, w - rw - 12, 12, rw, 58); c.textAlign = 'right'; c.fillStyle = COL.gold; c.font = '900 10px Wantedo, Georgia'; c.fillText('TO PIN', w - 24, 30); var dp = b ? Math.round(hyp(b.x - St.hole.cup.x, b.z - St.hole.cup.z)) : 0; c.fillStyle = COL.cream; c.font = 'bold ' + (narrow ? 18 : 22) + 'px Georgia'; c.fillText(dp + ' yd', w - 24, 54);
-    // running to-par score (progression) — only when there's room between the two side panels
+    // HUD type — big Wantedo straight on screen, like a real cabinet
+    var narrow = w < 720;
+    var topLine = St.hi >= 0 ? ('HOLE ' + (St.hi + 1) + '/' + HOLES.length + ' · PAR ' + St.hole.par) : ('★ ' + (St.customName || St.hole.name));
+    hudTxt(c, topLine, 22, 36, narrow ? 15 : 19, COL.gold);
+    if (St.hi >= 0 && !narrow) hudTxt(c, St.hole.name, 22, 60, 15, 'rgba(243,238,221,.88)');
+    var sy = narrow ? 86 : 112, ssz = narrow ? 38 : 50;
+    var nw = hudTxt(c, String(St.strokes), 22, sy, ssz, COL.cream);
+    hudTxt(c, St.strokes === 1 ? 'STROKE' : 'STROKES', 30 + nw, sy, Math.round(ssz * 0.42), COL.gold);
+    if (St.holeBest != null) hudTxt(c, '★ BEST ' + St.holeBest, 22, sy + 26, 14, COL.gold);
+    var dp = b ? Math.round(hyp(b.x - St.hole.cup.x, b.z - St.hole.cup.z)) : 0;
+    hudTxt(c, 'TO PIN', w - 22, 30, 13, COL.gold, 'right');
+    hudTxt(c, dp + ' YD', w - 22, narrow ? 58 : 64, narrow ? 24 : 32, COL.cream, 'right');
     var tot = St.scores.reduce(function (a, cv) { return a + (cv || 0); }, 0), tp = tot - (St.parDone || 0);
-    if (!narrow) { panel(c, w / 2 - 78, 12, 156, 40); c.textAlign = 'center'; c.fillStyle = COL.cream; c.font = 'bold 15px Georgia'; c.fillText('THRU ' + St.hi + '  ·  ' + tot + '  (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 38); }
-    if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpx = narrow ? 12 : (w / 2 - 78), cpw = narrow ? lw : 156, cpy = narrow ? 76 : 56; panel(c, cpx, cpy, cpw, 30); c.textAlign = 'center'; var cpz = 1 + (St.coinPulse || 0) * 0.7, ccx = cpx + cpw / 2; c.save(); c.translate(ccx, cpy + 20); c.scale(cpz, cpz); c.fillStyle = (St.coinPulse || 0) > 0.25 ? '#fff0a0' : COL.gold; c.font = 'bold 14px Georgia'; c.fillText('🪙 ' + (St.coins || 0) + '      ★ ' + (St.points || 0), 0, 0); c.restore(); }
-    // active power-up badges
+    if (!narrow && St.hi > 0) hudTxt(c, 'THRU ' + St.hi + ' · ' + tot + ' (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 34, 16, COL.gold, 'center');
+    if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpz = 1 + (St.coinPulse || 0) * 0.55, cyy = sy + (St.holeBest != null ? 50 : 28); c.save(); c.translate(22, cyy); c.scale(cpz, cpz); hudTxt(c, '🪙 ' + (St.coins || 0) + '   ★ ' + (St.points || 0), 0, 0, 17, (St.coinPulse || 0) > 0.25 ? '#fff0a0' : COL.gold); c.restore(); }
+    // active power-up callouts — bare stroked type, no chips
     var badges = []; var pball = primeBall();
-    if (St.magnetT > 0) badges.push(['MAGNET ' + St.magnetT.toFixed(1) + 's', '#ff4477']);
-    if (St.slowT > 0) badges.push(['SLOW-MO ' + St.slowT.toFixed(1) + 's', '#9b6bff']);
-    if (pball && pball.shield) badges.push(['SHIELD', '#33b6ff']);
-    if (badges.length) { var by = (narrow && ((St.coins || 0) > 0 || (St.points || 0) > 0)) ? 114 : 96; badges.forEach(function (bd, bi) { var bw = 132, bx = w / 2 - bw / 2; panel(c, bx, by + bi * 26, bw, 22); c.textAlign = 'center'; c.fillStyle = bd[1]; c.font = '900 12px Wantedo, Georgia'; c.fillText('✦ ' + bd[0], w / 2, by + bi * 26 + 16); }); }
+    if (St.magnetT > 0) badges.push(['✦ MAGNET ' + St.magnetT.toFixed(1), '#ff6e99']);
+    if (St.slowT > 0) badges.push(['✦ SLOW-MO ' + St.slowT.toFixed(1), '#b08aff']);
+    if (pball && pball.shield) badges.push(['✦ SHIELD', '#55c6ff']);
+    badges.forEach(function (bd, bi) { hudTxt(c, bd[0], w / 2, 64 + bi * 26, 17, bd[1], 'center'); });
     // bumper-combo meter — pulsing multiplier while the ball racks up hits this shot
     if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 26 : 34) + 'px Wantedo, Georgia'; c.lineWidth = 5; c.strokeStyle = COL.ink; c.strokeText(ctxt, 0, 0); c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
-    c.textAlign = 'left'; c.fillStyle = COL.gold; c.font = '900 14px Georgia'; c.fillText(BUILD, 18, h - 26);
+    c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '42px Wantedo, Georgia'; c.fillStyle = COL.ink; c.fillText(St.banner, w / 2 + 2, h * .4 + 2); c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
-    c.textAlign = 'center'; c.fillStyle = 'rgba(245,239,220,.9)'; c.font = 'italic 13px Georgia';
-    if (St.state === 'aim') c.fillText('DRAG: left/right to AIM, down for POWER · release to shoot · ⟲ ⟳ turn view', w / 2, h - 14);
-    else if (St.state === 'roll') c.fillText('TAP left / right (or A / D) to fire the flippers', w / 2, h - 14);
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 58px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = 9; c.strokeStyle = 'rgba(16,8,3,.95)'; c.strokeText(St.banner, w / 2, h * .4); c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
+    c.globalAlpha = 0.85;
+    if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE', w / 2, h - 14, 13, COL.cream, 'center');
+    else if (St.state === 'roll') hudTxt(c, 'TAP LEFT / RIGHT TO FIRE THE FLIPPERS', w / 2, h - 14, 13, COL.cream, 'center');
+    c.globalAlpha = 1;
   }
   // simulate the shot forward (gravity, terrain, roll friction, wall bounces) so the aim guide shows the real path + bank shots
   function predictPath(b, power) {
@@ -1167,12 +1209,21 @@
     c.globalAlpha = 1;
     if (St.drag && St.drag.pull > 5) { c.strokeStyle = 'rgba(255,238,196,.6)'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(bs.x, bs.y); c.lineTo(St.drag.sx, St.drag.sy); c.stroke(); c.fillStyle = St.power > .8 ? COL.red : 'rgba(255,238,196,.92)'; c.beginPath(); c.arc(St.drag.sx, St.drag.sy, 9, 0, TAU); c.fill(); }
   }
-  function powerMeter(c, w, h) { var x = w / 2 - 120, y = h - 48, bw = 240, bh = 18; c.fillStyle = 'rgba(20,12,6,.7)'; rrect(c, x - 3, y - 3, bw + 6, bh + 6, 8); c.fill(); var g = c.createLinearGradient(x, 0, x + bw, 0); g.addColorStop(0, COL.grn); g.addColorStop(.6, COL.gold); g.addColorStop(1, COL.red); rrect(c, x, y, bw * St.power, bh, 7); c.fillStyle = g; c.fill(); c.strokeStyle = COL.gold; c.lineWidth = 2; rrect(c, x, y, bw, bh, 7); c.stroke(); c.fillStyle = COL.cream; c.font = 'bold 12px Georgia'; c.textAlign = 'center'; c.fillText('POWER ' + Math.round(St.power * 100) + '%', w / 2, y - 7); }
+  function powerMeter(c, w, h) {   // hard-edged powder-charge wedge: thin -> tall, solid fills, ink outline — no pills, no gradients
+    var bw = 280, bh = 26, x = w / 2 - bw / 2, yb = h - 44, p = St.power;
+    function wedgePath(f) { var xe = x + bw * f, he = 5 + (bh - 5) * f; c.beginPath(); c.moveTo(x, yb); c.lineTo(xe, yb); c.lineTo(xe, yb - he); c.lineTo(x, yb - 5); c.closePath(); }
+    c.lineJoin = 'round';
+    wedgePath(1); c.fillStyle = 'rgba(16,8,3,.78)'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = 'rgba(16,8,3,.95)'; c.stroke();
+    wedgePath(Math.max(0.02, p)); c.fillStyle = p > 0.8 ? COL.red : p > 0.45 ? COL.gold : COL.grn; c.fill();
+    c.strokeStyle = 'rgba(16,8,3,.6)'; c.lineWidth = 2;
+    [0.25, 0.5, 0.75].forEach(function (f) { var tx = x + bw * f, th = 5 + (bh - 5) * f; c.beginPath(); c.moveTo(tx, yb); c.lineTo(tx, yb - th); c.stroke(); });
+    hudTxt(c, 'POWER ' + Math.round(p * 100) + '%', w / 2, yb - bh - 10, 17, p > 0.8 ? COL.red : COL.cream, 'center');
+  }
 
   /* ================================================================ input */
   function ptr(e) { var r = St.scene.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
   function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'L' : 'R'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
-  function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0; St.aimYaw = St.drag.yaw0 - dx * 0.0048; St.drag.pull = Math.max(0, dy); St.power = clamp(St.drag.pull / K.pullPx, 0.05, 1); }
+  function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0, len = Math.sqrt(dx * dx + dy * dy); St.drag.pull = len; if (len > 8) St.aimYaw = St.drag.yaw0 + Math.atan2(dx, dy); St.power = clamp(len / K.pullPx, 0.05, 1); }   // SLINGSHOT: pull any way — the shot fires the opposite way, full 360° incl. backwards
   function onUp(e) { if (ED.on) { edUp(); return; } if (St.ptr) { var role = St.ptr[e.pointerId]; if (role === 'L' || role === 'R') { delete St.ptr[e.pointerId]; var any = false; for (var k in St.ptr) if (St.ptr[k] === role) any = true; flipPress(role, any); return; } delete St.ptr[e.pointerId]; } if (!St.drag) return; var pull = St.drag.pull; St.drag = null; if (pull >= 14) shoot(); }
   function onKey(down, e) { var k = e.code; if (St.state === 'roll') { if (k === 'ArrowLeft' || k === 'KeyA') { flipPress('L', down); e.preventDefault(); } else if (k === 'ArrowRight' || k === 'KeyD') { flipPress('R', down); e.preventDefault(); } } else if (down && St.state === 'aim') { if (k === 'ArrowLeft' || k === 'KeyA') { St.camOrbit -= 0.06; e.preventDefault(); } else if (k === 'ArrowRight' || k === 'KeyD') { St.camOrbit += 0.06; e.preventDefault(); } } }
 
@@ -1865,11 +1916,11 @@
     audioUI();
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
     edInit();
-    var BTNCSS = 'position:fixed;left:12px;z-index:30;padding:7px 11px;border:2px solid #160d06;border-radius:9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;';
-    var eb = elt('button', BTNCSS + 'top:80px;', '✎ EDIT THIS LEVEL', document.body);
+    var BTNCSS = 'position:fixed;left:14px;z-index:30;padding:2px 0;border:none;background:transparent;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;text-shadow:2px 2px 0 #100803,-1px -1px 0 #100803,1px -1px 0 #100803,-1px 1px 0 #100803;text-align:left;';
+    var eb = elt('button', BTNCSS + 'bottom:104px;', '✎ EDIT LEVEL', document.body);
     eb.onclick = function () { if (St.testing && ED.draft) { edEnter(); return; } if (St.hole && St.hi >= 0) { editBuiltin(St.hi); return; } if (St.hole && St.hi < 0 && St.customName) { editCustom(St.customName); return; } edEnter(); };
-    var lb = elt('button', BTNCSS + 'top:116px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
-    var sk = elt('button', BTNCSS + 'top:152px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
+    var lb = elt('button', BTNCSS + 'bottom:74px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
+    var sk = elt('button', BTNCSS + 'bottom:44px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
     ED.dom.gameBtns = [eb, lb, sk];
     St.scores = []; St.parDone = 0; St.hi = 0; loadHole(0);
     var ld = document.getElementById('load'); if (ld) { ld.classList.add('gone'); setTimeout(function () { ld.style.display = 'none'; }, 450); }
