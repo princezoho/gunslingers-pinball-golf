@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 57 · FILM LOOK MAX';
+  var BUILD = 'BUILD 58 · AAA DIORAMA';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -402,10 +402,10 @@
       R3.scene.add(new T.HemisphereLight(0xffe0aa, 0x40301a, 0.18));
       var sun = new T.DirectionalLight(0xffd9a0, 1.15); sun.position.set(-700, 1400, -300); sun.castShadow = true;
       sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
-      var sc = sun.shadow.camera; sc.near = 100; sc.far = 4200; sc.left = -1400; sc.right = 1400; sc.top = 1400; sc.bottom = -1400;
+      var sc = sun.shadow.camera; sc.near = 100; sc.far = 5600; sc.left = -1800; sc.right = 1800; sc.top = 1800; sc.bottom = -1800;
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
-      var rim = new T.DirectionalLight(0x9ec8ff, 0.32); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -600, y: 1300, z: -400 };
+      var rim = new T.DirectionalLight(0x9ec8ff, 0.32); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -950, y: 850, z: -550 };
       initEnv(); initPost(); R3.zoom = 1; R3.ready = true; return true;
     } catch (e) { R3.ready = false; return false; }
   }
@@ -458,12 +458,20 @@
       var vsh = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
       var fsh = [
         'precision highp float; varying vec2 vUv;',
-        'uniform sampler2D tD; uniform float uT; uniform float uCA; uniform float uGrain; uniform float uVig; uniform vec2 uRes;',
+        'uniform sampler2D tD; uniform float uT; uniform float uCA; uniform float uGrain; uniform float uVig; uniform float uDof; uniform float uFocus; uniform vec2 uRes;',
         'float hash(vec2 p){ vec3 q = fract(vec3(p.xyx) * 443.8975); q += dot(q, q.yzx + 19.19); return fract((q.x + q.y) * q.z); }',
         'void main(){',
         '  vec2 d = vUv - 0.5; float r2 = dot(d, d);',
-        '  vec2 off = d * (uCA * (0.5 + 2.4 * r2));',
-        '  vec3 col = vec3(texture2D(tD, vUv + off).r, texture2D(tD, vUv).g, texture2D(tD, vUv - off).b);',
+        '  vec2 ca = d * (uCA * (0.5 + 2.4 * r2));',
+        '  vec3 base = vec3(texture2D(tD, vUv + ca).r, texture2D(tD, vUv).g, texture2D(tD, vUv - ca).b);',
+        '  float band = abs(vUv.y - uFocus);',
+        '  float br = uDof * (smoothstep(0.10, 0.46, band) + 0.55 * smoothstep(0.14, 0.5, r2));',
+        '  vec2 o1 = vec2(br, 0.0); vec2 o2 = vec2(0.0, br); vec2 o3 = vec2(br * 0.707, br * 0.707); vec2 o4 = vec2(br * 0.707, -br * 0.707);',
+        '  vec3 ring = texture2D(tD, vUv + o1).rgb + texture2D(tD, vUv - o1).rgb + texture2D(tD, vUv + o2).rgb + texture2D(tD, vUv - o2).rgb;',
+        '  ring += texture2D(tD, vUv + o3).rgb + texture2D(tD, vUv - o3).rgb + texture2D(tD, vUv + o4).rgb + texture2D(tD, vUv - o4).rgb;',
+        '  ring *= 0.125;',
+        '  vec3 col = mix(base, ring, clamp(br * 220.0, 0.0, 0.62));',
+        '  col += max(ring - 0.74, 0.0) * 0.5;',
         '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
         '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
@@ -477,7 +485,7 @@
       else rt = new T.WebGLRenderTarget(8, 8);
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, uT: { value: 0 }, uCA: { value: 0.0048 }, uGrain: { value: 0.09 }, uVig: { value: 0.38 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, uT: { value: 0 }, uCA: { value: 0.0048 }, uGrain: { value: 0.09 }, uVig: { value: 0.38 }, uDof: { value: 0.005 }, uFocus: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0048, rt: rt, mat: mat, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
@@ -519,6 +527,48 @@
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // skirt
     var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ map: skirtTex(), color: new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
+    (function () {
+      var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
+      var prnd = function (n) { var x = Math.sin(n * 113.7 + 3.3) * 43758.5453; return x - Math.floor(x); };
+      var cacM = new T.MeshStandardMaterial({ color: 0x3f7c33, roughness: .8 });
+      var rokM = new T.MeshStandardMaterial({ color: 0xa88a66, roughness: .95 });
+      var rokM2 = new T.MeshStandardMaterial({ color: 0x8a7458, roughness: .95 });
+      var fenM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6a3c, roughness: .8 });
+      var moonRokM = new T.MeshStandardMaterial({ color: 0x6a6280, roughness: .95 });
+      for (var k = 0; k < 26; k++) {
+        var side = k % 4, px, pz, off = 80 + prnd(k * 3 + 1) * 170;
+        if (side === 0) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.minZ - off; }
+        else if (side === 1) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.maxZ + off; }
+        else if (side === 2) { px = bn.minX - off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
+        else { px = bn.maxX + off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
+        var py = hole.terrain(px, pz), t = prnd(k + 99);
+        if (hole.theme === 'moon' || hole.theme === 'ice') {
+          if (t < 0.6) { var mr = new T.Mesh(new T.IcosahedronGeometry(26 + prnd(k + 7) * 40, 0), hole.theme === 'moon' ? moonRokM : rokM); mr.scale.y = 0.62; mr.position.set(px, py + 8, pz); mr.rotation.y = prnd(k + 3) * TAU; mr.castShadow = true; R3.group.add(mr); }
+          continue;
+        }
+        if (!WESTERN[hole.theme || 'grass']) continue;
+        if (t < 0.42) {
+          var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8, cac = new T.Group();
+          var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 8), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk);
+          var na = 1 + (prnd(k + 17) > 0.5 ? 1 : 0);
+          for (var ai = 0; ai < na; ai++) {
+            var sgn = ai ? -1 : 1, ay = ch * (0.42 + prnd(k + 19 + ai) * 0.2);
+            var armO = new T.Mesh(new T.CylinderGeometry(cr * .55, cr * .6, cr * 2.6, 7), cacM); armO.rotation.z = sgn * PI / 2; armO.position.set(sgn * cr * 1.6, ay, 0); cac.add(armO);
+            var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 7), cacM); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
+          }
+          cac.position.set(px, py, pz); cac.rotation.y = prnd(k + 23) * TAU; R3.group.add(cac);
+        } else if (t < 0.78) {
+          var rk = new T.Mesh(new T.IcosahedronGeometry(24 + prnd(k + 7) * 38, 0), prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; R3.group.add(rk);
+        } else {
+          var fg = new T.Group();
+          for (var fp = 0; fp < 3; fp++) { var post = new T.Mesh(new T.BoxGeometry(9, 52 + prnd(k + fp) * 14, 9), fenM); post.position.set(fp * 56 - 56, 30, 0); post.castShadow = true; fg.add(post); }
+          var rail = new T.Mesh(new T.BoxGeometry(150, 7, 5), fenM); rail.position.set(0, 46, 0); rail.rotation.z = (prnd(k + 41) - 0.5) * 0.16; fg.add(rail);
+          var rail2 = new T.Mesh(new T.BoxGeometry(150, 7, 5), fenM); rail2.position.set(0, 24, 0); rail2.rotation.z = (prnd(k + 43) - 0.5) * 0.1; fg.add(rail2);
+          fg.position.set(px, py, pz); fg.rotation.y = (side < 2 ? 0 : PI / 2) + (prnd(k + 47) - .5) * .5; R3.group.add(fg);
+        }
+      }
+    })();
     // MOON CRATERS — flat decorative craters scattered on the pale lunar ground (purely visual, no collision; deterministic so they don't jitter on editor rebuilds)
     if (hole.theme === 'moon') {
       var prnd = function (n) { var x = Math.sin(n * 127.1 + 0.7) * 43758.5453; return x - Math.floor(x); };
@@ -1806,7 +1856,7 @@
         if (m && m[1] !== cur) {
           shown = true;
           var bar = elt('div', 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;padding:11px 18px;border:2px solid #160d06;border-radius:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.55);', '🔄 New build v' + m[1] + ' ready — tap to update', document.body);
-          bar.onclick = function () { location.reload(true); };
+          bar.onclick = function () { location.replace(self + '?bust=' + Date.now()); };
         }
       }).catch(function () { });
     }, 4000);
@@ -1858,5 +1908,5 @@
   PG.__snapAngle = function (ax, az, bx, bz) { return snapAngle(ax, az, bx, bz); };
   // film-look hooks: toggle the post pass / live-tune aberration, grain, vignette
   PG.__fx = function (on) { if (R3.post) R3.post.on = on !== false; return R3.post ? R3.post.on : null; };
-  PG.__fxSet = function (ca, grain, vig) { if (!R3.post) return null; var u = R3.post.mat.uniforms; if (ca != null) R3.post.ca = ca; if (grain != null) u.uGrain.value = grain; if (vig != null) u.uVig.value = vig; return { ca: R3.post.ca, grain: u.uGrain.value, vig: u.uVig.value, on: R3.post.on }; };
+  PG.__fxSet = function (ca, grain, vig, dof) { if (!R3.post) return null; var u = R3.post.mat.uniforms; if (ca != null) R3.post.ca = ca; if (grain != null) u.uGrain.value = grain; if (vig != null) u.uVig.value = vig; if (dof != null) u.uDof.value = dof; return { ca: R3.post.ca, grain: u.uGrain.value, vig: u.uVig.value, dof: u.uDof.value, on: R3.post.on }; };
 })();
