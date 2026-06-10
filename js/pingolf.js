@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 56 · AAA FILM LOOK';
+  var BUILD = 'BUILD 57 · FILM LOOK MAX';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -404,7 +404,8 @@
       sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
       var sc = sun.shadow.camera; sc.near = 100; sc.far = 4200; sc.left = -1400; sc.right = 1400; sc.top = 1400; sc.bottom = -1400;
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
-      R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun; R3.sunOff = { x: -600, y: 1300, z: -400 };
+      R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
+      var rim = new T.DirectionalLight(0x9ec8ff, 0.32); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -600, y: 1300, z: -400 };
       initEnv(); initPost(); R3.zoom = 1; R3.ready = true; return true;
     } catch (e) { R3.ready = false; return false; }
   }
@@ -467,8 +468,8 @@
         '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
-        '  col = mix(vec3(lum), col, 1.09);',
-        '  col = clamp((col - 0.5) * 1.055 + 0.5, 0.0, 1.0);',
+        '  col = mix(vec3(lum), col, 1.13);',
+        '  col = clamp((col - 0.5) * 1.075 + 0.5, 0.0, 1.0);',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       var rt;
@@ -476,9 +477,9 @@
       else rt = new T.WebGLRenderTarget(8, 8);
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, uT: { value: 0 }, uCA: { value: 0.0028 }, uGrain: { value: 0.06 }, uVig: { value: 0.33 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, uT: { value: 0 }, uCA: { value: 0.0048 }, uGrain: { value: 0.09 }, uVig: { value: 0.38 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
-      R3.post = { on: true, ca: 0.0028, rt: rt, mat: mat, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+      R3.post = { on: true, ca: 0.0048, rt: rt, mat: mat, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
@@ -489,10 +490,10 @@
         if (w > 0 && h > 0 && (p.rt.width !== w || p.rt.height !== h)) { p.rt.setSize(w, h); p.mat.uniforms.uRes.value.set(w, h); }
         R3.r.setRenderTarget(p.rt); R3.r.render(R3.scene, R3.cam); R3.r.setRenderTarget(null);
         p.mat.uniforms.uT.value = (performance.now() % 64000) / 1000;
-        p.mat.uniforms.uCA.value = p.ca * (1 + Math.min(St.shake || 0, 14) * 0.1);
+        p.mat.uniforms.uCA.value = p.ca * (1 + Math.min(St.shake || 0, 14) * 0.16);
         R3.r.render(p.scene, p.cam);
         return;
-      } catch (e) { p.on = false; try { R3.r.setRenderTarget(null); } catch (e2) { } }
+      } catch (e) { p.on = false; try { R3.r.setRenderTarget(null); } catch (e2) { } if (window.console) console.warn('film FX disabled:', e); }
     }
     R3.r.render(R3.scene, R3.cam);
   }
