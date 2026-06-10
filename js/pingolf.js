@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 58 · AAA DIORAMA';
+  var BUILD = 'BUILD 59 · GUNSLINGERS WORLD';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -453,6 +453,25 @@
     }, [3, 1]);
   }
   function skirtTex() { return tex('skirt', 256, 256, function (x) { var g = x.createRadialGradient(128, 128, 20, 128, 128, 182); g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#c2c2c2'); g.addColorStop(1, '#4a4a4a'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }); }
+  // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
+  var BGMAP = { grass: 'bg-canyon', sand: 'bg-9', mud: 'bg-town', speed: 'bg-18', rubber: 'bg-12', moon: 'bg-5', ice: 'bg-16' };
+  var GROUNDC = { grass: 0xc9a08a, sand: 0xd2ab74, mud: 0x8d7a86, speed: 0xd6b58e, rubber: 0x7d2e1c, moon: 0x6a667e, ice: 0x9ab4c4 };
+  function panoMat(name) {
+    var key = 'pano_' + name; if (R3['_' + key]) return R3['_' + key];
+    var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a });
+    if ('toneMapped' in m) m.toneMapped = false;
+    var t = new T.TextureLoader().load('assets/' + name + '.png', function () { m.color.set(0xffffff); m.needsUpdate = true; });
+    if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
+    t.wrapS = T.RepeatWrapping; t.repeat.set(2, 1); m.map = t;
+    R3['_' + key] = m; return m;
+  }
+  function spriteMat(name) {
+    var key = 'sprm_' + name; if (R3['_' + key]) return R3['_' + key];
+    var m = new T.MeshStandardMaterial({ transparent: true, alphaTest: .45, side: T.DoubleSide, roughness: .9, opacity: 0 });
+    var t = new T.TextureLoader().load('assets/' + name + '.png', function () { m.opacity = 1; m.needsUpdate = true; });
+    if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
+    m.map = t; R3['_' + key] = m; return m;
+  }
   function initPost() {   // film pass: chromatic aberration (impact-reactive) + animated grain + vignette + gentle sat/contrast
     try {
       var vsh = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
@@ -523,10 +542,13 @@
     var pos = geo.attributes.position;
     for (var i = 0; i < pos.count; i++) pos.setY(i, hole.terrain(pos.getX(i), pos.getZ(i)));
     geo.computeVertexNormals();
-    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ color: hole.turf, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .55 }) : new T.MeshStandardMaterial({ map: turfTex(), roughness: .95, envMapIntensity: .5 });
+    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ color: hole.turf, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: turfTex(), roughness: .95, envMapIntensity: .5 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // skirt
-    var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ map: skirtTex(), color: new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    // GUNSLINGERS PAINTED PANORAMA — the brand background paintings (assets/bg-*.png) wrap the horizon for every theme
+    var bgName = BGMAP[hole.theme || 'grass'];
+    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(4300, 4300, 3300, 48, 1, true), panoMat(bgName)); pano.position.set((bn.minX + bn.maxX) / 2, 830, midZ); R3.group.add(pano); }
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
@@ -548,7 +570,7 @@
           continue;
         }
         if (!WESTERN[hole.theme || 'grass']) continue;
-        if (t < 0.42) {
+        if (t < 0.34) {
           var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8, cac = new T.Group();
           var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 8), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk);
           var na = 1 + (prnd(k + 17) > 0.5 ? 1 : 0);
@@ -558,8 +580,14 @@
             var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 7), cacM); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
           }
           cac.position.set(px, py, pz); cac.rotation.y = prnd(k + 23) * TAU; R3.group.add(cac);
-        } else if (t < 0.78) {
+        } else if (t < 0.56) {
           var rk = new T.Mesh(new T.IcosahedronGeometry(24 + prnd(k + 7) * 38, 0), prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; R3.group.add(rk);
+        } else if (t < 0.8) {   // brand art cutouts: barrels, skulls, lanterns, dynamite from assets/
+          var SPR = [['barrel', 130], ['skull', 84], ['Lantern_2.6_', 96], ['Dynamite_2.1_', 80]];
+          var sp = SPR[Math.floor(prnd(k + 61) * SPR.length)], sh2 = sp[1] * (0.85 + prnd(k + 67) * 0.5);
+          var bb = new T.Mesh(new T.PlaneGeometry(sh2, sh2), spriteMat(sp[0]));
+          bb.position.set(px, py + sh2 / 2 - 2, pz); bb.rotation.y = PI + (prnd(k + 71) - .5) * 0.7; R3.group.add(bb);
+          var bsh2 = new T.Mesh(new T.CircleGeometry(sh2 * 0.3, 14), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .28 })); bsh2.rotation.x = -PI / 2; bsh2.position.set(px, py + 1.6, pz); R3.group.add(bsh2);
         } else {
           var fg = new T.Group();
           for (var fp = 0; fp < 3; fp++) { var post = new T.Mesh(new T.BoxGeometry(9, 52 + prnd(k + fp) * 14, 9), fenM); post.position.set(fp * 56 - 56, 30, 0); post.castShadow = true; fg.add(post); }
