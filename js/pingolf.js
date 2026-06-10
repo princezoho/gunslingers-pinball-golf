@@ -456,14 +456,21 @@
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
   var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
   var GROUNDC = { grass: 0xd0784c, sand: 0xdfae66, mud: 0xd8a0ac, speed: 0xb88484, rubber: 0xcdb682, moon: 0x9e90be, ice: 0xc8a87a };
-  var FOGC = { grass: 0xe09a6e, sand: 0xe5c182, mud: 0xe4aeb4, speed: 0xc89488, rubber: 0xdcc998, moon: 0xb4a6cc, ice: 0xd8bc8c };   // distance haze tuned to each painting's horizon so the skirt melts into the art
+  var FOGC = { grass: 0xd8895c, sand: 0xe0b878, mud: 0xdfa3ac, speed: 0xc08c84, rubber: 0xd4c08c, moon: 0xa898c4, ice: 0xceb084 };   // distance haze tuned to each painting's horizon so the skirt melts into the art
+  function panoAlpha() {   // vertical fade: painting melts into the ground skirt like distance haze (also hides the cylinder facet line)
+    if (R3._panoA) return R3._panoA;
+    var c = document.createElement('canvas'); c.width = 1; c.height = 256; var x = c.getContext('2d');
+    var g = x.createLinearGradient(0, 256, 0, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.3, 'rgba(255,255,255,0)'); g.addColorStop(0.45, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,1)');
+    x.fillStyle = g; x.fillRect(0, 0, 1, 256);
+    var t = new T.CanvasTexture(c); t.wrapT = T.ClampToEdgeWrapping; R3._panoA = t; return t;
+  }
   function panoMat(name) {
     var key = 'pano_' + name; if (R3['_' + key]) return R3['_' + key];
-    var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a });
+    var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a, transparent: true, alphaMap: panoAlpha() });
     if ('toneMapped' in m) m.toneMapped = false;
     var t = new T.TextureLoader().load('assets/' + name, function () { m.color.set(0xffffff); m.needsUpdate = true; });
     if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
-    t.wrapS = T.RepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(3, 1.12); t.offset.y = 0.25; m.map = t;   // land band sits at eye level, painted sky fills the band the camera actually sees; clamp extends sky-top above
+    t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(4, 1.12); t.offset.y = 0.22; m.map = t;   // mirrored wrap = no visible seam (the paintings aren't tileable); land band at eye level, painted sky above, clamped sky-top blends into the gradient
     R3['_' + key] = m; return m;
   }
   function spriteMat(name) {
@@ -548,14 +555,11 @@
     geo.computeVertexNormals();
     var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ color: hole.turf, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: turfTex(), roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
-    // skirt
-    var skirt = new T.Mesh(new T.PlaneGeometry(24000, 24000), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(0, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
-    // GUNSLINGERS PAINTED PANORAMA — the brand background paintings (assets/bg-*.png) wrap the horizon for every theme
+    // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
+    var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
-    if (bgName) {   // close-in cylinder so the painting actually FILLS the horizon at game camera pitch (radius hugs the table, height tuned to the visible band)
-      var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85;
-      var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 48, 1, true), panoMat(bgName)); pano.position.set((bn.minX + bn.maxX) / 2, pr * 0.23, midZ); R3.group.add(pano);
-    }
+    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 96, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
@@ -676,9 +680,20 @@
     if (!R3.bumpLight) { R3.bumpLight = new T.PointLight(0xffc24e, 0, 1100, 2); R3.scene.add(R3.bumpLight); }
     R3.bumpLight.intensity = 0;
     // boosters
-    hole.boosters.forEach(function (z) { var gy = hole.terrain(z.x, z.z), g = new T.Group(); var pad = new T.Mesh(new T.CircleGeometry(z.r, 28), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466aa, emissiveIntensity: .55, transparent: true, opacity: .5, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.y = 2.5; g.add(pad); var ar = new T.Mesh(new T.ConeGeometry(z.r * .5, z.r * 1.1, 4), new T.MeshStandardMaterial({ color: 0xeafaff, emissive: 0x4ad0ff, emissiveIntensity: .7 })); ar.rotation.x = PI / 2; ar.position.y = 7; g.add(ar); g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g; });
+    hole.boosters.forEach(function (z) {
+      var gy = hole.terrain(z.x, z.z), g = new T.Group();
+      var pad = new T.Mesh(new T.CircleGeometry(z.r, 28), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466aa, emissiveIntensity: .55, transparent: true, opacity: .5, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.y = 2.5; g.add(pad);
+      var rim = new T.Mesh(new T.TorusGeometry(z.r, 4.5, 8, 30), new T.MeshStandardMaterial({ color: 0x4ad0ff, emissive: 0x1f8ad0, emissiveIntensity: .8, roughness: .35 })); rim.rotation.x = -PI / 2; rim.position.y = 3; g.add(rim);
+      var chevM = new T.MeshBasicMaterial({ color: 0xbdeaff, transparent: true, opacity: .9, side: T.DoubleSide, depthWrite: false });
+      [0, -0.5].forEach(function (off) {   // flat glowing chevrons pointing the launch direction (no more white teepee cone)
+        var zz = z.r * off, cg = new T.BufferGeometry();
+        cg.setAttribute('position', new T.BufferAttribute(new Float32Array([0, 4, z.r * 0.72 + zz, -z.r * 0.46, 4, z.r * 0.1 + zz, 0, 4, z.r * 0.32 + zz, 0, 4, z.r * 0.32 + zz, z.r * 0.46, 4, z.r * 0.1 + zz, 0, 4, z.r * 0.72 + zz]), 3));
+        cg.computeVertexNormals(); g.add(new T.Mesh(cg, chevM));
+      });
+      g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g;
+    });
     // flippers
-    var chrome = new T.MeshStandardMaterial({ color: 0xeef2f8, metalness: .92, roughness: .18, envMapIntensity: 1.25 }), redM = new T.MeshStandardMaterial({ color: 0xc01818, roughness: .3, metalness: .15 });
+    var chrome = new T.MeshStandardMaterial({ color: 0xf0f4fa, metalness: .96, roughness: .1, envMapIntensity: 2.1 }), redM = new T.MeshStandardMaterial({ color: 0xc01818, roughness: .26, metalness: .2, envMapIntensity: 1.2 });
     hole.flippers.forEach(function (f) { var gy = hole.terrain(f.px, f.pz), g = new T.Group(); var pad = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 18, bevelEnabled: true, bevelThickness: 3, bevelSize: 2.5, bevelSegments: 2 }), chrome); pad.rotation.x = -PI / 2; pad.position.y = 16; pad.castShadow = true; g.add(pad); outline(pad, 1.05); var piv = new T.Mesh(new T.CylinderGeometry(18, 20, 24, 16), redM); piv.position.y = 10; g.add(piv); g.position.set(f.px, gy + 6, f.pz); R3.group.add(g); f.mesh = g; });
     // windmills
     hole.windmills.forEach(function (wmi) {
