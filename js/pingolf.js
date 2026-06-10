@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 61 · TRUE GRIT';
+  var BUILD = 'BUILD 62 · NO BALL LEFT BEHIND';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -540,7 +540,7 @@
   function flipperShape(L) { var r0 = 16, r1 = 7, sh = new T.Shape(), phi = Math.asin((r0 - r1) / L); sh.absarc(0, 0, r0, PI / 2 + phi, 1.5 * PI - phi, false); sh.absarc(L, 0, r1, -PI / 2 - phi, PI / 2 + phi, false); return sh; }
   function buildScene(hole) {
     if (!R3.ready) return;
-    St.shocks = [];
+    St.shocks = []; hole._hull = undefined;   // walls may have changed (editor) — recompute the OOB hull lazily
     if (R3.group) R3.scene.remove(R3.group);
     R3.group = new T.Group(); R3.scene.add(R3.group);
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
@@ -655,7 +655,7 @@
     }
     // walls
     var wm = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb07840, roughness: .72 }), capm = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .55, roughness: .38, envMapIntensity: .5 });
-    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); outline(body, 1.03); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); });
+    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var ol = outline(body, 1.03); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: ol, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xc01822, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0xc01822, metalness: .2, roughness: .3 });
@@ -838,6 +838,30 @@
       if (ts > 0) { var ns = Math.max(0, ts - K.rollFric * dt), kf = ns / ts; b.vx = tx * kf + vd * n.x; b.vy = ty * kf + vd * n.y; b.vz = tz * kf + vd * n.z; }
       b.air = false;
     } else b.air = true;
+    // OUT-OF-BOUNDS RESCUE — lofted over the rail and stranded outside the playfield walls: after a beat, drop the ball back where the shot was played from
+    if (!b.air) {
+      var hu = hole._hull;
+      if (hu === undefined) {
+        hu = null;
+        if (hole.walls.length) {
+          var hx0 = 1e9, hx1 = -1e9, hz0 = 1e9, hz1 = -1e9;
+          for (var hwi = 0; hwi < hole.walls.length; hwi++) { var hw = hole.walls[hwi]; hx0 = Math.min(hx0, hw.ax, hw.bx); hx1 = Math.max(hx1, hw.ax, hw.bx); hz0 = Math.min(hz0, hw.az, hw.bz); hz1 = Math.max(hz1, hw.az, hw.bz); }
+          // only trust the hull when it encloses the legit play space (tee + cup) — odd custom levels skip the rule
+          if (hole.tee.x > hx0 && hole.tee.x < hx1 && hole.tee.z > hz0 && hole.tee.z < hz1 && hole.cup.x > hx0 && hole.cup.x < hx1 && hole.cup.z > hz0 && hole.cup.z < hz1) hu = { minX: hx0, maxX: hx1, minZ: hz0, maxZ: hz1 };
+        }
+        hole._hull = hu;
+      }
+      if (hu && (b.x < hu.minX || b.x > hu.maxX || b.z < hu.minZ || b.z > hu.maxZ)) {
+        b.stillT = 0; b.settled = false;   // never settle out there — the rescue below always gets its chance
+        b.oobT = (b.oobT || 0) + dt;
+        if (b.oobT > 0.55) {
+          b.oobT = 0; var rs = b.shotFrom || hole.tee;
+          pop3d(b.x, b.z, gh, 'OUT OF BOUNDS!', COL.red); sfx('tick');
+          b.x = rs.x; b.z = rs.z; b.y = hole.terrain(rs.x, rs.z) + K.R + 150; b.vx = 0; b.vz = 0; b.vy = 0; b.air = true; b.stillT = 0; b.settled = false;
+          spawnShock(rs.x, hole.terrain(rs.x, rs.z), rs.z, COL.red); St.shake = Math.min(8, St.shake + 4);
+        }
+      } else b.oobT = 0;
+    }
     var i, gy = gh;
     for (i = 0; i < hole.walls.length; i++) collideWall(b, hole.walls[i], gy);
     for (i = 0; i < hole.bumpers.length; i++) collideBumper(b, hole.bumpers[i], gy);
@@ -1096,8 +1120,29 @@
   function project(x, y, z) { var v = new T.Vector3(x, y, z).project(R3.cam); return { x: (v.x * .5 + .5) * St.w, y: (-v.y * .5 + .5) * St.h, vis: v.z < 1 }; }
 
   /* ================================================================ sync + HUD */
+  function segCross(ax, az, bx, bz, cx, cz, dx, dz) {   // 2D segment AB × CD -> t along AB, or -1
+    var rX = bx - ax, rZ = bz - az, sX = dx - cx, sZ = dz - cz, den = rX * sZ - rZ * sX;
+    if (Math.abs(den) < 1e-9) return -1;
+    var t = ((cx - ax) * sZ - (cz - az) * sX) / den, u = ((cx - ax) * rZ - (cz - az) * rX) / den;
+    return (t >= 0 && t <= 1 && u >= 0 && u <= 1) ? t : -1;
+  }
+  function xrayWalls(hole) {   // any wall standing between the camera and the ball goes see-through so the ball is never hidden
+    var pb = primeBall(); if (!pb || !R3.cam) return;
+    var cx = R3.cam.position.x, cy = R3.cam.position.y, cz = R3.cam.position.z;
+    for (var wi = 0; wi < hole.walls.length; wi++) {
+      var s = hole.walls[wi], m3 = s._m3; if (!m3) continue;
+      var blocking = false, t = segCross(cx, cz, pb.x, pb.z, s.ax, s.az, s.bx, s.bz);
+      if (t > 0.02 && t < 0.985) { var losY = cy + (pb.y - cy) * t; blocking = losY < m3.gy + s.h + 14; }
+      m3.fade += ((blocking ? 1 : 0) - m3.fade) * 0.22; if (!blocking && m3.fade < 0.015) m3.fade = 0;
+      var tr = m3.fade > 0.01, op = 1 - m3.fade * 0.78;
+      if (m3.body.material.transparent !== tr) { m3.body.material.transparent = tr; m3.cap.material.transparent = tr; }
+      m3.body.material.opacity = op; m3.cap.material.opacity = op;
+      m3.out.visible = m3.fade < 0.4;
+    }
+  }
   function syncMeshes() {
     ensureBallMeshes(); var hole = St.hole;
+    xrayWalls(hole);
     for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
     for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; if (R3.shieldMeshes && R3.shieldMeshes[i]) R3.shieldMeshes[i].visible = false; } }
     var bigFl = 0, bigBm = null;
