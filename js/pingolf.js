@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 73 · BRAND FLAG';
+  var BUILD = 'BUILD 74 · NO CHEAP SHAPES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -413,12 +413,12 @@
       R3.cam = new T.PerspectiveCamera(58, 1, 1, 14000);
       R3.scene.add(new T.AmbientLight(0xffe2c0, 0.18));
       R3.scene.add(new T.HemisphereLight(0xffdca6, 0x3a2c1c, 0.32));
-      var sun = new T.DirectionalLight(0xffd290, 1.22); sun.position.set(-700, 1400, -300); sun.castShadow = true;
+      var sun = new T.DirectionalLight(0xffd290, 1.32); sun.position.set(-700, 1400, -300); sun.castShadow = true;
       sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
       var sc = sun.shadow.camera; sc.near = 100; sc.far = 5600; sc.left = -1800; sc.right = 1800; sc.top = 1800; sc.bottom = -1800;
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
-      var rim = new T.DirectionalLight(0x9ec8ff, 0.42); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -950, y: 850, z: -550 };
+      var rim = new T.DirectionalLight(0x9ec8ff, 0.52); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -950, y: 850, z: -550 };
       initEnv(); initPost(); R3.zoom = 1; R3.ready = true; return true;
     } catch (e) { R3.ready = false; return false; }
   }
@@ -489,25 +489,20 @@
     });
   }
   function moteTex() { return tex('mote', 32, 32, function (x) { var g = x.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); }); }
-  function flagTex() {   // the pin pennant: brand red cloth wearing the GUNSLINGERS plaque logo (assets/logo-flag.png, drawn in when it loads; gold star until then)
+  function flagTex() {   // the pin pennant: brand red cloth wearing the cowboy-face icon logo (assets/logo-flag.png) — no strokes, no boxes
     var t = tex('flag', 256, 128, function (x) {
       x.fillStyle = '#c8332a'; x.fillRect(0, 0, 256, 128);
       x.fillStyle = 'rgba(120,16,10,.35)'; x.fillRect(0, 88, 256, 40);
-      x.strokeStyle = '#1b0f06'; x.lineWidth = 10; x.strokeRect(0, 0, 256, 128);
-      x.fillStyle = '#f5c542'; x.strokeStyle = '#1b0f06'; x.lineWidth = 3; x.beginPath();
-      for (var i = 0; i < 10; i++) { var a = -PI / 2 + i * PI / 5, rr = i % 2 ? 15 : 34; var sx = 128 + Math.cos(a) * rr, sy = 64 + Math.sin(a) * rr; i ? x.lineTo(sx, sy) : x.moveTo(sx, sy); }
-      x.closePath(); x.fill(); x.stroke();
     });
     if (!R3._flagLogoKicked) {
       R3._flagLogoKicked = true;
       var im = new Image();
       im.onload = function () {
         var c = t.image, x = c.getContext('2d');
-        x.fillStyle = '#c8332a'; x.fillRect(0, 0, 256, 128);                       // repaint cloth over the placeholder star
+        x.fillStyle = '#c8332a'; x.fillRect(0, 0, 256, 128);
         x.fillStyle = 'rgba(120,16,10,.35)'; x.fillRect(0, 88, 256, 40);
-        var lw = 210, lh = lw * im.height / im.width; if (lh > 104) { lh = 104; lw = lh * im.width / im.height; }
+        var lh = 122, lw = lh * im.width / im.height; if (lw > 240) { lw = 240; lh = lw * im.height / im.width; }
         x.drawImage(im, (256 - lw) / 2, (128 - lh) / 2, lw, lh);
-        x.strokeStyle = '#1b0f06'; x.lineWidth = 10; x.strokeRect(0, 0, 256, 128);
         t.needsUpdate = true;
       };
       im.src = 'assets/logo-flag.png';
@@ -631,7 +626,7 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.07 }, uVig: { value: 0.38 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.07 }, uVig: { value: 0.38 }, uDof: { value: 0.0036 }, uFocus: { value: 0.55 }, uBloom: { value: 0.68 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
@@ -748,22 +743,22 @@
         else { px = bn.maxX + off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
         var py = hole.terrain(px, pz), t = prnd(k + 99);
         if (hole.theme === 'moon' || hole.theme === 'ice') {
-          if (t < 0.6) { var mr = new T.Mesh(new T.IcosahedronGeometry(26 + prnd(k + 7) * 40, 0), hole.theme === 'moon' ? moonRokM : rokM); mr.scale.y = 0.62; mr.position.set(px, py + 8, pz); mr.rotation.y = prnd(k + 3) * TAU; mr.castShadow = true; R3.group.add(mr); }
+          if (t < 0.6) { var mr = new T.Mesh(new T.IcosahedronGeometry(26 + prnd(k + 7) * 40, 1), hole.theme === 'moon' ? moonRokM : rokM); mr.scale.y = 0.62; mr.position.set(px, py + 8, pz); mr.rotation.y = prnd(k + 3) * TAU; mr.castShadow = true; R3.group.add(mr); }
           continue;
         }
         if (!WESTERN[hole.theme || 'grass']) continue;
         if (t < 0.34) {
           var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8, cac = new T.Group();
-          var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 14), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk); outline(trunk, 1.07);
+          var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 24), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk); var tcap = new T.Mesh(new T.SphereGeometry(cr * .82, 22, 14), cacM); tcap.position.y = ch; cac.add(tcap);
           var na = 1 + (prnd(k + 17) > 0.5 ? 1 : 0);
           for (var ai = 0; ai < na; ai++) {
             var sgn = ai ? -1 : 1, ay = ch * (0.42 + prnd(k + 19 + ai) * 0.2);
-            var armO = new T.Mesh(new T.CylinderGeometry(cr * .55, cr * .6, cr * 2.6, 12), cacM); armO.rotation.z = sgn * PI / 2; armO.position.set(sgn * cr * 1.6, ay, 0); cac.add(armO);
-            var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 12), cacM); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
+            var armO = new T.Mesh(new T.CylinderGeometry(cr * .55, cr * .6, cr * 2.6, 20), cacM); armO.rotation.z = sgn * PI / 2; armO.position.set(sgn * cr * 1.6, ay, 0); cac.add(armO);
+            var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 20), cacM); var acap = new T.Mesh(new T.SphereGeometry(cr * .5, 18, 12), cacM); acap.position.set(sgn * cr * 2.7, ay + ch * 0.3, 0); cac.add(acap); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
           }
           cac.position.set(px, py, pz); cac.rotation.y = prnd(k + 23) * TAU; R3.group.add(cac);
         } else if (t < 0.56) {
-          var rk = new T.Mesh(new T.IcosahedronGeometry(24 + prnd(k + 7) * 38, 0), prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; outline(rk, 1.07); R3.group.add(rk);
+          var rk = new T.Mesh(new T.IcosahedronGeometry(24 + prnd(k + 7) * 38, 1), prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; R3.group.add(rk);
         } else if (t < 0.8) {   // brand art cutouts: barrels, skulls, lanterns, dynamite from assets/
           var SPR = [['barrel', 130], ['skull', 84], ['Lantern_2.6_', 96], ['Dynamite_2.1_', 80]];
           var sp = SPR[Math.floor(prnd(k + 61) * SPR.length)], sh2 = sp[1] * (0.85 + prnd(k + 67) * 0.5);
@@ -826,25 +821,56 @@
     }
     // walls
     var wm = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb07840, roughness: .72 }), capm = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .55, roughness: .38, envMapIntensity: .5 });
-    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var ol = outline(body, 1.03); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: ol, fade: 0, gy: gy }; });
+    function turfDecal(cx, cz, r0, r1, segs, rings, mat, lift) {   // disc/annulus that FOLLOWS the turf ripples — flat decals z-fight the undulating ground into sawtooth tears
+      var pos = [], idx = [], RG = rings;
+      for (var ri = 0; ri <= RG; ri++) for (var si = 0; si <= segs; si++) {
+        var rr = r0 + (r1 - r0) * ri / RG, aa = si / segs * TAU, wx = cx + Math.cos(aa) * rr, wz = cz + Math.sin(aa) * rr;
+        pos.push(wx, hole.terrain(wx, wz) + lift, wz);
+      }
+      for (ri = 0; ri < RG; ri++) for (si = 0; si < segs; si++) { var a0 = ri * (segs + 1) + si; idx.push(a0, a0 + segs + 1, a0 + 1, a0 + 1, a0 + segs + 1, a0 + segs + 2); }
+      var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
+      var mm = new T.Mesh(gg, mat); R3.group.add(mm); return mm;
+    }
+    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: null, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
     var bumpGlass = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xfff2cf, metalness: .05, roughness: .05, transparent: true, opacity: .22, envMapIntensity: 2.0, clearcoat: 1, clearcoatRoughness: .04, side: T.DoubleSide }) : new T.MeshStandardMaterial({ color: 0xfff2cf, transparent: true, opacity: .22, roughness: .08 });
+    var glassM = new T.MeshPhysicalMaterial({ color: 0xfff6e0, metalness: 0, roughness: .04, transmission: .94, ior: 1.45, transparent: true, opacity: 1, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: .03, side: T.DoubleSide });
+    var brassM = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .92, roughness: .24, envMapIntensity: 1.6 });
+    var darkIronM = new T.MeshStandardMaterial({ color: 0x3a3026, metalness: .8, roughness: .42, envMapIntensity: 1.0 });
     hole.bumpers.forEach(function (bm, bmi) {
-      var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r;
-      var cs = new T.Mesh(new T.CircleGeometry(r * 1.4, 24), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .4 })); cs.rotation.x = -PI / 2; cs.position.set(bm.x, gy + 1.2, bm.z); R3.group.add(cs);
-      var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 36), chromeB); base.position.y = 5; base.castShadow = true; g.add(base);
-      var skirtC = new T.Mesh(new T.CylinderGeometry(r * 0.9, r * 1.04, 18, 28), bumpRed); skirtC.position.y = 19; skirtC.castShadow = true; g.add(skirtC);
-      var coreM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xffb31e, emissiveIntensity: .55, roughness: .35 });
-      var core = new T.Mesh(new T.SphereGeometry(r * 0.46, 18, 14), coreM); core.position.y = 30 + r * 0.16; g.add(core); bm.coreM = coreM;
-      var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 28, 18, 0, TAU, 0, PI * 0.58), bumpGlass); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
-      var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 32), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap);   // classic red bumper cap seen from above
-      var stripe = new T.Mesh(new T.TorusGeometry(r * 0.58, 2.2, 8, 26), new T.MeshStandardMaterial({ color: 0xf5ead0, roughness: .5 })); stripe.rotation.x = -PI / 2; stripe.position.y = 30 + r * 0.6; g.add(stripe);
-      var btn = new T.Mesh(new T.CylinderGeometry(r * 0.2, r * 0.24, 5, 18), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
-      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 12, 34), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
-      var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 20, 14), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
-      var glow = new T.Mesh(new T.CircleGeometry(r * 1.95, 28), new T.MeshBasicMaterial({ color: 0xffc24e, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); glow.rotation.x = -PI / 2; glow.position.y = 2.6; g.add(glow); bm.glow = glow;
+      var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r, kind = bmi % 3;
+      turfDecal(bm.x, bm.z, 0, r * 1.4, 40, 3, new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .35, depthWrite: false }), 1.6);
+      bm.glow = turfDecal(bm.x, bm.z, 0, r * 1.95, 40, 3, new T.MeshBasicMaterial({ color: 0xffc24e, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false }), 2.6);
+      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 16, 72), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
+      var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 32, 20), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
+      if (kind === 1) {   // SALOON OIL LANTERN — brass body, real glass chimney, a living flame inside
+        var lbase = new T.Mesh(new T.CylinderGeometry(r * .8, r * 1.05, 14, 48), brassM); lbase.position.y = 7; lbase.castShadow = true; g.add(lbase);
+        var tank = new T.Mesh(new T.SphereGeometry(r * .62, 40, 26), brassM); tank.scale.y = .62; tank.position.y = 20; tank.castShadow = true; g.add(tank);
+        var lpts = []; for (var li = 0; li <= 16; li++) { var lt = li / 16; lpts.push(new T.Vector2(r * (0.42 + Math.sin(lt * PI) * 0.16), 26 + lt * r * 1.15)); }
+        var chim = new T.Mesh(new T.LatheGeometry(lpts, 48), glassM); chim.castShadow = false; g.add(chim);
+        var flameM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xff9a1e, emissiveIntensity: .9, roughness: .4 });
+        var flame = new T.Mesh(new T.SphereGeometry(r * .24, 24, 18), flameM); flame.scale.y = 1.7; flame.position.y = 30 + r * .5; g.add(flame); bm.coreM = flameM;
+        var crown = new T.Mesh(new T.CylinderGeometry(r * .3, r * .48, 9, 40), brassM); crown.position.y = 27 + r * 1.18; crown.castShadow = true; g.add(crown);
+        var knob = new T.Mesh(new T.SphereGeometry(r * .14, 20, 14), brassM); knob.position.y = 33 + r * 1.18; g.add(knob); bm.btnM = null;
+      } else if (kind === 2) {   // WHISKEY BARREL — coopered staves, iron hoops, amber glow seeping from the bung
+        var bpts = []; for (var bi2 = 0; bi2 <= 18; bi2++) { var bt = bi2 / 18; bpts.push(new T.Vector2(r * (0.78 + Math.sin(bt * PI) * 0.3), 2 + bt * r * 1.5)); }
+        var barrel = new T.Mesh(new T.LatheGeometry(bpts, 56), new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6534, roughness: .62, envMapIntensity: .5 })); barrel.castShadow = true; g.add(barrel);
+        var lidM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x7e5128, roughness: .7 });
+        var lid = new T.Mesh(new T.CylinderGeometry(r * .78, r * .78, 5, 56), lidM); lid.position.y = 3 + r * 1.5; lid.castShadow = true; g.add(lid);
+        [0.22, 0.5, 0.78].forEach(function (hh) { var hp = new T.Mesh(new T.TorusGeometry(r * (0.78 + Math.sin(hh * PI) * 0.3) + 1.5, 2.6, 12, 64), darkIronM); hp.rotation.x = -PI / 2; hp.position.y = 2 + hh * r * 1.5; g.add(hp); });
+        var bungM = new T.MeshStandardMaterial({ color: 0xffba3a, emissive: 0xd97a10, emissiveIntensity: .8, roughness: .35 });
+        var bung = new T.Mesh(new T.CylinderGeometry(r * .2, r * .2, 4, 32), bungM); bung.position.y = 6 + r * 1.5; g.add(bung); bm.coreM = bungM;
+      } else {   // CLASSIC POP BUMPER — chrome base, lacquered skirt, glowing bulb under a real glass dome
+        var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 72), chromeB); base.position.y = 5; base.castShadow = true; g.add(base);
+        var skirtC = new T.Mesh(new T.CylinderGeometry(r * 0.9, r * 1.04, 18, 64), bumpRed); skirtC.position.y = 19; skirtC.castShadow = true; g.add(skirtC);
+        var coreM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xffb31e, emissiveIntensity: .55, roughness: .35 });
+        var core = new T.Mesh(new T.SphereGeometry(r * 0.46, 36, 26), coreM); core.position.y = 30 + r * 0.16; g.add(core); bm.coreM = coreM;
+        var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 56, 36, 0, TAU, 0, PI * 0.58), glassM); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
+        var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 64), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap);
+        var btn = new T.Mesh(new T.CylinderGeometry(r * 0.2, r * 0.24, 5, 36), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
+      }
       bm.idleSeed = bmi * 1.7;
       g.position.set(bm.x, gy, bm.z); R3.group.add(g); bm.mesh = g;
     });
@@ -854,26 +880,26 @@
     // boosters
     hole.boosters.forEach(function (z) {
       var gy = hole.terrain(z.x, z.z), g = new T.Group();
-      var pad = new T.Mesh(new T.CircleGeometry(z.r, 28), new T.MeshStandardMaterial({ color: 0x1d86d8, emissive: 0x14589c, emissiveIntensity: .7, transparent: true, opacity: .78, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.y = 2.5; g.add(pad);
-      var rim = new T.Mesh(new T.TorusGeometry(z.r, 4.5, 8, 30), new T.MeshStandardMaterial({ color: 0x4ad0ff, emissive: 0x1f8ad0, emissiveIntensity: .8, roughness: .35 })); rim.rotation.x = -PI / 2; rim.position.y = 3; g.add(rim);
+      turfDecal(z.x, z.z, 0, z.r, 48, 4, new T.MeshStandardMaterial({ color: 0x1d86d8, emissive: 0x14589c, emissiveIntensity: .7, transparent: true, opacity: .78, roughness: .4 }), 2.2);
+      turfDecal(z.x, z.z, z.r - 4, z.r + 4, 48, 1, new T.MeshStandardMaterial({ color: 0x4ad0ff, emissive: 0x1f8ad0, emissiveIntensity: .85, roughness: .35 }), 3.4);
       var chevM = new T.MeshBasicMaterial({ color: 0xf2fbff, transparent: true, opacity: .95, side: T.DoubleSide, depthWrite: false });
-      [0, -0.5].forEach(function (off) {   // flat glowing chevrons pointing the launch direction (no more white teepee cone)
+      [0, -0.5].forEach(function (off) {   // flat glowing chevrons pointing the launch direction, floated above the ripples
         var zz = z.r * off, cg = new T.BufferGeometry();
-        cg.setAttribute('position', new T.BufferAttribute(new Float32Array([0, 4, z.r * 0.72 + zz, -z.r * 0.46, 4, z.r * 0.1 + zz, 0, 4, z.r * 0.32 + zz, 0, 4, z.r * 0.32 + zz, z.r * 0.46, 4, z.r * 0.1 + zz, 0, 4, z.r * 0.72 + zz]), 3));
+        cg.setAttribute('position', new T.BufferAttribute(new Float32Array([0, 9, z.r * 0.72 + zz, -z.r * 0.46, 9, z.r * 0.1 + zz, 0, 9, z.r * 0.32 + zz, 0, 9, z.r * 0.32 + zz, z.r * 0.46, 9, z.r * 0.1 + zz, 0, 9, z.r * 0.72 + zz]), 3));
         cg.computeVertexNormals(); g.add(new T.Mesh(cg, chevM));
       });
       g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g;
     });
     // flippers
     var chrome = new T.MeshStandardMaterial({ color: 0xf0f4fa, metalness: .96, roughness: .1, envMapIntensity: 2.1 }), redM = new T.MeshStandardMaterial({ color: 0xc01818, roughness: .26, metalness: .2, envMapIntensity: 1.2 });
-    hole.flippers.forEach(function (f) { var gy = hole.terrain(f.px, f.pz), g = new T.Group(); var pad = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 18, bevelEnabled: true, bevelThickness: 3, bevelSize: 2.5, bevelSegments: 2 }), chrome); pad.rotation.x = -PI / 2; pad.position.y = 16; pad.castShadow = true; g.add(pad); outline(pad, 1.05); var piv = new T.Mesh(new T.CylinderGeometry(18, 20, 24, 16), redM); piv.position.y = 10; g.add(piv); g.position.set(f.px, gy + 6, f.pz); R3.group.add(g); f.mesh = g; });
+    hole.flippers.forEach(function (f) { var gy = hole.terrain(f.px, f.pz), g = new T.Group(); var pad = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 18, bevelEnabled: true, bevelThickness: 3, bevelSize: 2.5, bevelSegments: 5 }), chrome); pad.rotation.x = -PI / 2; pad.position.y = 16; pad.castShadow = true; g.add(pad); var piv = new T.Mesh(new T.CylinderGeometry(18, 20, 24, 16), redM); piv.position.y = 10; g.add(piv); g.position.set(f.px, gy + 6, f.pz); R3.group.add(g); f.mesh = g; });
     // windmills
     hole.windmills.forEach(function (wmi) {
       var gy = hole.terrain(wmi.x, wmi.z);
       [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.CylinderGeometry(7, 10, wmi.r * 1.2, 8), new T.MeshStandardMaterial({ color: 0x6e4524, roughness: .85 })); post.position.set(wmi.x + sgn * wmi.r * 1.04, gy + wmi.r * 0.6, wmi.z); post.castShadow = true; R3.group.add(post); });
       var hub = new T.Group(); hub.position.set(wmi.x, gy + wmi.r, wmi.z);
       var bmatA = new T.MeshStandardMaterial({ color: 0xe8e0d0, roughness: .55 }), bmatB = new T.MeshStandardMaterial({ color: 0xc8442e, roughness: .6 });
-      for (var i = 0; i < wmi.n; i++) { var blade = new T.Mesh(new T.BoxGeometry(22, wmi.r * 0.96, 10), i % 2 ? bmatB : bmatA); blade.position.y = wmi.r * 0.5; blade.castShadow = true; outline(blade, 1.08); var bo = new T.Group(); bo.rotation.z = i / wmi.n * TAU; bo.add(blade); hub.add(bo); }
+      for (var i = 0; i < wmi.n; i++) { var blade = new T.Mesh(new T.BoxGeometry(22, wmi.r * 0.96, 10), i % 2 ? bmatB : bmatA); blade.position.y = wmi.r * 0.5; blade.castShadow = true; var bo = new T.Group(); bo.rotation.z = i / wmi.n * TAU; bo.add(blade); hub.add(bo); }
       var cap = new T.Mesh(new T.SphereGeometry(17, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .8, roughness: .3, envMapIntensity: 1.2 })); hub.add(cap);
       R3.group.add(hub); wmi.mesh = hub;
     });
@@ -935,10 +961,10 @@
       var coinM = new T.MeshStandardMaterial({ color: 0xffd54a, emissive: 0xc89a10, emissiveIntensity: .5, metalness: .9, roughness: .22, envMapIntensity: 1.4 });
       var coinM2 = new T.MeshStandardMaterial({ color: 0xa97c10, emissive: 0x6e4f06, emissiveIntensity: .45, metalness: .9, roughness: .32 });
       var grp = new T.Group();
-      var disc = new T.Mesh(new T.CylinderGeometry(24, 24, 6, 28), coinM); disc.rotation.x = PI / 2; disc.castShadow = true; grp.add(disc);
-      var crim = new T.Mesh(new T.CylinderGeometry(26.5, 26.5, 3.2, 28), coinM2); crim.rotation.x = PI / 2; grp.add(crim);   // milled darker edge ring
+      var disc = new T.Mesh(new T.CylinderGeometry(24, 24, 6, 64), coinM); disc.rotation.x = PI / 2; disc.castShadow = true; grp.add(disc);
+      var crim = new T.Mesh(new T.CylinderGeometry(26.5, 26.5, 3.2, 64), coinM2); crim.rotation.x = PI / 2; grp.add(crim);   // milled darker edge ring
       var starShp = new T.Shape(); for (var si = 0; si < 10; si++) { var sa = si / 10 * TAU - PI / 2, sr = si % 2 ? 7.5 : 16, sx = Math.cos(sa) * sr, sy = Math.sin(sa) * sr; si ? starShp.lineTo(sx, sy) : starShp.moveTo(sx, sy); }
-      var star = new T.Mesh(new T.ExtrudeGeometry(starShp, { depth: 9, bevelEnabled: false }), coinM2); star.position.z = -4.5; grp.add(star);   // sheriff star embossed through both faces
+      var star = new T.Mesh(new T.ExtrudeGeometry(starShp, { depth: 6.5, bevelEnabled: true, bevelThickness: 1.5, bevelSize: 1.2, bevelSegments: 3 }), coinM2); star.position.z = -4.5; grp.add(star);   // sheriff star embossed through both faces
       grp.position.set(cn.x, g + 40, cn.z); R3.group.add(grp); cn.mesh = grp;
     });
     (hole.powerups || []).forEach(function (pu) {
@@ -948,15 +974,15 @@
     });
     (hole.enemies || []).forEach(function (en) {
       var g = new T.Group(), col = en.type === 'blob' ? 0x2f9a3a : en.type === 'ghost' ? 0x8a4adf : 0x9a1f1f;
-      var body = new T.Mesh(new T.SphereGeometry(en.r, 16, 12), new T.MeshStandardMaterial({ color: col, roughness: .55, transparent: en.type === 'ghost', opacity: en.type === 'ghost' ? .6 : 1 })); body.position.y = en.r; body.castShadow = en.type !== 'ghost'; g.add(body); if (en.type !== 'ghost') outline(body, 1.07);
+      var body = new T.Mesh(new T.SphereGeometry(en.r, 32, 24), new T.MeshStandardMaterial({ color: col, roughness: .55, transparent: en.type === 'ghost', opacity: en.type === 'ghost' ? .6 : 1 })); body.position.y = en.r; body.castShadow = en.type !== 'ghost'; g.add(body);
       if (en.type === 'spiky') for (var s = 0; s < 8; s++) { var a = s / 8 * TAU, spike = new T.Mesh(new T.ConeGeometry(en.r * .24, en.r * .6, 6), new T.MeshStandardMaterial({ color: 0x550f0f })); spike.position.set(Math.cos(a) * en.r * .92, en.r, Math.sin(a) * en.r * .92); spike.rotation.x = PI / 2; spike.rotation.z = -a; g.add(spike); }
       [[-.42, .72], [.42, .72]].forEach(function (e) { var eye = new T.Mesh(new T.SphereGeometry(en.r * .2, 8, 8), new T.MeshStandardMaterial({ color: 0xffee44, emissive: 0xaa8800, emissiveIntensity: .7 })); eye.position.set(e[0] * en.r, en.r * 1.15, e[1] * en.r); g.add(eye); });
       g.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); R3.group.add(g); en.mesh = g;
     });
     var cu = hole.cup, cy = hole.terrain(cu.x, cu.z), cupD = 46;   // a proper cup: vertical-walled cylinder cut straight DOWN from the flat green
     // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim flush with the turf
-    var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, cupD, 28, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - cupD / 2, cu.z); R3.group.add(liner);   // top edge flush at green level (cy), walls drop straight down
-    var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 26), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - cupD + 1, cu.z); R3.group.add(pitB);
+    var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, cupD, 64, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - cupD / 2, cu.z); R3.group.add(liner);   // top edge flush at green level (cy), walls drop straight down
+    var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 64), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - cupD + 1, cu.z); R3.group.add(pitB);
     var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 10, 30), new T.MeshStandardMaterial({ color: 0xf5c542, metalness: .85, roughness: .22, envMapIntensity: 1.4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 0.5, cu.z); R3.group.add(rim);   // brass rim sits flush in the flat turf
     R3.cupGlow = new T.Mesh(new T.RingGeometry(dimR * 0.96, dimR * 1.1, 36), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .3, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 1, cu.z); R3.group.add(R3.cupGlow);   // thin pulsing lip ring hugging the cup
     // flagstick: painted pole rising from the cup, brass finial, CLOTH pennant that waves in the wind
@@ -972,7 +998,7 @@
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
-      var m = new T.Mesh(new T.SphereGeometry(K.R, 22, 16), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; outline(m, 1.1); R3.group.add(m); R3.ballMeshes.push(m);
+      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; R3.group.add(m); R3.ballMeshes.push(m);
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
       var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
@@ -1343,7 +1369,7 @@
       var tr = m3.fade > 0.01, op = 1 - m3.fade * 0.78;
       if (m3.body.material.transparent !== tr) { m3.body.material.transparent = tr; m3.cap.material.transparent = tr; }
       m3.body.material.opacity = op; m3.cap.material.opacity = op;
-      m3.out.visible = m3.fade < 0.4;
+      if (m3.out) m3.out.visible = m3.fade < 0.4;
     }
   }
   function syncMeshes() {
@@ -1395,7 +1421,7 @@
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
   // AAA type straight on the glass — big Wantedo with a heavy ink outline, no boxes, no pills
-  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.font = '900 ' + size + 'px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = Math.max(3, size * 0.16); c.strokeStyle = 'rgba(16,8,3,.95)'; c.strokeText(txt, x, y); c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }
+  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; var sz = Math.round(size * 1.25); c.font = '900 ' + sz + 'px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.8)'; c.shadowBlur = Math.max(4, sz * 0.18); c.shadowOffsetY = Math.max(1, sz * 0.05); c.fillStyle = col; c.fillText(txt, x, y); c.restore(); var ww = c.measureText(txt).width; return ww; }
   function drawHUD() {
     var c = St.hctx, w = St.w, h = St.h; c.setTransform(St.dpr, 0, 0, St.dpr, 0, 0); c.clearRect(0, 0, w, h);
     if (St.state === 'load') return;
@@ -1405,7 +1431,7 @@
     if (St.magnetT > 0 && b) drawMagnetPull(c, b);
     if (St.shocks) for (i = 0; i < St.shocks.length; i++) { var sw = St.shocks[i], sf = sw.t / sw.max, wr = 14 + sf * (sw.rmax || 165), ccs = project(sw.x, sw.y, sw.z), exs = project(sw.x + wr, sw.y, sw.z), ezs = project(sw.x, sw.y, sw.z + wr); if (!ccs.vis) continue; var rx = hyp(exs.x - ccs.x, exs.y - ccs.y), rz = hyp(ezs.x - ccs.x, ezs.y - ccs.y); c.globalAlpha = clamp(1 - sf, 0, 1) * 0.65; c.strokeStyle = sw.col; c.lineWidth = 2 + (1 - sf) * 3; c.beginPath(); if (c.ellipse) c.ellipse(ccs.x, ccs.y, Math.max(rx, 1), Math.max(rz, 1), 0, 0, TAU); else c.arc(ccs.x, ccs.y, Math.max(rx, 1), 0, TAU); c.stroke(); } c.globalAlpha = 1;
     for (i = 0; i < St.fx.length; i++) { var p = St.fx[i], s = project(p.x, p.y, p.z); if (!s.vis) continue; c.globalAlpha = clamp(p.life / p.max, 0, 1); c.fillStyle = p.col || (p.gold ? COL.gold : '#fff0c0'); c.beginPath(); c.arc(s.x, s.y, p.r || (p.gold ? 4 : 2.4), 0, TAU); c.fill(); } c.globalAlpha = 1;
-    c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 26px Wantedo, Georgia'; c.lineWidth = 4; c.strokeStyle = COL.ink; c.strokeText(q.text, qs.x, qs.y); c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); } c.globalAlpha = 1;
+    c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 32px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.8)'; c.shadowBlur = 7; c.shadowOffsetY = 2; c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); c.restore(); } c.globalAlpha = 1;
     if (St.state === 'aim' && b) drawAim(c, b);
     // HUD type — big Wantedo straight on screen, like a real cabinet
     var narrow = w < 720;
@@ -1429,10 +1455,10 @@
     if (pball && pball.shield) badges.push(['✦ SHIELD', '#55c6ff']);
     badges.forEach(function (bd, bi) { hudTxt(c, bd[0], w / 2, 64 + bi * 26, 17, bd[1], 'center'); });
     // bumper-combo meter — pulsing multiplier while the ball racks up hits this shot
-    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 26 : 34) + 'px Wantedo, Georgia'; c.lineWidth = 5; c.strokeStyle = COL.ink; c.strokeText(ctxt, 0, 0); c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
+    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 32 : 44) + 'px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.8)'; c.shadowBlur = 9; c.shadowOffsetY = 2; c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 58px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = 9; c.strokeStyle = 'rgba(16,8,3,.95)'; c.strokeText(St.banner, w / 2, h * .4); c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 76px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.85)'; c.shadowBlur = 14; c.shadowOffsetY = 3; c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.restore(); c.globalAlpha = 1; }
     c.globalAlpha = 0.85;
     if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
     else if (St.state === 'roll') hudTxt(c, 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
@@ -1490,7 +1516,7 @@
     var bw = 280, bh = 26, x = w / 2 - bw / 2, yb = h - 44, p = St.power;
     function wedgePath(f) { var xe = x + bw * f, he = 5 + (bh - 5) * f; c.beginPath(); c.moveTo(x, yb); c.lineTo(xe, yb); c.lineTo(xe, yb - he); c.lineTo(x, yb - 5); c.closePath(); }
     c.lineJoin = 'round';
-    wedgePath(1); c.fillStyle = 'rgba(16,8,3,.78)'; c.fill(); c.lineWidth = 3.5; c.strokeStyle = 'rgba(16,8,3,.95)'; c.stroke();
+    wedgePath(1); c.fillStyle = 'rgba(16,8,3,.55)'; c.fill();
     wedgePath(Math.max(0.02, p)); c.fillStyle = p > 0.8 ? COL.red : p > 0.45 ? COL.gold : COL.grn; c.fill();
     c.strokeStyle = 'rgba(16,8,3,.6)'; c.lineWidth = 2;
     [0.25, 0.5, 0.75].forEach(function (f) { var tx = x + bw * f, th = 5 + (bh - 5) * f; c.beginPath(); c.moveTo(tx, yb); c.lineTo(tx, yb - th); c.stroke(); });
