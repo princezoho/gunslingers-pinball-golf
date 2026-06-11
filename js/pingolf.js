@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 70 · NO MAGIC ORBS';
+  var BUILD = 'BUILD 71 · AAA POLISH';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -405,9 +405,9 @@
     if (!T) return false;
     try {
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-      R3.r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      R3.r.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
-      if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.06; }
+      if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 0.96; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
       R3.scene = new T.Scene(); R3.scene.fog = new T.Fog(0xc9a06a, 2400, 6500);
       R3.cam = new T.PerspectiveCamera(58, 1, 1, 14000);
@@ -581,7 +581,7 @@
         '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
-        '  col = mix(vec3(lum), col, 1.2);',
+        '  col = mix(vec3(lum), col, 1.26);',
         '  col = clamp((col - 0.5) * 1.12 + 0.5, 0.0, 1.0);',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
@@ -608,7 +608,7 @@
         '  gl_FragColor = vec4((lB < lMin || lB > lMax) ? rA : rB, 1.0);',
         '}'].join('\n');
       var rt;
-      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = 8; }
+      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = 4; }
       else rt = new T.WebGLRenderTarget(8, 8);
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
@@ -616,10 +616,10 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0032 }, uGrain: { value: 0.085 }, uVig: { value: 0.42 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.07 }, uVig: { value: 0.38 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
-      R3.post = { on: true, ca: 0.0032, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+      R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
@@ -720,7 +720,7 @@
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
       var prnd = function (n) { var x = Math.sin(n * 113.7 + 3.3) * 43758.5453; return x - Math.floor(x); };
-      var cacM = new T.MeshStandardMaterial({ color: 0x3f7c33, roughness: .8 });
+      var cacM = new T.MeshStandardMaterial({ color: 0x39702f, roughness: .8, envMapIntensity: .15 });
       var rokM = new T.MeshStandardMaterial({ color: 0xa88a66, roughness: .95 });
       var rokM2 = new T.MeshStandardMaterial({ color: 0x8a7458, roughness: .95 });
       var fenM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6a3c, roughness: .8 });
