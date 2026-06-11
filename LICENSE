@@ -33,6 +33,8 @@ without the author's permission.
 
 Third-party / bundled assets:
 - vendor/three.min.js — Three.js, (c) Three.js Authors, MIT License.
+- assets/tex/ (grass, sand, wood PBR texture maps) — from Poly Haven
+  (polyhaven.com), CC0 / public domain. Not subject to the reservation above.
 - assets/fonts/Wantedo.ttf — "Wantedo" display font, included for the Western
   look. If its license does not permit redistribution in your context, remove
   the file; the game falls back to Georgia automatically (font-display: swap).
