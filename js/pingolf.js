@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 80 · REAL HORIZON';
+  var BUILD = 'BUILD 81 · BRAND SKY BACK';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -415,7 +415,7 @@
       R3.scene.add(new T.HemisphereLight(0xffdca6, 0x3a2c1c, 0.32));
       var sun = new T.DirectionalLight(0xffd290, 1.32); sun.position.set(-700, 1400, -300); sun.castShadow = true;
       sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
-      var sc = sun.shadow.camera; sc.near = 100; sc.far = 5600; sc.left = -1800; sc.right = 1800; sc.top = 1800; sc.bottom = -1800;
+      var sc = sun.shadow.camera; sc.near = 100; sc.far = 4400; sc.left = -1150; sc.right = 1150; sc.top = 1150; sc.bottom = -1150;   // tight frustum around the table = much crisper shadows from the same 2048 map
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
       var rim = new T.DirectionalLight(0x9ec8ff, 0.52); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -950, y: 850, z: -550 };
@@ -487,7 +487,8 @@
     });
   }
   function turfTex() { return turfTex2().map; }
-  function ballTex() { return tex('ball', 64, 64, function (x) { x.fillStyle = '#f7f3ea'; x.fillRect(0, 0, 64, 64); x.fillStyle = 'rgba(150,150,160,.4)'; for (var i = 6; i < 64; i += 11) for (var j = (i / 11 % 2 ? 11 : 5); j < 64; j += 11) { x.beginPath(); x.arc(j, i, 2.1, 0, 7); x.fill(); } x.fillStyle = '#c0202a'; x.beginPath(); x.arc(42, 30, 6, 0, 7); x.fill(); }); }
+  function ballTex() { return tex('ball', 128, 128, function (x) { x.fillStyle = '#f7f3ea'; x.fillRect(0, 0, 128, 128); x.fillStyle = 'rgba(150,150,160,.35)'; for (var i = 12; i < 128; i += 22) for (var j = (i / 22 % 2 ? 22 : 10); j < 128; j += 22) { x.beginPath(); x.arc(j, i, 4.2, 0, 7); x.fill(); } x.fillStyle = '#c0202a'; x.beginPath(); x.arc(84, 60, 12, 0, 7); x.fill(); }); }
+  function ballBump() { return tex('ballB', 128, 128, function (x) { x.fillStyle = '#888'; x.fillRect(0, 0, 128, 128); for (var i = 12; i < 128; i += 22) for (var j = (i / 22 % 2 ? 22 : 10); j < 128; j += 22) { var g = x.createRadialGradient(j, i, 0.5, j, i, 4.6); g.addColorStop(0, '#3a3a3a'); g.addColorStop(.75, '#6a6a6a'); g.addColorStop(1, '#888'); x.fillStyle = g; x.beginPath(); x.arc(j, i, 4.6, 0, 7); x.fill(); } }); }
 
   /* ---------------- AAA film look: IBL env, gradient skies, wood grain, post FX ---------------- */
   function initEnv() {   // warm desert equirect -> PMREM: gives every metal/gloss surface real reflections
@@ -503,7 +504,7 @@
       R3.env = pm.fromEquirectangular(t).texture; pm.dispose(); t.dispose();
     } catch (e) { R3.env = null; }
   }
-  var SKYGRAD = { grass: ['#6f9fcb', '#9dc2dd', '#d9e4ea'], ice: ['#e4d4ac', '#e9dcb4', '#dfcba4'], moon: ['#e6deb6', '#d8cdb2', '#bdaec6'], mud: ['#ee9e4a', '#f2b65a', '#f6c97c'], rubber: ['#d9cfa9', '#e0d7b1', '#e8dfbb'], speed: ['#70c2ac', '#8cccb6', '#eaa97c'], sand: ['#cfba82', '#dcc794', '#e8d4a2'] };   // gradient tops continue each painting's sky above the panorama
+  var SKYGRAD = { grass: ['#7cc0cc', '#b7d8d2', '#eec79e'], ice: ['#e4d4ac', '#e9dcb4', '#dfcba4'], moon: ['#e6deb6', '#d8cdb2', '#bdaec6'], mud: ['#ee9e4a', '#f2b65a', '#f6c97c'], rubber: ['#d9cfa9', '#e0d7b1', '#e8dfbb'], speed: ['#70c2ac', '#8cccb6', '#eaa97c'], sand: ['#cfba82', '#dcc794', '#e8d4a2'] };   // gradient tops continue each painting's sky above the panorama
   function skyTex(theme, fallback) {   // vertical gradient sky (zenith -> warm horizon) instead of a flat color
     var cols = SKYGRAD[theme]; if (!cols) { var hx = '#' + new T.Color(fallback).getHexString(); cols = [hx, hx, hx]; }
     return tex('sky_' + theme, 4, 256, function (x) { var g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, cols[0]); g.addColorStop(0.62, cols[1]); g.addColorStop(1, cols[2]); x.fillStyle = g; x.fillRect(0, 0, 4, 256); });
@@ -583,7 +584,7 @@
     var t2 = new T.CanvasTexture(c); if (T.sRGBEncoding) t2.encoding = T.sRGBEncoding; R3['_' + key] = t2; return t2;
   }
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
-  var BGMAP = { grass: 'pano-desert.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
+  var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
   var GROUNDC = { grass: 0xe3d2a8, sand: 0xe6c486, mud: 0xddaab0, speed: 0xc89894, rubber: 0xd6c290, moon: 0xa89cc2, ice: 0xd0b890 };   // warm desert-beige sand tints (grass = pure beige to match the sunset backdrop floor)
   var FOGC = { grass: 0xd8895c, sand: 0xe0b878, mud: 0xdfa3ac, speed: 0xc08c84, rubber: 0xd4c08c, moon: 0xa898c4, ice: 0xceb084 };   // distance haze tuned to each painting's horizon so the skirt melts into the art
   function panoAlpha() {   // vertical fade: painting melts into the ground skirt like distance haze (also hides the cylinder facet line)
@@ -804,7 +805,7 @@
       var rokM2 = new T.MeshStandardMaterial({ color: 0x8a7458, roughness: .95 });
       var fenM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#fen', true), normalMap: photoTex('wood_n.jpg#fen', false), color: 0xb98c5a, roughness: .8 });
       var moonRokM = new T.MeshStandardMaterial({ color: 0x6a6280, roughness: .95, flatShading: true });
-      var cacVM = new T.MeshStandardMaterial({ vertexColors: true, roughness: .72, envMapIntensity: .2 });
+      var cacVM = new T.MeshStandardMaterial({ vertexColors: true, roughness: .88, envMapIntensity: .08 });
       var ribCol = function (geo, rib, c1, c2) {   // ridge/valley vertex shading — gives the ribs real depth under the sun
         var pos = geo.attributes.position, col = new Float32Array(pos.count * 3), CA = new T.Color(c1), CB = new T.Color(c2); if (CA.convertSRGBToLinear) { CA.convertSRGBToLinear(); CB.convertSRGBToLinear(); }
         for (var i = 0; i < pos.count; i++) { var th = Math.atan2(pos.getZ(i), pos.getX(i)), rv = Math.sin(th * rib) * 0.5 + 0.5, cc = CB.clone().lerp(CA, 0.3 + rv * 0.7); col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b; }
@@ -820,17 +821,17 @@
         var tg = new T.CylinderGeometry(cr * .8, cr, ch, 64, 20);
         var tp = tg.attributes.position; var lean = (prnd(seed * 3.1) - .5) * cr * 0.5;
         for (var i = 0; i < tp.count; i++) { var ty = (tp.getY(i) + ch / 2) / ch; tp.setX(i, tp.getX(i) + Math.sin(ty * PI * 0.5) * lean); }
-        ribDisp(tg, RIB, 0.15); ribCol(tg, RIB, 0x4d8438, 0x2c5722);
+        ribDisp(tg, RIB, 0.15); ribCol(tg, RIB, 0x3f7230, 0x21451a);
         var trunk = new T.Mesh(tg, cacVM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk);
-        var cg = new T.SphereGeometry(cr * .8, 64, 24, 0, TAU, 0, PI / 2); ribDisp(cg, RIB, 0.15); ribCol(cg, RIB, 0x558e3e, 0x2c5722);
+        var cg = new T.SphereGeometry(cr * .8, 64, 24, 0, TAU, 0, PI / 2); ribDisp(cg, RIB, 0.15); ribCol(cg, RIB, 0x477c35, 0x21451a);
         var crown = new T.Mesh(cg, cacVM); crown.position.set(lean, ch, 0); crown.castShadow = true; cac.add(crown);
         var na = 1 + (prnd(seed + 17) > 0.45 ? 1 : 0);
         for (var ai = 0; ai < na; ai++) {
           var sgn = ai ? -1 : 1, ay = ch * (0.38 + prnd(seed + 19 + ai) * 0.22), al = ch * (0.3 + prnd(seed + 29 + ai) * 0.25), ar = cr * (0.5 + prnd(seed + 31 + ai) * 0.12);
           var crv = new T.CatmullRomCurve3([new T.Vector3(sgn * cr * 0.5, ay, 0), new T.Vector3(sgn * cr * 2.1, ay + cr * 0.4, 0), new T.Vector3(sgn * cr * 2.7, ay + cr * 1.6, 0), new T.Vector3(sgn * cr * 2.8, ay + al, 0)]);
-          var ag = new T.TubeGeometry(crv, 32, ar, 24, false); ribCol(ag, RIB, 0x4d8438, 0x335f27);
+          var ag = new T.TubeGeometry(crv, 32, ar, 24, false); ribCol(ag, RIB, 0x3f7230, 0x27521e);
           var arm = new T.Mesh(ag, cacVM); arm.castShadow = true; cac.add(arm);
-          var eg = new T.SphereGeometry(ar, 32, 18); ribCol(eg, RIB, 0x558e3e, 0x36632a);
+          var eg = new T.SphereGeometry(ar, 32, 18); ribCol(eg, RIB, 0x477c35, 0x2a5520);
           var ecap = new T.Mesh(eg, cacVM); ecap.position.set(sgn * cr * 2.8, ay + al, 0); ecap.castShadow = true; cac.add(ecap);
         }
         return cac;
@@ -1122,7 +1123,7 @@
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
-      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; R3.group.add(m); R3.ballMeshes.push(m);
+      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; R3.group.add(m); R3.ballMeshes.push(m);
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
       var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
