@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 71 · AAA POLISH';
+  var BUILD = 'BUILD 72 · PROP DETAIL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -815,7 +815,7 @@
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
-    var bumpGlass = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xfff2cf, metalness: .05, roughness: .05, transparent: true, opacity: .4, envMapIntensity: 2.0, clearcoat: 1, clearcoatRoughness: .04, side: T.DoubleSide }) : new T.MeshStandardMaterial({ color: 0xfff2cf, transparent: true, opacity: .4, roughness: .08 });
+    var bumpGlass = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xfff2cf, metalness: .05, roughness: .05, transparent: true, opacity: .22, envMapIntensity: 2.0, clearcoat: 1, clearcoatRoughness: .04, side: T.DoubleSide }) : new T.MeshStandardMaterial({ color: 0xfff2cf, transparent: true, opacity: .22, roughness: .08 });
     hole.bumpers.forEach(function (bm, bmi) {
       var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r;
       var cs = new T.Mesh(new T.CircleGeometry(r * 1.4, 24), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .4 })); cs.rotation.x = -PI / 2; cs.position.set(bm.x, gy + 1.2, bm.z); R3.group.add(cs);
@@ -825,7 +825,8 @@
       var core = new T.Mesh(new T.SphereGeometry(r * 0.46, 18, 14), coreM); core.position.y = 30 + r * 0.16; g.add(core); bm.coreM = coreM;
       var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 28, 18, 0, TAU, 0, PI * 0.58), bumpGlass); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
       var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 32), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap);   // classic red bumper cap seen from above
-      var btn = new T.Mesh(new T.CylinderGeometry(r * 0.26, r * 0.3, 5, 18), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
+      var stripe = new T.Mesh(new T.TorusGeometry(r * 0.58, 2.2, 8, 26), new T.MeshStandardMaterial({ color: 0xf5ead0, roughness: .5 })); stripe.rotation.x = -PI / 2; stripe.position.y = 30 + r * 0.6; g.add(stripe);
+      var btn = new T.Mesh(new T.CylinderGeometry(r * 0.2, r * 0.24, 5, 18), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
       var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 12, 34), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
       var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 20, 14), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
       var glow = new T.Mesh(new T.CircleGeometry(r * 1.95, 28), new T.MeshBasicMaterial({ color: 0xffc24e, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); glow.rotation.x = -PI / 2; glow.position.y = 2.6; g.add(glow); bm.glow = glow;
@@ -838,9 +839,9 @@
     // boosters
     hole.boosters.forEach(function (z) {
       var gy = hole.terrain(z.x, z.z), g = new T.Group();
-      var pad = new T.Mesh(new T.CircleGeometry(z.r, 28), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466aa, emissiveIntensity: .55, transparent: true, opacity: .5, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.y = 2.5; g.add(pad);
+      var pad = new T.Mesh(new T.CircleGeometry(z.r, 28), new T.MeshStandardMaterial({ color: 0x1d86d8, emissive: 0x14589c, emissiveIntensity: .7, transparent: true, opacity: .78, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.y = 2.5; g.add(pad);
       var rim = new T.Mesh(new T.TorusGeometry(z.r, 4.5, 8, 30), new T.MeshStandardMaterial({ color: 0x4ad0ff, emissive: 0x1f8ad0, emissiveIntensity: .8, roughness: .35 })); rim.rotation.x = -PI / 2; rim.position.y = 3; g.add(rim);
-      var chevM = new T.MeshBasicMaterial({ color: 0xbdeaff, transparent: true, opacity: .9, side: T.DoubleSide, depthWrite: false });
+      var chevM = new T.MeshBasicMaterial({ color: 0xf2fbff, transparent: true, opacity: .95, side: T.DoubleSide, depthWrite: false });
       [0, -0.5].forEach(function (off) {   // flat glowing chevrons pointing the launch direction (no more white teepee cone)
         var zz = z.r * off, cg = new T.BufferGeometry();
         cg.setAttribute('position', new T.BufferAttribute(new Float32Array([0, 4, z.r * 0.72 + zz, -z.r * 0.46, 4, z.r * 0.1 + zz, 0, 4, z.r * 0.32 + zz, 0, 4, z.r * 0.32 + zz, z.r * 0.46, 4, z.r * 0.1 + zz, 0, 4, z.r * 0.72 + zz]), 3));
@@ -916,7 +917,14 @@
     });
     (hole.coins || []).forEach(function (cn) {
       var g = hole.terrain(cn.x, cn.z);
-      var coin = new T.Mesh(new T.TorusGeometry(22, 7, 10, 18), new T.MeshStandardMaterial({ color: 0xffd54a, emissive: 0xc89a10, emissiveIntensity: .85, metalness: .9, roughness: .18, envMapIntensity: 1.4 })); coin.position.set(cn.x, g + 40, cn.z); coin.castShadow = true; outline(coin, 1.18); R3.group.add(coin); cn.mesh = coin;
+      var coinM = new T.MeshStandardMaterial({ color: 0xffd54a, emissive: 0xc89a10, emissiveIntensity: .5, metalness: .9, roughness: .22, envMapIntensity: 1.4 });
+      var coinM2 = new T.MeshStandardMaterial({ color: 0xa97c10, emissive: 0x6e4f06, emissiveIntensity: .45, metalness: .9, roughness: .32 });
+      var grp = new T.Group();
+      var disc = new T.Mesh(new T.CylinderGeometry(24, 24, 6, 28), coinM); disc.rotation.x = PI / 2; disc.castShadow = true; grp.add(disc);
+      var crim = new T.Mesh(new T.CylinderGeometry(26.5, 26.5, 3.2, 28), coinM2); crim.rotation.x = PI / 2; grp.add(crim);   // milled darker edge ring
+      var starShp = new T.Shape(); for (var si = 0; si < 10; si++) { var sa = si / 10 * TAU - PI / 2, sr = si % 2 ? 7.5 : 16, sx = Math.cos(sa) * sr, sy = Math.sin(sa) * sr; si ? starShp.lineTo(sx, sy) : starShp.moveTo(sx, sy); }
+      var star = new T.Mesh(new T.ExtrudeGeometry(starShp, { depth: 9, bevelEnabled: false }), coinM2); star.position.z = -4.5; grp.add(star);   // sheriff star embossed through both faces
+      grp.position.set(cn.x, g + 40, cn.z); R3.group.add(grp); cn.mesh = grp;
     });
     (hole.powerups || []).forEach(function (pu) {
       var g = hole.terrain(pu.x, pu.z), cfg = PU[pu.kind] || PU.magnet;
