@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 79 · SHOWPIECE';
+  var BUILD = 'BUILD 80 · REAL HORIZON';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -503,7 +503,7 @@
       R3.env = pm.fromEquirectangular(t).texture; pm.dispose(); t.dispose();
     } catch (e) { R3.env = null; }
   }
-  var SKYGRAD = { grass: ['#7cc0cc', '#b7d8d2', '#eec79e'], ice: ['#e4d4ac', '#e9dcb4', '#dfcba4'], moon: ['#e6deb6', '#d8cdb2', '#bdaec6'], mud: ['#ee9e4a', '#f2b65a', '#f6c97c'], rubber: ['#d9cfa9', '#e0d7b1', '#e8dfbb'], speed: ['#70c2ac', '#8cccb6', '#eaa97c'], sand: ['#cfba82', '#dcc794', '#e8d4a2'] };   // gradient tops continue each painting's sky above the panorama
+  var SKYGRAD = { grass: ['#6f9fcb', '#9dc2dd', '#d9e4ea'], ice: ['#e4d4ac', '#e9dcb4', '#dfcba4'], moon: ['#e6deb6', '#d8cdb2', '#bdaec6'], mud: ['#ee9e4a', '#f2b65a', '#f6c97c'], rubber: ['#d9cfa9', '#e0d7b1', '#e8dfbb'], speed: ['#70c2ac', '#8cccb6', '#eaa97c'], sand: ['#cfba82', '#dcc794', '#e8d4a2'] };   // gradient tops continue each painting's sky above the panorama
   function skyTex(theme, fallback) {   // vertical gradient sky (zenith -> warm horizon) instead of a flat color
     var cols = SKYGRAD[theme]; if (!cols) { var hx = '#' + new T.Color(fallback).getHexString(); cols = [hx, hx, hx]; }
     return tex('sky_' + theme, 4, 256, function (x) { var g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, cols[0]); g.addColorStop(0.62, cols[1]); g.addColorStop(1, cols[2]); x.fillStyle = g; x.fillRect(0, 0, 4, 256); });
@@ -583,7 +583,7 @@
     var t2 = new T.CanvasTexture(c); if (T.sRGBEncoding) t2.encoding = T.sRGBEncoding; R3['_' + key] = t2; return t2;
   }
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
-  var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
+  var BGMAP = { grass: 'pano-desert.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
   var GROUNDC = { grass: 0xe3d2a8, sand: 0xe6c486, mud: 0xddaab0, speed: 0xc89894, rubber: 0xd6c290, moon: 0xa89cc2, ice: 0xd0b890 };   // warm desert-beige sand tints (grass = pure beige to match the sunset backdrop floor)
   var FOGC = { grass: 0xd8895c, sand: 0xe0b878, mud: 0xdfa3ac, speed: 0xc08c84, rubber: 0xd4c08c, moon: 0xa898c4, ice: 0xceb084 };   // distance haze tuned to each painting's horizon so the skirt melts into the art
   function panoAlpha() {   // vertical fade: painting melts into the ground skirt like distance haze (also hides the cylinder facet line)
@@ -595,11 +595,14 @@
   }
   function panoMat(name) {
     var key = 'pano_' + name; if (R3['_' + key]) return R3['_' + key];
-    var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a, transparent: true, alphaMap: panoAlpha() });
+    var photo = name.indexOf('pano-') === 0;
+    var m = new T.MeshBasicMaterial(photo ? { side: T.BackSide, fog: false, color: 0xbfa98a } : { side: T.BackSide, fog: false, color: 0xbfa98a, transparent: true, alphaMap: panoAlpha() });   // photo pano keeps its own ground as the distant valley floor — no haze dissolve
     if ('toneMapped' in m) m.toneMapped = false;
     var t = new T.TextureLoader().load('assets/' + name, function () { m.color.set(0xffffff); m.needsUpdate = true; });
     if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
-    t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(4, 1.12); t.offset.y = 0.22; m.map = t;   // mirrored wrap = no visible seam (the paintings aren't tileable); land band at eye level, painted sky above, clamped sky-top blends into the gradient
+    if (photo) { t.wrapS = T.RepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(1, 0.5); t.offset.y = 0.18; }   // photographic 360° pano: wraps seamlessly once; vertical zoom puts the mountain line at eye level
+    else { t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(4, 1.12); t.offset.y = 0.22; }
+    m.map = t;   // mirrored wrap = no visible seam (the paintings aren't tileable); land band at eye level, painted sky above, clamped sky-top blends into the gradient
     R3['_' + key] = m; return m;
   }
   function spriteMat(name) {
