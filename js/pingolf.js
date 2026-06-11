@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 68 · REAL CUP + CLEAN HORIZON';
+  var BUILD = 'BUILD 69 · A/D FLIPPERS · ARROW CAM · DESERT FLOOR';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -472,7 +472,22 @@
       }
     }, [3, 1]);
   }
-  function skirtTex() { return tex('skirt', 256, 256, function (x) { var g = x.createRadialGradient(128, 128, 20, 128, 128, 182); g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#c2c2c2'); g.addColorStop(1, '#4a4a4a'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }); }
+  function skirtTex() {   // seamless desert SAND ground — light & warm so GROUNDC tints it to beige; dune ripples + grain + pebbles so the floor reads as real desert, not flat color
+    return tex('skirt', 256, 256, function (x) {
+      function rnd(n) { var v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
+      x.fillStyle = '#e6d8bc'; x.fillRect(0, 0, 256, 256);                                   // light warm sand base
+      for (var d = 0; d < 6; d++) {                                                          // wind-blown dune ripples (sine = seamless across x)
+        var baseY = d * 42 + 8; x.strokeStyle = 'rgba(150,122,80,0.09)'; x.lineWidth = 11; x.beginPath();
+        for (var px = 0; px <= 256; px += 4) { var py = baseY + Math.sin(px / 256 * TAU * 3) * 6; if (px === 0) x.moveTo(px, py); else x.lineTo(px, py); }
+        x.stroke();
+        x.strokeStyle = 'rgba(255,250,232,0.08)'; x.lineWidth = 3; x.beginPath();
+        for (px = 0; px <= 256; px += 4) { py = baseY + 5 + Math.sin(px / 256 * TAU * 3) * 6; if (px === 0) x.moveTo(px, py); else x.lineTo(px, py); }
+        x.stroke();
+      }
+      for (var i = 0; i < 2600; i++) { var gx = rnd(i) * 256, gy = rnd(i + 7) * 256, br = rnd(i + 13); x.fillStyle = br > 0.5 ? 'rgba(255,250,235,' + (0.05 + rnd(i + 3) * 0.10).toFixed(2) + ')' : 'rgba(120,96,60,' + (0.04 + rnd(i + 5) * 0.10).toFixed(2) + ')'; x.fillRect(gx, gy, 1.6, 1.6); }   // fine grain speckle
+      for (var p = 0; p < 64; p++) { var rx = rnd(p * 3.7) * 256, ry = rnd(p * 5.3 + 1) * 256, rr = 1.4 + rnd(p * 2.1) * 3; x.fillStyle = 'rgba(112,88,56,' + (0.10 + rnd(p) * 0.13).toFixed(2) + ')'; x.beginPath(); x.arc(rx, ry, rr, 0, TAU); x.fill(); x.fillStyle = 'rgba(255,248,230,0.10)'; x.beginPath(); x.arc(rx - rr * 0.3, ry - rr * 0.3, rr * 0.5, 0, TAU); x.fill(); }   // scattered pebbles
+    });
+  }
   function moteTex() { return tex('mote', 32, 32, function (x) { var g = x.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); }); }
   function flagTex() {   // the pin pennant: brand red with the gold star, ink border
     return tex('flag', 128, 64, function (x) {
@@ -503,7 +518,7 @@
   }
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
   var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
-  var GROUNDC = { grass: 0xd0784c, sand: 0xdfae66, mud: 0xd8a0ac, speed: 0xb88484, rubber: 0xcdb682, moon: 0x9e90be, ice: 0xc8a87a };
+  var GROUNDC = { grass: 0xe3d2a8, sand: 0xe6c486, mud: 0xddaab0, speed: 0xc89894, rubber: 0xd6c290, moon: 0xa89cc2, ice: 0xd0b890 };   // warm desert-beige sand tints (grass = pure beige to match the sunset backdrop floor)
   var FOGC = { grass: 0xd8895c, sand: 0xe0b878, mud: 0xdfa3ac, speed: 0xc08c84, rubber: 0xd4c08c, moon: 0xa898c4, ice: 0xceb084 };   // distance haze tuned to each painting's horizon so the skirt melts into the art
   function panoAlpha() {   // vertical fade: painting melts into the ground skirt like distance haze (also hides the cylinder facet line)
     if (R3._panoA) return R3._panoA;
@@ -696,7 +711,8 @@
     })();
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
+    var skirtT = skirtTex(), srep = Math.max(8, Math.round(pr / 190)); skirtT.repeat.set(srep, srep);   // TILE the sand so the desert ground shows real grain instead of one stretched blur
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtT, color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
     if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
     // ATMOSPHERE — drifting dust motes hang in the air and catch the golden light (near ones defocus into bokeh)
@@ -1402,8 +1418,8 @@
     if (St.state === 'aim') powerMeter(c, w, h);
     if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 58px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = 9; c.strokeStyle = 'rgba(16,8,3,.95)'; c.strokeText(St.banner, w / 2, h * .4); c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
     c.globalAlpha = 0.85;
-    if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE', w / 2, h - 14, 13, COL.cream, 'center');
-    else if (St.state === 'roll') hudTxt(c, 'TAP LEFT / RIGHT TO FIRE THE FLIPPERS', w / 2, h - 14, 13, COL.cream, 'center');
+    if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
+    else if (St.state === 'roll') hudTxt(c, 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
     c.globalAlpha = 1;
   }
   // simulate the shot forward (gravity, terrain, roll friction, wall bounces) so the aim guide shows the real path + bank shots
@@ -1470,7 +1486,19 @@
   function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'L' : 'R'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
   function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0, len = Math.sqrt(dx * dx + dy * dy); St.drag.pull = len; if (len > 8) St.aimYaw = St.drag.yaw0 + Math.atan2(dx, dy); St.power = clamp(len / K.pullPx, 0.05, 1); }   // SLINGSHOT: pull any way — the shot fires the opposite way, full 360° incl. backwards
   function onUp(e) { if (ED.on) { edUp(); return; } if (St.ptr) { var role = St.ptr[e.pointerId]; if (role === 'L' || role === 'R') { delete St.ptr[e.pointerId]; var any = false; for (var k in St.ptr) if (St.ptr[k] === role) any = true; flipPress(role, any); return; } delete St.ptr[e.pointerId]; } if (!St.drag) return; var pull = St.drag.pull; St.drag = null; if (pull >= 14) shoot(); }
-  function onKey(down, e) { var k = e.code; if (St.state === 'roll') { if (k === 'ArrowLeft' || k === 'KeyA') { flipPress('L', down); e.preventDefault(); } else if (k === 'ArrowRight' || k === 'KeyD') { flipPress('R', down); e.preventDefault(); } } else if (down && St.state === 'aim') { if (k === 'ArrowLeft' || k === 'KeyA') { St.camOrbit -= 0.06; e.preventDefault(); } else if (k === 'ArrowRight' || k === 'KeyD') { St.camOrbit += 0.06; e.preventDefault(); } } }
+  function onKey(down, e) {
+    var k = e.code; if (ED.on || St.state === 'load') return;
+    // A / D fire the flippers — available AT ANY TIME (they animate in every state; they bat the ball while it's rolling)
+    if (k === 'KeyA') { flipPress('L', down); e.preventDefault(); return; }
+    if (k === 'KeyD') { flipPress('R', down); e.preventDefault(); return; }
+    // arrow keys drive the CAMERA only — left/right orbit, up/down zoom
+    if (down) {
+      if (k === 'ArrowLeft') { St.camOrbit -= 0.08; e.preventDefault(); }
+      else if (k === 'ArrowRight') { St.camOrbit += 0.08; e.preventDefault(); }
+      else if (k === 'ArrowUp') { R3.zoom = clamp(R3.zoom * 0.94, 0.55, 1.8); e.preventDefault(); }
+      else if (k === 'ArrowDown') { R3.zoom = clamp(R3.zoom * 1.06, 0.55, 1.8); e.preventDefault(); }
+    }
+  }
 
   /* ================================================================ LEVEL EDITOR */
   var ED = { on: false, brush: 'draw', sel: null, scale: 1, ox: 0, oz: 0, moving: false, seg: null, poly: null, drawing: null, erasing: false, painting: false, lastPaint: null, dragHandle: null, size: 240, smoothAmt: 2, dom: {}, curS: null, flash: null, undo: [], redo: [], snap: 20, snapOn: true, view3d: false, orb: { yaw: -0.5, pitch: 0.62, dist: 1.35 }, camDrag: null, palOpen: true, panelOpen: true };
