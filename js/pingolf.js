@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 87 · REAL LOOP';
+  var BUILD = 'BUILD 88 · HELIX LOOP';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1057,13 +1057,13 @@
     // cup + flag
     (hole.loops || []).forEach(function (lo) {   // REAL mini-golf loop-de-loop: a galvanized steel CHANNEL — full ring trough with side walls and flat entry/exit tongues at the bottom (see any crazy-golf loop)
       var gy = hole.terrain(lo.x, lo.z), r = lo.r, fwx = Math.sin(lo.ang), fwz = Math.cos(lo.ang), ltx = Math.cos(lo.ang), ltz = -Math.sin(lo.ang);
-      var cx = lo.x, cy = gy + r, cz = lo.z, W = 64, WALL = 20, SEG = 128;
+      var cx = lo.x, cy = gy + r, cz = lo.z, W = 64, WALL = 20, SEG = 128, SHIFT = W + 14;   // total lateral twist over one turn: a track-width + clearance, so entry and exit sit side by side
       var steelM = new T.MeshStandardMaterial({ color: 0xc9ced4, metalness: .88, roughness: .32, envMapIntensity: 1.6, side: T.DoubleSide });
       function channelRing() {   // three swept strips: floor + two side walls, riding surface on the INSIDE of the ring
         var pos = [], idx = [], rows = SEG + 1;
         for (var i2 = 0; i2 < rows; i2++) {
-          var th = i2 / SEG * TAU, fx2 = Math.sin(th) * r, fy2 = cy - Math.cos(th) * r;
-          var bxw = cx + fwx * fx2, bzw = cz + fwz * fx2, inx = (cx - bxw) / r, iny = (cy - fy2) / r, inz = (cz - bzw) / r;
+          var th = i2 / SEG * TAU, fx2 = Math.sin(th) * r, fy2 = cy - Math.cos(th) * r, latS = (i2 / SEG - 0.5) * SHIFT;   // the HELIX: each step around also slides sideways
+          var bxw = cx + fwx * fx2 + ltx * latS, bzw = cz + fwz * fx2 + ltz * latS, inx = (cx + ltx * latS - bxw) / r, iny = (cy - fy2) / r, inz = (cz + ltz * latS - bzw) / r;
           // 4 verts per row: wallL top, floor L, floor R, wallR top
           pos.push(bxw + ltx * W / 2 + inx * WALL, fy2 + iny * WALL, bzw + ltz * W / 2 + inz * WALL,
                    bxw + ltx * W / 2, fy2, bzw + ltz * W / 2,
@@ -1075,8 +1075,8 @@
         var mm = new T.Mesh(gg, steelM); mm.castShadow = true; R3.group.add(mm);
       }
       channelRing();
-      [-1, 1].forEach(function (sd) {   // flat entry/exit tongues, channel-section, lying on the turf at the bottom of the ring
-        var TL = r * 0.85, tcx = cx + fwx * sd * TL / 2, tcz = cz + fwz * sd * TL / 2, tgy = hole.terrain(tcx, tcz);
+      [-1, 1].forEach(function (sd) {   // flat entry/exit tongues — each on ITS side of the twist, so they sit beside each other instead of colliding
+        var TL = r * 0.85, tcx = cx + fwx * sd * TL / 2 + ltx * sd * SHIFT / 2, tcz = cz + fwz * sd * TL / 2 + ltz * sd * SHIFT / 2, tgy = hole.terrain(tcx, tcz);
         var tg2 = new T.Group();
         var fl = new T.Mesh(new T.BoxGeometry(TL, 3, W), steelM); fl.position.y = 1.5; fl.receiveShadow = true; tg2.add(fl);
         [-1, 1].forEach(function (ws) { var wl = new T.Mesh(new T.BoxGeometry(TL, WALL * (sd === 1 ? 0.9 : 0.9), 3), steelM); wl.position.set(0, WALL * 0.45, ws * (W / 2 - 1.5)); wl.castShadow = true; tg2.add(wl); });
@@ -1192,12 +1192,13 @@
     pop3d(b.x, b.z, b.y, 'ZAP!', '#ff4a5a'); spark(b.x, b.y + 14, b.z, 10); St.shake = Math.min(8, St.shake + 4); sfx('tick');
   }
   function stepLoop(b, dt) {
-    var lo = b.loop, rr = lo.r - K.R - 4;   // ball rides the INSIDE of the deck
+    var lo = b.loop, rr = lo.r - K.R - 4;   // ball rides the INSIDE of the channel
     lo.t += (lo.ride / (TAU * rr)) * dt;
     var th = lo.t * TAU, fx = Math.sin(lo.ang), fz = Math.cos(lo.ang), s = Math.sin(th);
-    b.x = lo.x + s * rr * fx; b.z = lo.z + s * rr * fz; b.y = lo.gy + K.R + rr * (1 - Math.cos(th));
+    var lat = (lo.t - 0.5) * lo.shift * lo.fsgn;   // the helix slide: enter on one side, exit on the other
+    b.x = lo.x + s * rr * fx + lo.lx * lat; b.z = lo.z + s * rr * fz + lo.lz * lat; b.y = lo.gy + K.R + rr * (1 - Math.cos(th));
     b.vx = fx * lo.ride * Math.cos(th); b.vz = fz * lo.ride * Math.cos(th); b.vy = 0; b.air = true; b.stillT = 0; b.settled = false;
-    if (lo.t >= 1) { b.x = lo.x + fx * lo.r * .6; b.z = lo.z + fz * lo.r * .6; b.y = lo.gy + K.R; b.vx = fx * lo.sp * 1.12; b.vz = fz * lo.sp * 1.12; b.vy = 0; b.air = false; b.loop = null; b.loopCd = .5; pop3d(b.x, b.z, b.y, 'LOOP BOOST!', COL.gold); St.shake = Math.min(10, St.shake + 6); sfx('boost'); }
+    if (lo.t >= 1) { var lEnd = lo.shift / 2 * lo.fsgn; b.x = lo.x + fx * lo.r * .6 + lo.lx * lEnd; b.z = lo.z + fz * lo.r * .6 + lo.lz * lEnd; b.y = lo.gy + K.R; b.vx = fx * lo.sp * 1.12; b.vz = fz * lo.sp * 1.12; b.vy = 0; b.air = false; b.loop = null; b.loopCd = .5; pop3d(b.x, b.z, b.y, 'LOOP BOOST!', COL.gold); St.shake = Math.min(10, St.shake + 6); sfx('boost'); }
   }
   function stepBall(b, dt, hole) {
     if (b.sunk || b.dead) return;
@@ -1257,7 +1258,7 @@
     for (i = 0; i < hole.boosters.length; i++) { var z = hole.boosters[i]; if (b.boostCd <= 0 && b.y < gy + 70 && hyp(b.x - z.x, b.z - z.z) < z.r) { b.vx = z.dx * z.spd; b.vz = z.dz * z.spd; b.boostCd = K.boostCd; z.flash = .3; St.shake = Math.min(11, St.shake + 7); pop3d(z.x, z.z, gy, 'TURBO!', COL.blue); spark(z.x, gy + 16, z.z, 16); spawnShock(z.x, gy, z.z, COL.blue); sfx('boost'); break; } }
     // loop-de-loop (enter from either side with enough speed; ball rides the vertical loop, exits boosted)
     var lps = hole.loops || [];
-    for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 72) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 800 && sp2 > 900) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(Math.max(sp2, 1800), 4200), ride: Math.min(Math.max(sp2 * 0.7, 1500), 2400), gy: hole.terrain(lo2.x, lo2.z) }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); spawnShock(lo2.x, hole.terrain(lo2.x, lo2.z), lo2.z, COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
+    for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 72) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 800 && sp2 > 900) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(Math.max(sp2, 1800), 4200), ride: Math.min(Math.max(sp2 * 0.7, 1500), 2400), gy: hole.terrain(lo2.x, lo2.z), shift: lo2.r ? 78 : 78, lx: Math.cos(lo2.ang), lz: -Math.sin(lo2.ang), fsgn: fwd >= 0 ? 1 : -1 }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); spawnShock(lo2.x, hole.terrain(lo2.x, lo2.z), lo2.z, COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
     // drop holes / warps — roll in, fall to the linked exit (lower tier)
     if (b.warpCd > 0) b.warpCd -= dt;
     var wps = hole.warps || [];
