@@ -89,23 +89,19 @@
   .section h2{ font-family:Wantedo,Georgia; text-align:center; color:var(--gold); font-size:clamp(30px,6vw,56px); letter-spacing:1px; text-shadow:3px 3px 0 var(--ink); }
   .section .sub{ text-align:center; color:#d8c4a2; margin-top:8px; font-size:16px; }
 
-  .grid{ margin-top:40px; display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); }
-  .card{ background:linear-gradient(180deg,#2c1d11,#1b1109); border:2px solid #4a3320; border-radius:16px; padding:26px 22px;
-    box-shadow:inset 0 1px 0 rgba(245,197,66,.12), 0 8px 18px rgba(0,0,0,.4); transition:transform .12s, border-color .12s; }
-  .card:hover{ transform:translateY(-4px); border-color:var(--gold-d); }
-  .card .ic{ font-size:40px; line-height:1; }
-  .card h3{ font-family:Wantedo,Georgia; color:var(--gold); font-size:23px; letter-spacing:.5px; margin:14px 0 8px; }
-  .card p{ color:#ddcbab; font-size:14.5px; line-height:1.55; }
+  /* features: open type on the page — no cards, no borders, no boxes */
+  .grid{ margin-top:48px; display:grid; gap:44px 56px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+  .card{ background:none; border:none; padding:0; }
+  .card .ic{ font-size:44px; line-height:1; filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
+  .card h3{ font-family:Wantedo,Georgia; color:var(--gold); font-size:27px; letter-spacing:.5px; margin:14px 0 8px; }
+  .card p{ color:#ddcbab; font-size:15.5px; line-height:1.6; }
 
-  /* ===== screenshots ===== */
-  .shots{ margin-top:40px; display:grid; gap:18px; grid-template-columns:1fr 1fr; }
-  .shot{ position:relative; border:3px solid #4a3320; border-radius:14px; overflow:hidden; background:#1b1109;
-    box-shadow:0 10px 22px rgba(0,0,0,.5); transition:transform .12s, border-color .12s; }
-  .shot:hover{ transform:translateY(-4px); border-color:var(--gold-d); }
-  .shot img{ display:block; width:100%; height:100%; object-fit:cover; }
+  /* ===== screenshots: frameless, the game speaks for itself ===== */
+  .shots{ margin-top:44px; display:grid; gap:34px 26px; grid-template-columns:1fr 1fr; }
+  .shot{ display:block; text-decoration:none; }
+  .shot img{ display:block; width:100%; height:auto; box-shadow:0 22px 50px rgba(0,0,0,.55); }
   .shot.wide{ grid-column:1 / -1; }
-  .shot .tag{ position:absolute; left:12px; bottom:12px; background:rgba(22,13,6,.82); border:2px solid var(--gold-d);
-    color:var(--gold); border-radius:9px; padding:6px 12px; font:700 13px Georgia; letter-spacing:1px; }
+  .shot .tag{ display:block; margin-top:14px; color:var(--cream); font-family:Wantedo,Georgia; font-size:19px; letter-spacing:2.5px; text-align:center; }
   @media(max-width:680px){ .shots{ grid-template-columns:1fr; } }
 
   /* ===== outlaws (wanted posters) ===== */
@@ -175,11 +171,11 @@
   <!-- ===================== SCREENSHOTS ===================== -->
   <section class="section">
     <h2>See the Course</h2>
-    <p class="sub">Cinematic 3D dioramas with film grain, bloom and a spaghetti-western color grade — fresh from BUILD 71.</p>
+    <p class="sub">Photographic turf, weathered timber, glass bumpers, golden-hour sun — straight from the game.</p>
     <div class="shots">
-      <a class="shot wide" href="game.html"><img src="docs/shots/game-table.jpg" alt="Hole 1 — Greenhorn Gulch, sunset desert table" loading="lazy"/><div class="tag">★ HOLE 1 · GREENHORN GULCH</div></a>
-      <a class="shot" href="game.html"><img src="docs/shots/game-moon.jpg" alt="Moon Craters hole — low gravity lunar table" loading="lazy"/><div class="tag">MOON CRATERS · LOW-G</div></a>
-      <a class="shot" href="game.html"><img src="docs/shots/game-combo.jpg" alt="Rubber Room hole — bumper gauntlet" loading="lazy"/><div class="tag">RUBBER ROOM · BUMPER GAUNTLET</div></a>
+      <a class="shot wide" href="game.html"><img src="docs/shots/game-table.jpg" alt="Hole 1 — Greenhorn Gulch, sunset desert table" loading="lazy"/><span class="tag">HOLE 1 · GREENHORN GULCH</span></a>
+      <a class="shot" href="game.html"><img src="docs/shots/game-moon.jpg" alt="Frozen Pond hole — glossy real ice" loading="lazy"/><span class="tag">FROZEN POND · REAL ICE</span></a>
+      <a class="shot" href="game.html"><img src="docs/shots/game-combo.jpg" alt="Loop-de-Loop City — ride the loop" loading="lazy"/><span class="tag">LOOP-DE-LOOP CITY</span></a>
     </div>
   </section>
 
