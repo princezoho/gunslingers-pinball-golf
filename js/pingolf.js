@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 82 · WINDMILL SAILS';
+  var BUILD = 'BUILD 83 · NO PITS, REAL LOOPS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -90,11 +90,12 @@
     return b;
   }
   function gauss(d, w) { var x = d / w; return Math.exp(-x * x); }
-  function terrainFn(features) {
+  function terrainFn(features, cup) {
+    var feats = cup ? features.filter(function (f) { return !(f.kind === 'funnel' && hyp(f.x - cup.x, f.z - cup.z) < 140); }) : features;   // design rule: the cup sits ON the green, never at the bottom of a funnel pit
     return function (x, z) {
       var h = 0;
-      for (var i = 0; i < features.length; i++) {
-        var f = features[i];
+      for (var i = 0; i < feats.length; i++) {
+        var f = feats[i];
         if (f.kind === 'hill') h += f.h * gauss(hyp(x - f.x, z - f.z), f.rad);
         else if (f.kind === 'ramp') { var up = clamp((z - f.z0) / (f.z1 - f.z0), 0, 1), drop = clamp((z - f.z1) / f.lip, 0, 1); h += f.h * (up - drop) * clamp(1 - Math.abs(x) / f.halfW, 0, 1); }
         else if (f.kind === 'tier') { if (z > f.z0 && Math.abs(x) < f.halfW) h += f.h * clamp((z - f.z0) / 60, 0, 1); }
@@ -384,7 +385,7 @@
   }
   function finish(b, name, par, tee, cup, minX, maxX, minZ, maxZ) {
     b.name = name; b.par = par; b.tee = tee; b.cup = cup;
-    b.terrain = terrainFn(b.terrainFeatures);
+    b.terrain = terrainFn(b.terrainFeatures, cup);
     b.bounds = { minX: minX, maxX: maxX, minZ: minZ, maxZ: maxZ };
     return b;
   }
@@ -785,8 +786,13 @@
         var rr = Math.sqrt(lx * lx + ly * ly), lip = clamp(1 - (rr - cInner) / 9, 0, 1), csh = 1 - 0.28 * lip;   // only the immediate lip darkens, like real worn turf at a cup
         ccol[ci * 3] = ccol[ci * 3 + 1] = ccol[ci * 3 + 2] = csh;
       }
+      for (ci = 0; ci < cp.count; ci++) {   // CONFORM the ring to the actual terrain — a flat ring slices any slope into white shards
+        var lx2 = cp.getX(ci), ly2 = cp.getY(ci);
+        cp.setXYZ(ci, cuP.x + lx2, hole.terrain(cuP.x + lx2, cuP.z - ly2) + 0.5, cuP.z - ly2);
+      }
+      cgeo.computeVertexNormals();
       cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3));
-      var collar = new T.Mesh(cgeo, collarMat); collar.rotation.x = -PI / 2; collar.position.set(cuP.x, ccy + 0.4, cuP.z); collar.receiveShadow = true; R3.group.add(collar);
+      var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar);
     })();
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
@@ -1000,10 +1006,12 @@
       var gy = hole.terrain(z.x, z.z), g = new T.Group();
       turfDecal(z.x, z.z, 0, z.r, 48, 4, new T.MeshStandardMaterial({ color: 0x1d86d8, emissive: 0x14589c, emissiveIntensity: .7, transparent: true, opacity: .78, roughness: .4 }), 2.2);
       turfDecal(z.x, z.z, z.r - 4, z.r + 4, 48, 1, new T.MeshStandardMaterial({ color: 0x4ad0ff, emissive: 0x1f8ad0, emissiveIntensity: .85, roughness: .35 }), 3.4);
-      var chevM = new T.MeshBasicMaterial({ color: 0xf2fbff, transparent: true, opacity: .95, side: T.DoubleSide, depthWrite: false });
-      [0, -0.5].forEach(function (off) {   // flat glowing chevrons pointing the launch direction, floated above the ripples
-        var zz = z.r * off, cg = new T.BufferGeometry();
-        cg.setAttribute('position', new T.BufferAttribute(new Float32Array([0, 9, z.r * 0.72 + zz, -z.r * 0.46, 9, z.r * 0.1 + zz, 0, 9, z.r * 0.32 + zz, 0, 9, z.r * 0.32 + zz, z.r * 0.46, 9, z.r * 0.1 + zz, 0, 9, z.r * 0.72 + zz]), 3));
+      var chevM = new T.MeshBasicMaterial({ color: 0xf4fbff, transparent: true, opacity: .45, side: T.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+      [0, -0.5].forEach(function (off) {   // chevrons CONFORM to the turf like painted markings — floating arrows read as paper shards up close
+        var zz = z.r * off, pts = [[0, z.r * 0.72 + zz], [-z.r * 0.46, z.r * 0.1 + zz], [0, z.r * 0.32 + zz], [0, z.r * 0.32 + zz], [z.r * 0.46, z.r * 0.1 + zz], [0, z.r * 0.72 + zz]];
+        var arr = new Float32Array(18), ca2 = Math.cos(-Math.atan2(z.dx, z.dz)), sa2 = Math.sin(-Math.atan2(z.dx, z.dz));
+        for (var pi2 = 0; pi2 < 6; pi2++) { var wx3 = z.x + pts[pi2][0] * ca2 + pts[pi2][1] * sa2, wz3 = z.z - pts[pi2][0] * sa2 + pts[pi2][1] * ca2; arr[pi2 * 3] = pts[pi2][0]; arr[pi2 * 3 + 1] = hole.terrain(wx3, wz3) - gy + 3.4; arr[pi2 * 3 + 2] = pts[pi2][1]; }
+        var cg = new T.BufferGeometry(); cg.setAttribute('position', new T.BufferAttribute(arr, 3));
         cg.computeVertexNormals(); g.add(new T.Mesh(cg, chevM));
       });
       g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g;
@@ -1172,11 +1180,12 @@
     pop3d(b.x, b.z, b.y, 'ZAP!', '#ff4a5a'); spark(b.x, b.y + 14, b.z, 10); St.shake = Math.min(8, St.shake + 4); sfx('tick');
   }
   function stepLoop(b, dt) {
-    var lo = b.loop; lo.t += (lo.sp / (TAU * lo.r)) * dt;
+    var lo = b.loop, rr = lo.r - K.R - 4;   // ball rides the INSIDE of the deck
+    lo.t += (lo.ride / (TAU * rr)) * dt;
     var th = lo.t * TAU, fx = Math.sin(lo.ang), fz = Math.cos(lo.ang), s = Math.sin(th);
-    b.x = lo.x + s * lo.r * fx; b.z = lo.z + s * lo.r * fz; b.y = lo.gy + lo.r * (1 - Math.cos(th));
-    b.vx = fx * lo.sp; b.vz = fz * lo.sp; b.vy = 0; b.air = true; b.stillT = 0; b.settled = false;
-    if (lo.t >= 1) { b.x = lo.x + fx * lo.r * .5; b.z = lo.z + fz * lo.r * .5; b.y = lo.gy + K.R; b.vx = fx * lo.sp * 1.05; b.vz = fz * lo.sp * 1.05; b.vy = 0; b.air = false; b.loop = null; b.loopCd = .5; St.shake = Math.min(10, St.shake + 6); sfx('boost'); }
+    b.x = lo.x + s * rr * fx; b.z = lo.z + s * rr * fz; b.y = lo.gy + K.R + rr * (1 - Math.cos(th));
+    b.vx = fx * lo.ride * Math.cos(th); b.vz = fz * lo.ride * Math.cos(th); b.vy = 0; b.air = true; b.stillT = 0; b.settled = false;
+    if (lo.t >= 1) { b.x = lo.x + fx * lo.r * .6; b.z = lo.z + fz * lo.r * .6; b.y = lo.gy + K.R; b.vx = fx * lo.sp * 1.12; b.vz = fz * lo.sp * 1.12; b.vy = 0; b.air = false; b.loop = null; b.loopCd = .5; pop3d(b.x, b.z, b.y, 'LOOP BOOST!', COL.gold); St.shake = Math.min(10, St.shake + 6); sfx('boost'); }
   }
   function stepBall(b, dt, hole) {
     if (b.sunk || b.dead) return;
@@ -1236,7 +1245,7 @@
     for (i = 0; i < hole.boosters.length; i++) { var z = hole.boosters[i]; if (b.boostCd <= 0 && b.y < gy + 70 && hyp(b.x - z.x, b.z - z.z) < z.r) { b.vx = z.dx * z.spd; b.vz = z.dz * z.spd; b.boostCd = K.boostCd; z.flash = .3; St.shake = Math.min(11, St.shake + 7); pop3d(z.x, z.z, gy, 'TURBO!', COL.blue); spark(z.x, gy + 16, z.z, 16); spawnShock(z.x, gy, z.z, COL.blue); sfx('boost'); break; } }
     // loop-de-loop (enter from either side with enough speed; ball rides the vertical loop, exits boosted)
     var lps = hole.loops || [];
-    for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 46) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 1050 && sp2 > 1150) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(sp2, 4200), gy: hole.terrain(lo2.x, lo2.z) }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); spawnShock(lo2.x, hole.terrain(lo2.x, lo2.z), lo2.z, COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
+    for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 72) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 800 && sp2 > 900) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(Math.max(sp2, 1800), 4200), ride: Math.min(Math.max(sp2 * 0.7, 1500), 2400), gy: hole.terrain(lo2.x, lo2.z) }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); spawnShock(lo2.x, hole.terrain(lo2.x, lo2.z), lo2.z, COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
     // drop holes / warps — roll in, fall to the linked exit (lower tier)
     if (b.warpCd > 0) b.warpCd -= dt;
     var wps = hole.warps || [];
@@ -1374,7 +1383,7 @@
   function clearOver(i) { var o = overStore(); delete o['' + i]; try { localStorage.setItem('pg_over', JSON.stringify(o)); } catch (e) { } }
   function hasOver(i) { return overStore()['' + i] != null; }
   // the hole the campaign actually plays at index hi: a saved edit if one exists, else the pristine built-in
-  function builtinHole(hi) { var ov = overStore()['' + hi]; if (ov) { try { var d = edDeserialize(ov); d.terrain = terrainFn(d.terrainFeatures); if (d.par == null) d.par = HOLES[hi]().par; d._ov = hi; return d; } catch (e) { } } return HOLES[hi](); }
+  function builtinHole(hi) { var ov = overStore()['' + hi]; if (ov) { try { var d = edDeserialize(ov); d.terrain = terrainFn(d.terrainFeatures, d.cup); if (d.par == null) d.par = HOLES[hi]().par; d._ov = hi; return d; } catch (e) { } } return HOLES[hi](); }
   function loadHole(hi) {
     var scd = document.getElementById('pg-scorecard'); if (scd) scd.remove();
     St.hi = hi;
@@ -1386,7 +1395,7 @@
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
   function playDraftInGame(d, banner, customName) {
-    applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures); rebuildBox(d);
+    applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures, d.cup); rebuildBox(d);
     (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); (d.firerings || []).forEach(function (f) { f.passed = false; f.passedCd = 0; });
     St.hole = d; St.hole.par = d.par; St.customName = customName || null;
     var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); clearBallMeshes();
@@ -1673,7 +1682,7 @@
 
   /* ================================================================ LEVEL EDITOR */
   var ED = { on: false, brush: 'draw', sel: null, scale: 1, ox: 0, oz: 0, moving: false, seg: null, poly: null, drawing: null, erasing: false, painting: false, lastPaint: null, dragHandle: null, size: 240, smoothAmt: 2, dom: {}, curS: null, flash: null, undo: [], redo: [], snap: 20, snapOn: true, view3d: false, orb: { yaw: -0.5, pitch: 0.62, dist: 1.35 }, camDrag: null, palOpen: true, panelOpen: true };
-  function edEnter3D() { var d = ED.draft; applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures); rebuildBox(d); (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); St.hole = d; St.hole.par = d.par; var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); clearBallMeshes(); ED.view3d = true; St.magnetT = 0; St.slowT = 0; }
+  function edEnter3D() { var d = ED.draft; applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures, d.cup); rebuildBox(d); (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); St.hole = d; St.hole.par = d.par; var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); clearBallMeshes(); ED.view3d = true; St.magnetT = 0; St.slowT = 0; }
   function edExit3D() { ED.view3d = false; ED.camDrag = null; ED.moving3d = false; }
   function orbitCam() {
     var bn = ED.draft.bounds, cx = (bn.minX + bn.maxX) / 2, cz = (bn.minZ + bn.maxZ) / 2, span = Math.max(bn.maxX - bn.minX, bn.maxZ - bn.minZ);
@@ -1935,7 +1944,7 @@
     ED.flash = { x: pts[0].x, z: pts[0].z, t: 0.35 }; edPanel();
   }
   function edDelete() { var s = ED.sel; if (!s || s.kind === 'tee' || s.kind === 'cup') return; edSnapshot(); if (s.kind === 'wallgroup') { var d = ED.draft; s.items.forEach(function (g) { var idx = d.walls.indexOf(g); if (idx >= 0) d.walls.splice(idx, 1); }); } else if (s.arr) s.arr.splice(s.idx, 1); ED.sel = null; edPanel(); }
-  function edPlay() { var d = ED.draft; applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures); rebuildBox(d); (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); (d.firerings || []).forEach(function (f) { f.passed = false; f.passedCd = 0; }); St.hole = d; St.hi = 0; St.hole.par = d.par; var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); St.strokes = 0; St.combo = 0; St.scores = []; St.parDone = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.magnetT = 0; St.slowT = 0; var hy = Math.atan2(d.cup.x - t.x, d.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.camOrbit = 0; St.power = 0.5; St.state = 'aim'; St.testing = true; St.holeBest = null; St.banner = 'TEST · ' + d.name; St.bannerT = 1.6; ED.on = false; edShow(false); }
+  function edPlay() { var d = ED.draft; applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures, d.cup); rebuildBox(d); (d.coins || []).forEach(function (c) { c.got = false; }); (d.powerups || []).forEach(function (p) { p.got = false; }); (d.firerings || []).forEach(function (f) { f.passed = false; f.passedCd = 0; }); St.hole = d; St.hi = 0; St.hole.par = d.par; var t = d.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = d.terrain(t.x, t.z) + K.R; buildScene(d); St.strokes = 0; St.combo = 0; St.scores = []; St.parDone = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.magnetT = 0; St.slowT = 0; var hy = Math.atan2(d.cup.x - t.x, d.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.camOrbit = 0; St.power = 0.5; St.state = 'aim'; St.testing = true; St.holeBest = null; St.banner = 'TEST · ' + d.name; St.bannerT = 1.6; ED.on = false; edShow(false); }
   function icon(c, kind, s, sel, item) {
     c.save();
     var SC = ED.scale || 0.1, it = item || {};
