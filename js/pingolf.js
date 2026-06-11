@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 75 · HIGH DETAIL';
+  var BUILD = 'BUILD 76 · SPAGHETTI WESTERN';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -423,14 +423,62 @@
     } catch (e) { R3.ready = false; return false; }
   }
   function tex(key, w, h, paint, rep) { if (R3['_' + key]) return R3['_' + key]; var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; R3['_' + key] = t; return t; }
-  function turfTex() {   // NEUTRAL luminance detail (mow stripes + patch blotches + blade speckle) — the theme color tints it, so every theme gets rich ground
-    return tex('turfN', 256, 256, function (x) {
-      x.fillStyle = '#c9c9c9'; x.fillRect(0, 0, 256, 256);
-      for (var i = 0; i < 256; i += 26) { x.fillStyle = (i / 26) % 2 ? 'rgba(255,255,255,.10)' : 'rgba(40,40,40,.10)'; x.fillRect(i, 0, 13, 256); }
-      for (var p = 0; p < 9; p++) { var px = (p * 89) % 256, py = (p * 151) % 256, pr = 40 + (p * 37) % 60; var g = x.createRadialGradient(px, py, 4, px, py, pr); g.addColorStop(0, p % 2 ? 'rgba(70,60,40,.05)' : 'rgba(255,250,230,.045)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }
-      for (var k = 0; k < 5200; k++) { var gl = (k * 53) % 56; x.fillStyle = 'rgba(' + (165 + gl) + ',' + (160 + gl) + ',' + (140 + gl) + ',.28)'; x.fillRect((k * 97) % 256, (k * 181) % 256, 1, 2); }
+  function dualTex(key, w, paint2, rep) {   // builds a COLOR map + matching grayscale BUMP map in one pass (photoreal ground needs both)
+    if (R3['_' + key]) return R3['_' + key];
+    var ca = document.createElement('canvas'), cb = document.createElement('canvas'); ca.width = ca.height = cb.width = cb.height = w;
+    paint2(ca.getContext('2d'), cb.getContext('2d'), w);
+    var mk = function (c, srgb) { var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); if (srgb && T.sRGBEncoding) t.encoding = T.sRGBEncoding; if (R3.r && R3.r.capabilities) t.anisotropy = Math.min(8, R3.r.capabilities.getMaxAnisotropy()); return t; };
+    return (R3['_' + key] = { map: mk(ca, true), bump: mk(cb, false) });
+  }
+  function fbmFill(x, bx, w, opts) {   // seamless multi-octave value noise written per-pixel into BOTH canvases
+    var P = opts.cells, seed = opts.seed;
+    function h2(ix, iy, sd) { var n = Math.sin(((ix % P) + P) % P * 127.1 + ((iy % P) + P) % P * 311.7 + sd * 74.7) * 43758.5453; return n - Math.floor(n); }
+    function vn(px, py, sc, sd) { var xx = px / w * sc, yy = py / w * sc, ix = Math.floor(xx), iy = Math.floor(yy), fx = xx - ix, fy = yy - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy); var a = h2(ix, iy, sd), b = h2(ix + 1, iy, sd), c2 = h2(ix, iy + 1, sd), d = h2(ix + 1, iy + 1, sd); return a + (b - a) * fx + (c2 - a) * fy + (a - b - c2 + d) * fx * fy; }
+    var idA = x.createImageData(w, w), idB = bx.createImageData(w, w), dA = idA.data, dB = idB.data;
+    var c0 = opts.c0, c1 = opts.c1;
+    for (var py = 0; py < w; py++) for (var px = 0; px < w; px++) {
+      var n = 0, amp = 0.55, sc = P;   // 4 octaves, all period-locked => the tile is SEAMLESS
+      for (var o = 0; o < 4; o++) { n += vn(px, py, sc, seed + o * 13) * amp; sc *= 2; amp *= 0.5; }
+      n = n / 1.03; var i4 = (py * w + px) * 4;
+      dA[i4] = c0[0] + (c1[0] - c0[0]) * n; dA[i4 + 1] = c0[1] + (c1[1] - c0[1]) * n; dA[i4 + 2] = c0[2] + (c1[2] - c0[2]) * n; dA[i4 + 3] = 255;
+      var bv = 40 + n * 175; dB[i4] = dB[i4 + 1] = dB[i4 + 2] = bv; dB[i4 + 3] = 255;
+    }
+    x.putImageData(idA, 0, 0); bx.putImageData(idB, 0, 0);
+  }
+  function turfTex2() {   // sun-scorched fairway: noise base + tens of thousands of individual grass blades + dry patches, with a real bump map
+    return dualTex('turf2', 1024, function (x, bx, w) {
+      function rnd(n) { var v = Math.sin(n * 91.7 + 5.1) * 43758.5453; return v - Math.floor(v); }
+      fbmFill(x, bx, w, { cells: 8, seed: 3.1, c0: [148, 152, 110], c1: [205, 208, 168] });
+      for (var d = 0; d < 14; d++) { var dx2 = rnd(d * 7) * w, dy = rnd(d * 11 + 1) * w, dr = 60 + rnd(d * 3) * 180; var g = x.createRadialGradient(dx2, dy, 4, dx2, dy, dr); g.addColorStop(0, 'rgba(186,164,98,' + (0.10 + rnd(d) * 0.16).toFixed(2) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w); }   // sun-scorched dry patches
+      for (var k = 0; k < 42000; k++) {   // individual grass blades — short directional strokes, light & dark
+        var gx = rnd(k * 1.7) * w, gy = rnd(k * 2.3 + 1) * w, ln = 2.5 + rnd(k + 5) * 5, an = -PI / 2 + (rnd(k + 9) - .5) * 0.9, lt = rnd(k + 3);
+        var ex = gx + Math.cos(an) * ln, ey = gy + Math.sin(an) * ln;
+        x.strokeStyle = lt > 0.5 ? 'rgba(228,232,180,' + (0.10 + lt * 0.16).toFixed(2) + ')' : 'rgba(72,86,42,' + (0.10 + lt * 0.2).toFixed(2) + ')';
+        x.lineWidth = 1.1; x.beginPath(); x.moveTo(gx, gy); x.lineTo(ex, ey); x.stroke();
+        bx.strokeStyle = lt > 0.5 ? 'rgba(255,255,255,.30)' : 'rgba(0,0,0,.30)'; bx.lineWidth = 1.1; bx.beginPath(); bx.moveTo(gx, gy); bx.lineTo(ex, ey); bx.stroke();
+      }
+      x.fillStyle = 'rgba(255,255,255,0.035)'; for (var st = 0; st < w; st += 256) x.fillRect(st, 0, 128, w);   // ghost of a mow stripe — barely there
     }, [10, 30]);
   }
+  function sandTex2() {   // wind-rippled desert floor with real relief
+    return dualTex('sand2', 1024, function (x, bx, w) {
+      function rnd(n) { var v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); }
+      fbmFill(x, bx, w, { cells: 6, seed: 9.7, c0: [196, 172, 128], c1: [240, 224, 186] });
+      for (var d = 0; d < 22; d++) {   // wind ripples (sine-locked => seamless), carved into both color and relief
+        var baseY = d * (w / 22) + 6, ph = rnd(d) * TAU;
+        x.strokeStyle = 'rgba(140,112,72,0.13)'; x.lineWidth = w / 90; x.beginPath();
+        for (var px2 = 0; px2 <= w; px2 += 8) { var py2 = baseY + Math.sin(px2 / w * TAU * 4 + ph) * (w / 80); px2 === 0 ? x.moveTo(px2, py2) : x.lineTo(px2, py2); } x.stroke();
+        x.strokeStyle = 'rgba(255,250,232,0.12)'; x.lineWidth = w / 240; x.beginPath();
+        for (px2 = 0; px2 <= w; px2 += 8) { py2 = baseY + w / 110 + Math.sin(px2 / w * TAU * 4 + ph) * (w / 80); px2 === 0 ? x.moveTo(px2, py2) : x.lineTo(px2, py2); } x.stroke();
+        bx.strokeStyle = 'rgba(0,0,0,.35)'; bx.lineWidth = w / 90; bx.beginPath();
+        for (px2 = 0; px2 <= w; px2 += 8) { py2 = baseY + Math.sin(px2 / w * TAU * 4 + ph) * (w / 80); px2 === 0 ? bx.moveTo(px2, py2) : bx.lineTo(px2, py2); } bx.stroke();
+        bx.strokeStyle = 'rgba(255,255,255,.4)'; bx.lineWidth = w / 240; bx.beginPath();
+        for (px2 = 0; px2 <= w; px2 += 8) { py2 = baseY + w / 110 + Math.sin(px2 / w * TAU * 4 + ph) * (w / 80); px2 === 0 ? bx.moveTo(px2, py2) : bx.lineTo(px2, py2); } bx.stroke();
+      }
+      for (var p = 0; p < 240; p++) { var rx = rnd(p * 3.7) * w, ry = rnd(p * 5.3 + 1) * w, rr = 2 + rnd(p * 2.1) * 7; x.fillStyle = 'rgba(112,88,56,' + (0.12 + rnd(p) * 0.16).toFixed(2) + ')'; x.beginPath(); x.arc(rx, ry, rr, 0, TAU); x.fill(); x.fillStyle = 'rgba(255,248,230,0.14)'; x.beginPath(); x.arc(rx - rr * 0.3, ry - rr * 0.3, rr * 0.5, 0, TAU); x.fill(); bx.fillStyle = 'rgba(255,255,255,.5)'; bx.beginPath(); bx.arc(rx, ry, rr, 0, TAU); bx.fill(); }
+    });
+  }
+  function turfTex() { return turfTex2().map; }
   function ballTex() { return tex('ball', 64, 64, function (x) { x.fillStyle = '#f7f3ea'; x.fillRect(0, 0, 64, 64); x.fillStyle = 'rgba(150,150,160,.4)'; for (var i = 6; i < 64; i += 11) for (var j = (i / 11 % 2 ? 11 : 5); j < 64; j += 11) { x.beginPath(); x.arc(j, i, 2.1, 0, 7); x.fill(); } x.fillStyle = '#c0202a'; x.beginPath(); x.arc(42, 30, 6, 0, 7); x.fill(); }); }
 
   /* ---------------- AAA film look: IBL env, gradient skies, wood grain, post FX ---------------- */
@@ -591,8 +639,8 @@
         '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
-        '  col = mix(vec3(lum), col, 1.26);',
-        '  col = clamp((col - 0.5) * 1.12 + 0.5, 0.0, 1.0);',
+        '  col = mix(vec3(lum), col, 1.12);',
+        '  col = clamp((col - 0.5) * 1.2 + 0.5, 0.0, 1.0);',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       // FXAA — edge smoothing on the final image: kills the jaggies on rounded silhouettes and the painted horizon line
@@ -626,7 +674,7 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.07 }, uVig: { value: 0.38 }, uDof: { value: 0.0036 }, uFocus: { value: 0.55 }, uBloom: { value: 0.68 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.09 }, uVig: { value: 0.45 }, uDof: { value: 0.0036 }, uFocus: { value: 0.55 }, uBloom: { value: 0.68 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
@@ -696,7 +744,8 @@
       aoArr[ai * 3] = aoArr[ai * 3 + 1] = aoArr[ai * 3 + 2] = sh3;
     }
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
-    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: turfTex(), color: hole.turf, vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: turfTex(), color: 0x86b054, vertexColors: true, roughness: .95, envMapIntensity: .25 });
+    var turfTB = turfTex2(); turfTB.bump.repeat.copy(turfTB.map.repeat);
+    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: turfTB.map, bumpMap: turfTB.bump, bumpScale: 2.6, color: hole.turf, vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: turfTB.map, bumpMap: turfTB.bump, bumpScale: 2.6, color: 0x839a52, vertexColors: true, roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
     (function () {
@@ -721,8 +770,8 @@
     })();
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
-    var skirtT = skirtTex(), srep = Math.max(8, Math.round(pr / 190)); skirtT.repeat.set(srep, srep);   // TILE the sand so the desert ground shows real grain instead of one stretched blur
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtT, color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
+    var sandTB = sandTex2(), skirtT = sandTB.map, srep = Math.max(8, Math.round(pr / 190)); skirtT.repeat.set(srep, srep); sandTB.bump.repeat.set(srep, srep);   // TILE the sand so the desert ground shows real grain instead of one stretched blur
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtT, bumpMap: sandTB.bump, bumpScale: 3.2, color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
     if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
@@ -863,7 +912,7 @@
       var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
       var mm = new T.Mesh(gg, mat); R3.group.add(mm); return mm;
     }
-    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: null, fade: 0, gy: gy }; });
+    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), bumpMap: woodTex(), bumpScale: 1.6, color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: null, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
