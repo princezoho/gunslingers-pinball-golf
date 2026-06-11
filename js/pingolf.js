@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 72 · PROP DETAIL';
+  var BUILD = 'BUILD 73 · BRAND FLAG';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -489,15 +489,30 @@
     });
   }
   function moteTex() { return tex('mote', 32, 32, function (x) { var g = x.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); }); }
-  function flagTex() {   // the pin pennant: brand red with the gold star, ink border
-    return tex('flag', 128, 64, function (x) {
-      x.fillStyle = '#c8332a'; x.fillRect(0, 0, 128, 64);
-      x.fillStyle = 'rgba(120,16,10,.35)'; x.fillRect(0, 44, 128, 20);
-      x.strokeStyle = '#1b0f06'; x.lineWidth = 6; x.strokeRect(0, 0, 128, 64);
-      x.fillStyle = '#f5c542'; x.strokeStyle = '#1b0f06'; x.lineWidth = 2; x.beginPath();
-      for (var i = 0; i < 10; i++) { var a = -PI / 2 + i * PI / 5, rr = i % 2 ? 7.5 : 17; var sx = 64 + Math.cos(a) * rr, sy = 32 + Math.sin(a) * rr; i ? x.lineTo(sx, sy) : x.moveTo(sx, sy); }
+  function flagTex() {   // the pin pennant: brand red cloth wearing the GUNSLINGERS plaque logo (assets/logo-flag.png, drawn in when it loads; gold star until then)
+    var t = tex('flag', 256, 128, function (x) {
+      x.fillStyle = '#c8332a'; x.fillRect(0, 0, 256, 128);
+      x.fillStyle = 'rgba(120,16,10,.35)'; x.fillRect(0, 88, 256, 40);
+      x.strokeStyle = '#1b0f06'; x.lineWidth = 10; x.strokeRect(0, 0, 256, 128);
+      x.fillStyle = '#f5c542'; x.strokeStyle = '#1b0f06'; x.lineWidth = 3; x.beginPath();
+      for (var i = 0; i < 10; i++) { var a = -PI / 2 + i * PI / 5, rr = i % 2 ? 15 : 34; var sx = 128 + Math.cos(a) * rr, sy = 64 + Math.sin(a) * rr; i ? x.lineTo(sx, sy) : x.moveTo(sx, sy); }
       x.closePath(); x.fill(); x.stroke();
     });
+    if (!R3._flagLogoKicked) {
+      R3._flagLogoKicked = true;
+      var im = new Image();
+      im.onload = function () {
+        var c = t.image, x = c.getContext('2d');
+        x.fillStyle = '#c8332a'; x.fillRect(0, 0, 256, 128);                       // repaint cloth over the placeholder star
+        x.fillStyle = 'rgba(120,16,10,.35)'; x.fillRect(0, 88, 256, 40);
+        var lw = 210, lh = lw * im.height / im.width; if (lh > 104) { lh = 104; lw = lh * im.width / im.height; }
+        x.drawImage(im, (256 - lw) / 2, (128 - lh) / 2, lw, lh);
+        x.strokeStyle = '#1b0f06'; x.lineWidth = 10; x.strokeRect(0, 0, 256, 128);
+        t.needsUpdate = true;
+      };
+      im.src = 'assets/logo-flag.png';
+    }
+    return t;
   }
   function swirlTex(col) {   // glowing vortex spiral for portals (additive, rotated each frame)
     var key = 'swirl_' + col; if (R3['_' + key]) return R3['_' + key];
