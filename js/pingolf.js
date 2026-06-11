@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 86 · TRUE ASPECT';
+  var BUILD = 'BUILD 87 · REAL LOOP';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1055,24 +1055,34 @@
     // multiball pad
     if (hole.multiball) { var mb = hole.multiball, gy = hole.terrain(mb.x, mb.z); var pad = new T.Mesh(new T.CircleGeometry(mb.r, 26), new T.MeshStandardMaterial({ color: 0xb84aff, emissive: 0x6a18aa, emissiveIntensity: .6, transparent: true, opacity: .55, roughness: .4 })); pad.rotation.x = -PI / 2; pad.position.set(mb.x, gy + 2.5, mb.z); R3.group.add(pad); mb.mesh = pad; }
     // cup + flag
-    (hole.loops || []).forEach(function (lo) {   // a REAL stunt loop: ridable wooden deck ribbon + gold rails + support posts
-      var gy = hole.terrain(lo.x, lo.z), r = lo.r, dx = Math.sin(lo.ang), dz = Math.cos(lo.ang), px = Math.cos(lo.ang), pz = -Math.sin(lo.ang);
-      var cx = lo.x, cy = gy + r, cz = lo.z, W = 78, SEG = 112;
-      var lpos = new Float32Array((SEG + 1) * 6), luv = new Float32Array((SEG + 1) * 4), lidx = [];
-      for (var s = 0; s <= SEG; s++) {
-        var th = s / SEG * TAU, bx = cx + dx * Math.sin(th) * r, by = cy - Math.cos(th) * r, bz = cz + dz * Math.sin(th) * r;
-        lpos[s * 6] = bx + px * W / 2; lpos[s * 6 + 1] = by; lpos[s * 6 + 2] = bz + pz * W / 2;
-        lpos[s * 6 + 3] = bx - px * W / 2; lpos[s * 6 + 4] = by; lpos[s * 6 + 5] = bz - pz * W / 2;
-        luv[s * 4] = s / SEG * 7; luv[s * 4 + 1] = 0; luv[s * 4 + 2] = s / SEG * 7; luv[s * 4 + 3] = 1;
-        if (s < SEG) { var a0 = s * 2; lidx.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2); }
+    (hole.loops || []).forEach(function (lo) {   // REAL mini-golf loop-de-loop: a galvanized steel CHANNEL — full ring trough with side walls and flat entry/exit tongues at the bottom (see any crazy-golf loop)
+      var gy = hole.terrain(lo.x, lo.z), r = lo.r, fwx = Math.sin(lo.ang), fwz = Math.cos(lo.ang), ltx = Math.cos(lo.ang), ltz = -Math.sin(lo.ang);
+      var cx = lo.x, cy = gy + r, cz = lo.z, W = 64, WALL = 20, SEG = 128;
+      var steelM = new T.MeshStandardMaterial({ color: 0xc9ced4, metalness: .88, roughness: .32, envMapIntensity: 1.6, side: T.DoubleSide });
+      function channelRing() {   // three swept strips: floor + two side walls, riding surface on the INSIDE of the ring
+        var pos = [], idx = [], rows = SEG + 1;
+        for (var i2 = 0; i2 < rows; i2++) {
+          var th = i2 / SEG * TAU, fx2 = Math.sin(th) * r, fy2 = cy - Math.cos(th) * r;
+          var bxw = cx + fwx * fx2, bzw = cz + fwz * fx2, inx = (cx - bxw) / r, iny = (cy - fy2) / r, inz = (cz - bzw) / r;
+          // 4 verts per row: wallL top, floor L, floor R, wallR top
+          pos.push(bxw + ltx * W / 2 + inx * WALL, fy2 + iny * WALL, bzw + ltz * W / 2 + inz * WALL,
+                   bxw + ltx * W / 2, fy2, bzw + ltz * W / 2,
+                   bxw - ltx * W / 2, fy2, bzw - ltz * W / 2,
+                   bxw - ltx * W / 2 + inx * WALL, fy2 + iny * WALL, bzw - ltz * W / 2 + inz * WALL);
+          if (i2 < SEG) { var a0 = i2 * 4; for (var q = 0; q < 3; q++) idx.push(a0 + q, a0 + q + 4, a0 + q + 1, a0 + q + 1, a0 + q + 4, a0 + q + 5); }
+        }
+        var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
+        var mm = new T.Mesh(gg, steelM); mm.castShadow = true; R3.group.add(mm);
       }
-      var dg = new T.BufferGeometry(); dg.setAttribute('position', new T.BufferAttribute(lpos, 3)); dg.setAttribute('uv', new T.BufferAttribute(luv, 2)); dg.setIndex(lidx); dg.computeVertexNormals();
-      var deck = new T.Mesh(dg, new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#dk', true), normalMap: photoTex('wood_n.jpg#dk', false), color: 0xd0a268, roughness: .68, side: T.DoubleSide })); deck.castShadow = true; R3.group.add(deck);
-      var railM = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .82, roughness: .28, envMapIntensity: 1.3 });
-      [-1, 1].forEach(function (sd) { var rail = new T.Mesh(new T.TorusGeometry(r, 4.5, 14, 96), railM); rail.position.set(cx + px * sd * W / 2, cy, cz + pz * sd * W / 2); rail.rotation.y = lo.ang - PI / 2; rail.castShadow = true; R3.group.add(rail); });
-      var postM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#dk', true), normalMap: photoTex('wood_n.jpg#dk', false), color: 0xa87848, roughness: .8 });
-      [-1, 1].forEach(function (sd) { var pgy = hole.terrain(cx + dx * sd * r * 0.92, cz + dz * sd * r * 0.92), ph2 = cy - pgy; var post = new T.Mesh(new T.CylinderGeometry(5.5, 8, ph2, 8), postM); post.position.set(cx + dx * sd * r * 0.92, pgy + ph2 / 2, cz + dz * sd * r * 0.92); post.castShadow = true; R3.group.add(post); });
-      var base = new T.Mesh(new T.CircleGeometry(r * .6, 22), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .3 })); base.rotation.x = -PI / 2; base.position.set(lo.x, gy + 1.5, lo.z); R3.group.add(base);
+      channelRing();
+      [-1, 1].forEach(function (sd) {   // flat entry/exit tongues, channel-section, lying on the turf at the bottom of the ring
+        var TL = r * 0.85, tcx = cx + fwx * sd * TL / 2, tcz = cz + fwz * sd * TL / 2, tgy = hole.terrain(tcx, tcz);
+        var tg2 = new T.Group();
+        var fl = new T.Mesh(new T.BoxGeometry(TL, 3, W), steelM); fl.position.y = 1.5; fl.receiveShadow = true; tg2.add(fl);
+        [-1, 1].forEach(function (ws) { var wl = new T.Mesh(new T.BoxGeometry(TL, WALL * (sd === 1 ? 0.9 : 0.9), 3), steelM); wl.position.set(0, WALL * 0.45, ws * (W / 2 - 1.5)); wl.castShadow = true; tg2.add(wl); });
+        tg2.position.set(tcx, tgy, tcz); tg2.rotation.y = Math.atan2(fwx, fwz); R3.group.add(tg2);
+      });
+      var base = new T.Mesh(new T.CircleGeometry(r * .6, 32), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .3 })); base.rotation.x = -PI / 2; base.position.set(lo.x, gy + 1.2, lo.z); R3.group.add(base);
     });
     (hole.warps || []).forEach(function (wp) {
       var gy = hole.terrain(wp.x, wp.z), gy2 = hole.terrain(wp.ex, wp.ez);
