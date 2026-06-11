@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 84 · FILM FADE';
+  var BUILD = 'BUILD 85 · TRUE THEMES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -71,7 +71,7 @@
       booster: function (x, z, ang, r, spd) { this.boosters.push({ x: x, z: z, dx: Math.cos(ang), dz: Math.sin(ang), r: r || 110, spd: spd || K.boostSpeed, flash: 0 }); return this; },
       flip: function (side, x, z, len, rot, speed) { var rest = (side === 'L' ? -0.5 : PI + 0.5) + (rot || 0); this.flippers.push({ side: side, px: x, pz: z, len: len || 150, rot: rot || 0, speed: speed || 1, ang: rest, om: 0, held: false, holdT: 0, live: false }); return this; },
       windmill: function (x, z, r, blades, speed) { this.windmills.push({ x: x, z: z, r: r || 200, n: blades || 4, speed: speed || 1.6, ang: 0, om: 0 }); return this; },
-      loopde: function (x, z, r, ang) { this.loops.push({ x: x, z: z, r: r || 130, ang: ang == null ? PI / 2 : ang }); return this; },
+      loopde: function (x, z, r, ang) { this.loops.push({ x: x, z: z, r: r || 130, ang: ang == null ? 0 : ang }); return this; },   // ang 0 = the loop runs DOWN the lane (tee->cup) like a traditional loop-de-loop; PI/2 was sideways
       warp: function (x, z, ex, ez, r) { this.warps.push({ x: x, z: z, ex: ex == null ? x : ex, ez: ez == null ? z + 360 : ez, r: r || 50, flash: 0 }); return this; },
       portal: function (x, z, exits, r) { this.portals.push({ x: x, z: z, exits: (exits && exits.length) ? exits : [{ x: x + 320, z: z }], r: r || 46, flash: 0 }); return this; },
       firering: function (x, z, r, h, points, period) { this.firerings.push({ x: x, z: z, r: r || 120, h: h == null ? 170 : h, points: points == null ? 100 : points, period: period || 2.4, on: true, flash: 0, passedCd: 0, passed: false }); return this; },
@@ -760,8 +760,9 @@
       aoArr[ai * 3] = aoArr[ai * 3 + 1] = aoArr[ai * 3 + 2] = sh3;
     }
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
-    var grassD = photoTex('grass_d.jpg', true, [8, 24]), grassN = photoTex('grass_n.jpg', false, [8, 24]);
-    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: 0xf0f2e4, vertexColors: true, roughness: .95, envMapIntensity: .25 });
+    var TGROUND = { ice: ['snow_d.jpg', 'snow_n.jpg'], moon: ['snow_d.jpg', 'snow_n.jpg'], mud: ['mud_d.jpg', 'mud_n.jpg'], speed: ['asph_d.jpg', 'asph_n.jpg'], rubber: ['asph_d.jpg', 'asph_n.jpg'], sand: ['sand_d.jpg', 'sand_n.jpg'] };   // each theme gets its OWN photographic ground — ice is ice, moon is regolith, not green grass
+    var tgf = TGROUND[hole.theme], tgD = photoTex((tgf ? tgf[0] : 'grass_d.jpg') + '#turf', true, [8, 24]), tgN = photoTex((tgf ? tgf[1] : 'grass_n.jpg') + '#turf', false, [8, 24]);
+    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), hole.theme === 'ice' || hole.theme === 'moon' ? 0.6 : 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .22 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? 1.1 : .3 }) : new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: 0xf0f2e4, vertexColors: true, roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
     (function () {
@@ -1056,7 +1057,7 @@
     // cup + flag
     (hole.loops || []).forEach(function (lo) {   // a REAL stunt loop: ridable wooden deck ribbon + gold rails + support posts
       var gy = hole.terrain(lo.x, lo.z), r = lo.r, dx = Math.sin(lo.ang), dz = Math.cos(lo.ang), px = Math.cos(lo.ang), pz = -Math.sin(lo.ang);
-      var cx = lo.x, cy = gy + r, cz = lo.z, W = 78, SEG = 56;
+      var cx = lo.x, cy = gy + r, cz = lo.z, W = 78, SEG = 112;
       var lpos = new Float32Array((SEG + 1) * 6), luv = new Float32Array((SEG + 1) * 4), lidx = [];
       for (var s = 0; s <= SEG; s++) {
         var th = s / SEG * TAU, bx = cx + dx * Math.sin(th) * r, by = cy - Math.cos(th) * r, bz = cz + dz * Math.sin(th) * r;
@@ -1068,7 +1069,7 @@
       var dg = new T.BufferGeometry(); dg.setAttribute('position', new T.BufferAttribute(lpos, 3)); dg.setAttribute('uv', new T.BufferAttribute(luv, 2)); dg.setIndex(lidx); dg.computeVertexNormals();
       var deck = new T.Mesh(dg, new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#dk', true), normalMap: photoTex('wood_n.jpg#dk', false), color: 0xd0a268, roughness: .68, side: T.DoubleSide })); deck.castShadow = true; R3.group.add(deck);
       var railM = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .82, roughness: .28, envMapIntensity: 1.3 });
-      [-1, 1].forEach(function (sd) { var rail = new T.Mesh(new T.TorusGeometry(r, 4.5, 10, 52), railM); rail.position.set(cx + px * sd * W / 2, cy, cz + pz * sd * W / 2); rail.rotation.y = lo.ang - PI / 2; rail.castShadow = true; R3.group.add(rail); });
+      [-1, 1].forEach(function (sd) { var rail = new T.Mesh(new T.TorusGeometry(r, 4.5, 14, 96), railM); rail.position.set(cx + px * sd * W / 2, cy, cz + pz * sd * W / 2); rail.rotation.y = lo.ang - PI / 2; rail.castShadow = true; R3.group.add(rail); });
       var postM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#dk', true), normalMap: photoTex('wood_n.jpg#dk', false), color: 0xa87848, roughness: .8 });
       [-1, 1].forEach(function (sd) { var pgy = hole.terrain(cx + dx * sd * r * 0.92, cz + dz * sd * r * 0.92), ph2 = cy - pgy; var post = new T.Mesh(new T.CylinderGeometry(5.5, 8, ph2, 8), postM); post.position.set(cx + dx * sd * r * 0.92, pgy + ph2 / 2, cz + dz * sd * r * 0.92); post.castShadow = true; R3.group.add(post); });
       var base = new T.Mesh(new T.CircleGeometry(r * .6, 22), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .3 })); base.rotation.x = -PI / 2; base.position.set(lo.x, gy + 1.5, lo.z); R3.group.add(base);
