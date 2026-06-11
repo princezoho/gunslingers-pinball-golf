@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 66 · COURSE ARCHITECT';
+  var BUILD = 'BUILD 67 · FLAT GREENS + FXAA';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -570,18 +570,41 @@
         '  col = clamp((col - 0.5) * 1.12 + 0.5, 0.0, 1.0);',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
+      // FXAA — edge smoothing on the final image: kills the jaggies on rounded silhouettes and the painted horizon line
+      var fxaaF = [
+        'precision highp float; varying vec2 vUv; uniform sampler2D tD; uniform vec2 uRes;',
+        'void main(){',
+        '  vec2 inv = 1.0 / uRes; vec3 L = vec3(0.299, 0.587, 0.114);',
+        '  vec3 mC = texture2D(tD, vUv).rgb;',
+        '  vec3 nw = texture2D(tD, vUv + vec2(-1.0,-1.0)*inv).rgb;',
+        '  vec3 ne = texture2D(tD, vUv + vec2( 1.0,-1.0)*inv).rgb;',
+        '  vec3 sw = texture2D(tD, vUv + vec2(-1.0, 1.0)*inv).rgb;',
+        '  vec3 se = texture2D(tD, vUv + vec2( 1.0, 1.0)*inv).rgb;',
+        '  float lNW=dot(nw,L), lNE=dot(ne,L), lSW=dot(sw,L), lSE=dot(se,L), lM=dot(mC,L);',
+        '  float lMin = min(lM, min(min(lNW,lNE), min(lSW,lSE)));',
+        '  float lMax = max(lM, max(max(lNW,lNE), max(lSW,lSE)));',
+        '  vec2 dir = vec2(-((lNW+lNE)-(lSW+lSE)), ((lNW+lSW)-(lNE+lSE)));',
+        '  float red = max((lNW+lNE+lSW+lSE)*0.25*0.0625, 0.0078125);',
+        '  float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);',
+        '  dir = clamp(dir*rcp, -8.0, 8.0) * inv;',
+        '  vec3 rA = 0.5*(texture2D(tD, vUv + dir*(1.0/3.0-0.5)).rgb + texture2D(tD, vUv + dir*(2.0/3.0-0.5)).rgb);',
+        '  vec3 rB = rA*0.5 + 0.25*(texture2D(tD, vUv + dir*-0.5).rgb + texture2D(tD, vUv + dir*0.5).rgb);',
+        '  float lB = dot(rB, L);',
+        '  gl_FragColor = vec4((lB < lMin || lB > lMax) ? rA : rB, 1.0);',
+        '}'].join('\n');
       var rt;
-      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = 4; }
+      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = 8; }
       else rt = new T.WebGLRenderTarget(8, 8);
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
       var mkRT = function () { var r = new T.WebGLRenderTarget(8, 8); r.texture.minFilter = T.LinearFilter; r.texture.generateMipmaps = false; return r; };
-      var b1 = mkRT(), b2 = mkRT();
+      var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0032 }, uGrain: { value: 0.085 }, uVig: { value: 0.42 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0017 }, uGrain: { value: 0.085 }, uVig: { value: 0.42 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
-      R3.post = { on: true, ca: 0.0032, rt: rt, b1: b1, b2: b2, brightM: brightM, blurM: blurM, mat: mat, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+      R3.post = { on: true, ca: 0.0017, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
@@ -591,6 +614,7 @@
         var w = R3.r.domElement.width, h = R3.r.domElement.height;
         if (w > 0 && h > 0 && (p.rt.width !== w || p.rt.height !== h)) {
           p.rt.setSize(w, h); p.mat.uniforms.uRes.value.set(w, h);
+          p.ldr.setSize(w, h); p.fxaaM.uniforms.uRes.value.set(w, h);
           var bw = Math.max(8, w >> 2), bh = Math.max(8, h >> 2); p.b1.setSize(bw, bh); p.b2.setSize(bw, bh);
         }
         R3.r.setRenderTarget(p.rt); R3.r.render(R3.scene, R3.cam);
@@ -601,11 +625,14 @@
         R3.r.setRenderTarget(p.b2); R3.r.render(p.scene, p.cam);
         p.blurM.uniforms.tD.value = p.b2.texture; p.blurM.uniforms.uDir.value.set(0, 1 / p.b1.height);
         R3.r.setRenderTarget(p.b1); R3.r.render(p.scene, p.cam);
-        // film composite to screen
-        R3.r.setRenderTarget(null);
+        // film composite -> LDR target
         p.quad.material = p.mat; p.mat.uniforms.tD.value = p.rt.texture; p.mat.uniforms.tB.value = p.b1.texture;
         p.mat.uniforms.uT.value = (performance.now() % 64000) / 1000;
         p.mat.uniforms.uCA.value = p.ca * (1 + Math.min(St.shake || 0, 14) * 0.16);
+        R3.r.setRenderTarget(p.ldr); R3.r.render(p.scene, p.cam);
+        // FXAA -> screen: smooth the jagged silhouettes & the painted horizon edge
+        R3.r.setRenderTarget(null);
+        p.quad.material = p.fxaaM; p.fxaaM.uniforms.tD.value = p.ldr.texture;
         R3.r.render(p.scene, p.cam);
         return;
       } catch (e) { p.on = false; try { R3.r.setRenderTarget(null); } catch (e2) { } if (window.console) console.warn('film FX disabled:', e); }
@@ -630,13 +657,9 @@
     geo.rotateX(-PI / 2); geo.translate((bn.minX + bn.maxX) / 2, 0, midZ);
     var pos = geo.attributes.position;
     for (var i = 0; i < pos.count; i++) pos.setY(i, hole.terrain(pos.getX(i), pos.getZ(i)));
-    // carve a REAL recess into the green around the cup — the hole is finally a hole (visual only; physics terrain unchanged)
-    var cuD = hole.cup, dimR = K.cupR * 2.2, dimD = 26;
-    for (i = 0; i < pos.count; i++) {
-      var ddc = hyp(pos.getX(i) - cuD.x, pos.getZ(i) - cuD.z);
-      if (ddc < dimR) { var ff = 1 - (ddc / dimR) * (ddc / dimR); pos.setY(i, pos.getY(i) - dimD * ff); }
-    }
-    R3.cupDimple = { x: cuD.x, z: cuD.z, R: dimR, d: dimD };
+    // the green stays FLAT — a real golf hole is a cylindrical cup cut straight down, not a sloped funnel (recess removed per design)
+    var dimR = K.cupR * 1.18;   // dimR now only sizes the thin brass-lip glow ring hugging the cup, no terrain carving
+    R3.cupDimple = null;
     geo.computeVertexNormals();
     // baked contact AO — a soft dark ring along the wall line, fading both ways: grounds the table like real GI
     var aoArr = new Float32Array(pos.count * 3);
@@ -877,18 +900,18 @@
       [[-.42, .72], [.42, .72]].forEach(function (e) { var eye = new T.Mesh(new T.SphereGeometry(en.r * .2, 8, 8), new T.MeshStandardMaterial({ color: 0xffee44, emissive: 0xaa8800, emissiveIntensity: .7 })); eye.position.set(e[0] * en.r, en.r * 1.15, e[1] * en.r); g.add(eye); });
       g.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); R3.group.add(g); en.mesh = g;
     });
-    var cu = hole.cup, cy = hole.terrain(cu.x, cu.z), sink = 18;   // hardware sits down inside the carved recess
-    // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim
-    var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, 34, 26, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - sink - 15, cu.z); R3.group.add(liner);
-    var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 24), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - sink - 31, cu.z); R3.group.add(pitB);
-    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 10, 28), new T.MeshStandardMaterial({ color: 0xf5c542, metalness: .85, roughness: .22, envMapIntensity: 1.4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy - sink + 1, cu.z); R3.group.add(rim);
-    R3.cupGlow = new T.Mesh(new T.RingGeometry(dimR * 0.95, dimR * 1.12, 32), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .3, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 2, cu.z); R3.group.add(R3.cupGlow);   // thin pulsing lip ring around the recess
-    // flagstick: painted pole, brass finial, CLOTH pennant that waves in the wind
-    var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 225, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy - sink + 112, cu.z); pole.castShadow = true; R3.group.add(pole);
-    var fin = new T.Mesh(new T.SphereGeometry(6.5, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .85, roughness: .25, envMapIntensity: 1.3 })); fin.position.set(cu.x, cy - sink + 228, cu.z); R3.group.add(fin);
+    var cu = hole.cup, cy = hole.terrain(cu.x, cu.z), cupD = 46;   // a proper cup: vertical-walled cylinder cut straight DOWN from the flat green
+    // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim flush with the turf
+    var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, cupD, 28, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - cupD / 2, cu.z); R3.group.add(liner);   // top edge flush at green level (cy), walls drop straight down
+    var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 26), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - cupD + 1, cu.z); R3.group.add(pitB);
+    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 10, 30), new T.MeshStandardMaterial({ color: 0xf5c542, metalness: .85, roughness: .22, envMapIntensity: 1.4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 0.5, cu.z); R3.group.add(rim);   // brass rim sits flush in the flat turf
+    R3.cupGlow = new T.Mesh(new T.RingGeometry(dimR * 0.96, dimR * 1.1, 36), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .3, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 1, cu.z); R3.group.add(R3.cupGlow);   // thin pulsing lip ring hugging the cup
+    // flagstick: painted pole rising from the cup, brass finial, CLOTH pennant that waves in the wind
+    var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 232, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy - cupD + 116, cu.z); pole.castShadow = true; R3.group.add(pole);   // pole foot rests at the cup bottom
+    var fin = new T.Mesh(new T.SphereGeometry(6.5, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .85, roughness: .25, envMapIntensity: 1.3 })); fin.position.set(cu.x, cy - cupD + 235, cu.z); R3.group.add(fin);
     var FL = 92, FH = 42, fgeo = new T.PlaneGeometry(FL, FH, 14, 3); fgeo.translate(FL / 2 + 3, 0, 0);
     R3.flag = new T.Mesh(fgeo, new T.MeshStandardMaterial({ map: flagTex(), side: T.DoubleSide, roughness: .85 }));
-    R3.flag.position.set(cu.x, cy - sink + 196, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
+    R3.flag.position.set(cu.x, cy - cupD + 203, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
     R3.flagWave = { geo: fgeo, base: fgeo.attributes.position.array.slice(0), L: FL };
     // balls
     R3.ballMeshes = []; R3.bsh = []; R3.shieldMeshes = [];
