@@ -16,7 +16,15 @@
   html,body { height:100%; width:100%; overflow:hidden; background:#120c07; font-family:Georgia,serif; color:var(--cream); touch-action:none; user-select:none; }
   #wrap { position:fixed; inset:0; }
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
-  #hud { pointer-events:none; }
+  #hud { pointer-events:none; z-index:10; }
+  /* glassmorphism cards — frosted panes floating over the world, HUD type renders on top */
+  .glass { position:absolute; z-index:5; pointer-events:none;
+    background:rgba(255,243,219,.07); border:1px solid rgba(255,255,255,.20);
+    border-radius:14px; backdrop-filter:blur(10px) saturate(1.25); -webkit-backdrop-filter:blur(10px) saturate(1.25);
+    box-shadow:0 6px 26px rgba(22,10,4,.22), inset 0 1px 0 rgba(255,255,255,.16); }
+  #glassTL { left:10px; top:8px; width:304px; height:130px; }
+  #glassTR { right:10px; top:8px; width:188px; height:66px; }
+  #glassPM { left:50%; bottom:26px; transform:translateX(-50%); width:352px; height:74px; }
   /* camera dock (right edge) */
   #cam { position:absolute; right:14px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:8px; z-index:20; }
   #cam button {
@@ -44,6 +52,9 @@
 <body>
   <div id="wrap">
     <canvas id="scene"></canvas>
+    <div id="glassTL" class="glass"></div>
+    <div id="glassTR" class="glass"></div>
+    <div id="glassPM" class="glass"></div>
     <canvas id="hud"></canvas>
     <div id="cam">
       <button id="rotL" title="Rotate left">&#8634;</button>
@@ -62,6 +73,6 @@
     </div>
   </div>
   <script src="vendor/three.min.js"></script>
-  <script src="js/pingolf.js?v=107"></script>
+  <script src="js/pingolf.js?v=108"></script>
 </body>
 </html>

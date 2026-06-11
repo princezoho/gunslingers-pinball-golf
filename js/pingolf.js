@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 64 · THE REAL DEAL';
+  var BUILD = 'BUILD 65 · SPAGHETTI WESTERN';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -392,7 +392,7 @@
     if (!T) return false;
     try {
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-      R3.r.setPixelRatio(Math.min(1.6, window.devicePixelRatio || 1));
+      R3.r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
       if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.06; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
@@ -460,6 +460,7 @@
     }, [3, 1]);
   }
   function skirtTex() { return tex('skirt', 256, 256, function (x) { var g = x.createRadialGradient(128, 128, 20, 128, 128, 182); g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#c2c2c2'); g.addColorStop(1, '#4a4a4a'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }); }
+  function moteTex() { return tex('mote', 32, 32, function (x) { var g = x.createRadialGradient(16, 16, 1, 16, 16, 15); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32); }); }
   function flagTex() {   // the pin pennant: brand red with the gold star, ink border
     return tex('flag', 128, 64, function (x) {
       x.fillStyle = '#c8332a'; x.fillRect(0, 0, 128, 64);
@@ -548,12 +549,12 @@
         '  col += max(ring - 0.78, 0.0) * 0.35;',
         '  col += texture2D(tB, vUv).rgb * uBloom;',                                       // BLOOM: lights actually glow
         '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
-        '  col = mix(col * vec3(0.93, 0.99, 1.07), col * vec3(1.05, 1.0, 0.93), smoothstep(0.2, 0.78, lum));',   // split-tone: cool shadows, warm highlights
+        '  col = mix(col * vec3(0.92, 0.97, 1.05), col * vec3(1.09, 1.01, 0.85), smoothstep(0.18, 0.75, lum));',   // spaghetti-western split-tone: olive-cool shadows, hot golden highlights
         '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
-        '  col = mix(vec3(lum), col, 1.16);',
-        '  col = clamp((col - 0.5) * 1.09 + 0.5, 0.0, 1.0);',
+        '  col = mix(vec3(lum), col, 1.2);',
+        '  col = clamp((col - 0.5) * 1.12 + 0.5, 0.0, 1.0);',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       var rt;
@@ -565,7 +566,7 @@
       var b1 = mkRT(), b2 = mkRT();
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0032 }, uGrain: { value: 0.05 }, uVig: { value: 0.3 }, uDof: { value: 0.0009 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0032 }, uGrain: { value: 0.085 }, uVig: { value: 0.42 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0032, rt: rt, b1: b1, b2: b2, brightM: brightM, blurM: blurM, mat: mat, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
@@ -616,6 +617,13 @@
     geo.rotateX(-PI / 2); geo.translate((bn.minX + bn.maxX) / 2, 0, midZ);
     var pos = geo.attributes.position;
     for (var i = 0; i < pos.count; i++) pos.setY(i, hole.terrain(pos.getX(i), pos.getZ(i)));
+    // carve a REAL recess into the green around the cup — the hole is finally a hole (visual only; physics terrain unchanged)
+    var cuD = hole.cup, dimR = K.cupR * 2.2, dimD = 26;
+    for (i = 0; i < pos.count; i++) {
+      var ddc = hyp(pos.getX(i) - cuD.x, pos.getZ(i) - cuD.z);
+      if (ddc < dimR) { var ff = 1 - (ddc / dimR) * (ddc / dimR); pos.setY(i, pos.getY(i) - dimD * ff); }
+    }
+    R3.cupDimple = { x: cuD.x, z: cuD.z, R: dimR, d: dimD };
     geo.computeVertexNormals();
     // baked contact AO — a soft dark ring along the wall line, fading both ways: grounds the table like real GI
     var aoArr = new Float32Array(pos.count * 3);
@@ -634,6 +642,14 @@
     var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
     if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 96, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }
+    // ATMOSPHERE — drifting dust motes hang in the air and catch the golden light (near ones defocus into bokeh)
+    (function () {
+      var dn = 240, dpos = new Float32Array(dn * 3), drnd = function (n) { var x2 = Math.sin(n * 91.3 + 7.1) * 43758.5453; return x2 - Math.floor(x2); };
+      for (var di = 0; di < dn; di++) { dpos[di * 3] = bn.minX - 500 + drnd(di * 3) * (spanX + 1000); dpos[di * 3 + 1] = 6 + drnd(di * 3 + 1) * 640; dpos[di * 3 + 2] = bn.minZ - 500 + drnd(di * 3 + 2) * (spanZ + 1000); }
+      var dgeo = new T.BufferGeometry(); dgeo.setAttribute('position', new T.BufferAttribute(dpos, 3));
+      var dm = new T.PointsMaterial({ size: 12, map: moteTex(), transparent: true, opacity: .4, depthWrite: false, blending: T.AdditiveBlending, color: 0xffe6b0, sizeAttenuation: true });
+      R3.dust = new T.Points(dgeo, dm); R3.dust.userData.base = dpos.slice(0); R3.group.add(R3.dust);
+    })();
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
@@ -657,12 +673,12 @@
         if (!WESTERN[hole.theme || 'grass']) continue;
         if (t < 0.34) {
           var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8, cac = new T.Group();
-          var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 8), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk); outline(trunk, 1.07);
+          var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 14), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk); outline(trunk, 1.07);
           var na = 1 + (prnd(k + 17) > 0.5 ? 1 : 0);
           for (var ai = 0; ai < na; ai++) {
             var sgn = ai ? -1 : 1, ay = ch * (0.42 + prnd(k + 19 + ai) * 0.2);
-            var armO = new T.Mesh(new T.CylinderGeometry(cr * .55, cr * .6, cr * 2.6, 7), cacM); armO.rotation.z = sgn * PI / 2; armO.position.set(sgn * cr * 1.6, ay, 0); cac.add(armO);
-            var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 7), cacM); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
+            var armO = new T.Mesh(new T.CylinderGeometry(cr * .55, cr * .6, cr * 2.6, 12), cacM); armO.rotation.z = sgn * PI / 2; armO.position.set(sgn * cr * 1.6, ay, 0); cac.add(armO);
+            var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 12), cacM); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
           }
           cac.position.set(px, py, pz); cac.rotation.y = prnd(k + 23) * TAU; R3.group.add(cac);
         } else if (t < 0.56) {
@@ -737,12 +753,12 @@
     hole.bumpers.forEach(function (bm, bmi) {
       var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r;
       var cs = new T.Mesh(new T.CircleGeometry(r * 1.4, 24), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .4 })); cs.rotation.x = -PI / 2; cs.position.set(bm.x, gy + 1.2, bm.z); R3.group.add(cs);
-      var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 28), chromeB); base.position.y = 5; base.castShadow = true; g.add(base); outline(base, 1.05);
+      var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 36), chromeB); base.position.y = 5; base.castShadow = true; g.add(base);
       var skirtC = new T.Mesh(new T.CylinderGeometry(r * 0.9, r * 1.04, 18, 28), bumpRed); skirtC.position.y = 19; skirtC.castShadow = true; g.add(skirtC);
       var coreM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xffb31e, emissiveIntensity: .55, roughness: .35 });
       var core = new T.Mesh(new T.SphereGeometry(r * 0.46, 18, 14), coreM); core.position.y = 30 + r * 0.16; g.add(core); bm.coreM = coreM;
       var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 28, 18, 0, TAU, 0, PI * 0.58), bumpGlass); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
-      var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 24), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap); outline(cap, 1.06);   // classic red bumper cap seen from above
+      var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 32), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap);   // classic red bumper cap seen from above
       var btn = new T.Mesh(new T.CylinderGeometry(r * 0.26, r * 0.3, 5, 18), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
       var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 12, 34), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
       var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 20, 14), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
@@ -848,18 +864,18 @@
       [[-.42, .72], [.42, .72]].forEach(function (e) { var eye = new T.Mesh(new T.SphereGeometry(en.r * .2, 8, 8), new T.MeshStandardMaterial({ color: 0xffee44, emissive: 0xaa8800, emissiveIntensity: .7 })); eye.position.set(e[0] * en.r, en.r * 1.15, e[1] * en.r); g.add(eye); });
       g.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); R3.group.add(g); en.mesh = g;
     });
-    var cu = hole.cup, cy = hole.terrain(cu.x, cu.z);
+    var cu = hole.cup, cy = hole.terrain(cu.x, cu.z), sink = 18;   // hardware sits down inside the carved recess
     // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim
-    var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, 34, 26, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - 17, cu.z); R3.group.add(liner);
-    var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 24), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - 33, cu.z); R3.group.add(pitB);
-    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 10, 28), new T.MeshStandardMaterial({ color: 0xf5c542, metalness: .85, roughness: .22, envMapIntensity: 1.4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 1.2, cu.z); R3.group.add(rim);
-    R3.cupGlow = new T.Mesh(new T.RingGeometry(K.cupR + 7, K.cupR + 34, 30), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .45, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 2.5, cu.z); R3.group.add(R3.cupGlow);   // pulsing target marker
+    var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, 34, 26, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - sink - 15, cu.z); R3.group.add(liner);
+    var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 24), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - sink - 31, cu.z); R3.group.add(pitB);
+    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 10, 28), new T.MeshStandardMaterial({ color: 0xf5c542, metalness: .85, roughness: .22, envMapIntensity: 1.4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy - sink + 1, cu.z); R3.group.add(rim);
+    R3.cupGlow = new T.Mesh(new T.RingGeometry(dimR * 0.95, dimR * 1.12, 32), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .3, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 2, cu.z); R3.group.add(R3.cupGlow);   // thin pulsing lip ring around the recess
     // flagstick: painted pole, brass finial, CLOTH pennant that waves in the wind
-    var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 225, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy + 112, cu.z); pole.castShadow = true; R3.group.add(pole);
-    var fin = new T.Mesh(new T.SphereGeometry(6.5, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .85, roughness: .25, envMapIntensity: 1.3 })); fin.position.set(cu.x, cy + 228, cu.z); R3.group.add(fin);
+    var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 225, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy - sink + 112, cu.z); pole.castShadow = true; R3.group.add(pole);
+    var fin = new T.Mesh(new T.SphereGeometry(6.5, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .85, roughness: .25, envMapIntensity: 1.3 })); fin.position.set(cu.x, cy - sink + 228, cu.z); R3.group.add(fin);
     var FL = 92, FH = 42, fgeo = new T.PlaneGeometry(FL, FH, 14, 3); fgeo.translate(FL / 2 + 3, 0, 0);
     R3.flag = new T.Mesh(fgeo, new T.MeshStandardMaterial({ map: flagTex(), side: T.DoubleSide, roughness: .85 }));
-    R3.flag.position.set(cu.x, cy + 196, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
+    R3.flag.position.set(cu.x, cy - sink + 196, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
     R3.flagWave = { geo: fgeo, base: fgeo.attributes.position.array.slice(0), L: FL };
     // balls
     R3.ballMeshes = []; R3.bsh = []; R3.shieldMeshes = [];
@@ -1244,7 +1260,7 @@
   function syncMeshes() {
     ensureBallMeshes(); var hole = St.hole;
     xrayWalls(hole);
-    for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
+    for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); if (R3.cupDimple && !b.air) { var cdp = R3.cupDimple, dd2 = hyp(b.x - cdp.x, b.z - cdp.z); if (dd2 < cdp.R) m.position.y = b.y - cdp.d * (1 - (dd2 / cdp.R) * (dd2 / cdp.R)); } var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
     for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; if (R3.shieldMeshes && R3.shieldMeshes[i]) R3.shieldMeshes[i].visible = false; } }
     var bigFl = 0, bigBm = null;
     for (i = 0; i < hole.bumpers.length; i++) {
@@ -1255,7 +1271,7 @@
       if (bm.coreM) bm.coreM.emissiveIntensity = idle + fn * 5.5;
       if (bm.btnM) bm.btnM.emissiveIntensity = 0.35 + idle * 0.5 + fn * 4;
       if (bm.halo) bm.halo.material.opacity = fn * 0.8;
-      if (bm.glow) bm.glow.material.opacity = idle * 0.1 + fn * 0.85;
+      if (bm.glow) bm.glow.material.opacity = idle * 0.035 + fn * 0.85;
       if (bm.ring) bm.ring.position.y = bm.ringY0 - fn * 17;   // chrome ring SLAMS down on the coil like the real machine
       if (fn > bigFl) { bigFl = fn; bigBm = bm; }
     }
@@ -1285,6 +1301,7 @@
       fp.needsUpdate = true; fw.geo.computeVertexNormals();
     }
     if (R3.portalSwirls) for (i = 0; i < R3.portalSwirls.length; i++) { var psw = R3.portalSwirls[i]; psw.m.rotation.z = St.t * psw.sp * psw.dir; }
+    if (R3.dust) { var dp2 = R3.dust.geometry.attributes.position, db2 = R3.dust.userData.base; for (i = 0; i < dp2.count; i++) { var ph3 = i * 1.71; dp2.setX(i, db2[i * 3] + Math.sin(St.t * 0.31 + ph3) * 40); dp2.setY(i, db2[i * 3 + 1] + Math.sin(St.t * 0.47 + ph3 * 1.3) * 24); dp2.setZ(i, db2[i * 3 + 2] + Math.cos(St.t * 0.26 + ph3) * 40); } dp2.needsUpdate = true; }
     if (R3.cupGlow) { var pu = 0.5 + 0.5 * Math.sin(St.t * 2.3); R3.cupGlow.scale.set(1 + pu * 0.55, 1 + pu * 0.55, 1); R3.cupGlow.material.opacity = 0.2 + pu * 0.34; }
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
@@ -2046,7 +2063,7 @@
     if (St.bannerT > 0 && St.bannerT < 900) St.bannerT -= dt; St.t += dt;
   }
   function tick(dt) { if (St.slowT > 0) { St.slowT = Math.max(0, St.slowT - dt); dt *= 0.45; } St.acc += dt; var fx = 1 / K.hz, guard = 0; while (St.acc >= fx && guard++ < 90) { physStep(fx); St.acc -= fx; } stepVisuals(dt); }
-  function frame(ts) { var dt = Math.min(0.05, (ts - St.last) / 1000 || 0); St.last = ts; if (ED.on) { if (ED.view3d) { if (ED.dirty3d) { ED.dirty3d = false; buildScene(ED.draft); } St.t += dt; var hh = St.hole; for (var wi = 0; wi < (hh.windmills || []).length; wi++) hh.windmills[wi].ang += hh.windmills[wi].speed * dt; for (var ei = 0; ei < (hh.enemies || []).length; ei++) { var en = hh.enemies[ei]; en.ph += en.speed * dt; var eu = Math.abs((en.ph % 2) - 1); en.cx = en.x + (en.ex - en.x) * eu; en.cz = en.z + (en.ez - en.z) * eu; } syncMeshes(); orbitCam(); renderGL(); if (St.hctx) draw3DHud(St.hctx); } else if (St.hctx) drawEditor(St.hctx); requestAnimationFrame(frame); return; } if (St.state !== 'load') tick(dt); drawHUD(); requestAnimationFrame(frame); }
+  function frame(ts) { var dt = Math.min(0.05, (ts - St.last) / 1000 || 0); St.last = ts; var _g1 = document.getElementById('glassTL'), _g2 = document.getElementById('glassTR'), _g3 = document.getElementById('glassPM'); if (_g1) { var _gd = (ED.on || St.state === 'load') ? 'none' : 'block'; _g1.style.display = _gd; if (_g2) _g2.style.display = _gd; if (_g3) _g3.style.display = (!ED.on && St.state === 'aim') ? 'block' : 'none'; } if (ED.on) { if (ED.view3d) { if (ED.dirty3d) { ED.dirty3d = false; buildScene(ED.draft); } St.t += dt; var hh = St.hole; for (var wi = 0; wi < (hh.windmills || []).length; wi++) hh.windmills[wi].ang += hh.windmills[wi].speed * dt; for (var ei = 0; ei < (hh.enemies || []).length; ei++) { var en = hh.enemies[ei]; en.ph += en.speed * dt; var eu = Math.abs((en.ph % 2) - 1); en.cx = en.x + (en.ex - en.x) * eu; en.cz = en.z + (en.ez - en.z) * eu; } syncMeshes(); orbitCam(); renderGL(); if (St.hctx) draw3DHud(St.hctx); } else if (St.hctx) drawEditor(St.hctx); requestAnimationFrame(frame); return; } if (St.state !== 'load') tick(dt); drawHUD(); requestAnimationFrame(frame); }
   function resize() { var r = St.scene.getBoundingClientRect(); St.dpr = Math.min(2, window.devicePixelRatio || 1); St.w = r.width; St.h = r.height; St.hud.width = Math.round(St.w * St.dpr); St.hud.height = Math.round(St.h * St.dpr); if (R3.ready) { R3.r.setSize(St.w, St.h, false); R3.cam.aspect = St.w / St.h; R3.cam.updateProjectionMatrix(); } if (ED.on) edToolbarLabels(); }
   function audioUI() {
     var dock = document.getElementById('snd'); if (!dock) return;
