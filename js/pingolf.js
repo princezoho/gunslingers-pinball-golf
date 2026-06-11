@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 77 · CINEMA';
+  var BUILD = 'BUILD 78 · TEN TIMES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -754,8 +754,8 @@
       aoArr[ai * 3] = aoArr[ai * 3 + 1] = aoArr[ai * 3 + 2] = sh3;
     }
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
-    var grassD = photoTex('grass_d.jpg', true, [6, 18]), grassN = photoTex('grass_n.jpg', false, [6, 18]);
-    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: 0xcdd3b0, vertexColors: true, roughness: .95, envMapIntensity: .25 });
+    var grassD = photoTex('grass_d.jpg', true, [8, 24]), grassN = photoTex('grass_n.jpg', false, [8, 24]);
+    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: 0xf0f2e4, vertexColors: true, roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
     (function () {
@@ -929,8 +929,23 @@
       var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
       var mm = new T.Mesh(gg, mat); R3.group.add(mm); return mm;
     }
-    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var wrep = Math.max(1, Math.round(L / 260)), wD = photoTex('wood_d.jpg#' + wrep, true), wN = photoTex('wood_n.jpg#' + wrep, false); wD.repeat.set(wrep, 1); wN.repeat.set(wrep, 1);   // repeat bucketed per wall length so planks never stretch (clone()-before-load is blank in r128, so each bucket is its own load)
-      var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: new T.Color(s.c).lerp(new T.Color(0xffffff), 0.35), roughness: .8 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: null, fade: 0, gy: gy }; });
+    var postWoodM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#post', true), normalMap: photoTex('wood_n.jpg#post', false), color: 0xc8a070, roughness: .8 });
+    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2);
+      var wrep = Math.max(1, Math.round(L / 260)), wD = photoTex('wood_d.jpg#' + wrep, true), wN = photoTex('wood_n.jpg#' + wrep, false); wD.repeat.set(wrep, 1); wN.repeat.set(wrep, 1);
+      var prnd2 = function (n) { var v = Math.sin((s.ax + s.az + n) * 12.97) * 43758.5453; return v - Math.floor(v); };
+      var nPl = Math.max(2, Math.round(s.h / 26));   // stacked plank courses — a built fence, not an extruded box
+      var pm = new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: new T.Color(s.c).lerp(new T.Color(0xffffff), 0.34), roughness: .8 });
+      var mats = [pm];
+      for (var pl = 0; pl < nPl; pl++) {
+        var ph2 = s.h / nPl;
+        var plank = new T.Mesh(new T.BoxGeometry(L + 14, ph2 - 1.6, 20 + prnd2(pl + 9) * 4), pm);
+        plank.position.y = ph2 * (pl + 0.5); plank.position.z = (prnd2(pl + 3) - .5) * 3; plank.rotation.z = (prnd2(pl + 5) - .5) * 0.004;
+        plank.castShadow = pl === 1; plank.receiveShadow = true; g.add(plank);   // one course casts the shadow — same silhouette, half the shadow draws
+      }
+      var capM2 = capm.clone(); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 27), capM2); cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);
+      [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(9.5, 11, s.h + 16, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 2), (s.h + 16) / 2 - 4, 0); post.castShadow = true; g.add(post);
+        var pcap = new T.Mesh(new T.SphereGeometry(9.5, 20, 12, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 2), s.h + 12, 0); g.add(pcap); });
+      g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
@@ -942,31 +957,31 @@
       var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r, kind = bmi % 3;
       turfDecal(bm.x, bm.z, 0, r * 1.4, 40, 3, new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .35, depthWrite: false }), 1.6);
       bm.glow = turfDecal(bm.x, bm.z, 0, r * 1.95, 40, 3, new T.MeshBasicMaterial({ color: 0xffc24e, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false }), 2.6);
-      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 16, 72), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
+      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 24, 128), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
       var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 32, 20), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
       if (kind === 1) {   // SALOON OIL LANTERN — brass body, real glass chimney, a living flame inside
-        var lbase = new T.Mesh(new T.CylinderGeometry(r * .8, r * 1.05, 14, 48), brassM); lbase.position.y = 7; lbase.castShadow = true; g.add(lbase);
+        var lbase = new T.Mesh(new T.CylinderGeometry(r * .8, r * 1.05, 14, 96), brassM); lbase.position.y = 7; lbase.castShadow = true; g.add(lbase);
         var tank = new T.Mesh(new T.SphereGeometry(r * .62, 40, 26), brassM); tank.scale.y = .62; tank.position.y = 20; tank.castShadow = true; g.add(tank);
         var lpts = []; for (var li = 0; li <= 16; li++) { var lt = li / 16; lpts.push(new T.Vector2(r * (0.42 + Math.sin(lt * PI) * 0.16), 26 + lt * r * 1.15)); }
-        var chim = new T.Mesh(new T.LatheGeometry(lpts, 48), glassM); chim.castShadow = false; g.add(chim);
+        var chim = new T.Mesh(new T.LatheGeometry(lpts, 96), glassM); chim.castShadow = false; g.add(chim);
         var flameM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xff9a1e, emissiveIntensity: .9, roughness: .4 });
         var flame = new T.Mesh(new T.SphereGeometry(r * .24, 24, 18), flameM); flame.scale.y = 1.7; flame.position.y = 30 + r * .5; g.add(flame); bm.coreM = flameM;
         var crown = new T.Mesh(new T.CylinderGeometry(r * .3, r * .48, 9, 40), brassM); crown.position.y = 27 + r * 1.18; crown.castShadow = true; g.add(crown);
         var knob = new T.Mesh(new T.SphereGeometry(r * .14, 20, 14), brassM); knob.position.y = 33 + r * 1.18; g.add(knob); bm.btnM = null;
       } else if (kind === 2) {   // WHISKEY BARREL — coopered staves, iron hoops, amber glow seeping from the bung
         var bpts = []; for (var bi2 = 0; bi2 <= 18; bi2++) { var bt = bi2 / 18; bpts.push(new T.Vector2(r * (0.78 + Math.sin(bt * PI) * 0.3), 2 + bt * r * 1.5)); }
-        var barrel = new T.Mesh(new T.LatheGeometry(bpts, 56), new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6534, roughness: .62, envMapIntensity: .5 })); barrel.castShadow = true; g.add(barrel);
+        var barrel = new T.Mesh(new T.LatheGeometry(bpts, 112), new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6534, roughness: .62, envMapIntensity: .5 })); barrel.castShadow = true; g.add(barrel);
         var lidM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x7e5128, roughness: .7 });
         var lid = new T.Mesh(new T.CylinderGeometry(r * .78, r * .78, 5, 56), lidM); lid.position.y = 3 + r * 1.5; lid.castShadow = true; g.add(lid);
         [0.22, 0.5, 0.78].forEach(function (hh) { var hp = new T.Mesh(new T.TorusGeometry(r * (0.78 + Math.sin(hh * PI) * 0.3) + 1.5, 2.6, 12, 64), darkIronM); hp.rotation.x = -PI / 2; hp.position.y = 2 + hh * r * 1.5; g.add(hp); });
         var bungM = new T.MeshStandardMaterial({ color: 0xffba3a, emissive: 0xd97a10, emissiveIntensity: .8, roughness: .35 });
         var bung = new T.Mesh(new T.CylinderGeometry(r * .2, r * .2, 4, 32), bungM); bung.position.y = 6 + r * 1.5; g.add(bung); bm.coreM = bungM;
       } else {   // CLASSIC POP BUMPER — chrome base, lacquered skirt, glowing bulb under a real glass dome
-        var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 72), chromeB); base.position.y = 5; base.castShadow = true; g.add(base);
-        var skirtC = new T.Mesh(new T.CylinderGeometry(r * 0.9, r * 1.04, 18, 64), bumpRed); skirtC.position.y = 19; skirtC.castShadow = true; g.add(skirtC);
+        var base = new T.Mesh(new T.CylinderGeometry(r * 1.06, r * 1.18, 10, 128), chromeB); base.position.y = 5; base.castShadow = true; g.add(base);
+        var skirtC = new T.Mesh(new T.CylinderGeometry(r * 0.9, r * 1.04, 18, 128), bumpRed); skirtC.position.y = 19; skirtC.castShadow = true; g.add(skirtC);
         var coreM = new T.MeshStandardMaterial({ color: 0xffd24a, emissive: 0xffb31e, emissiveIntensity: .55, roughness: .35 });
         var core = new T.Mesh(new T.SphereGeometry(r * 0.46, 36, 26), coreM); core.position.y = 30 + r * 0.16; g.add(core); bm.coreM = coreM;
-        var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 56, 36, 0, TAU, 0, PI * 0.58), glassM); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
+        var dome = new T.Mesh(new T.SphereGeometry(r * 0.78, 96, 64, 0, TAU, 0, PI * 0.58), glassM); dome.scale.y = 0.85; dome.position.y = 28; g.add(dome);
         var cap = new T.Mesh(new T.CylinderGeometry(r * 0.52, r * 0.64, 8, 64), bumpRed); cap.position.y = 28 + r * 0.6; cap.castShadow = true; g.add(cap);
         var btn = new T.Mesh(new T.CylinderGeometry(r * 0.2, r * 0.24, 5, 36), new T.MeshStandardMaterial({ color: 0xfff3d4, emissive: 0xffce5a, emissiveIntensity: .4, roughness: .3 })); btn.position.y = 34 + r * 0.6; g.add(btn); bm.btnM = btn.material;
       }
@@ -1466,9 +1481,7 @@
       if (t > 0.02 && t < 0.985) { var losY = cy + (pb.y - cy) * t; blocking = losY < m3.gy + s.h + 14; }
       m3.fade += ((blocking ? 1 : 0) - m3.fade) * 0.22; if (!blocking && m3.fade < 0.015) m3.fade = 0;
       var tr = m3.fade > 0.01, op = 1 - m3.fade * 0.78;
-      if (m3.body.material.transparent !== tr) { m3.body.material.transparent = tr; m3.cap.material.transparent = tr; }
-      m3.body.material.opacity = op; m3.cap.material.opacity = op;
-      if (m3.out) m3.out.visible = m3.fade < 0.4;
+      for (var mi2 = 0; mi2 < m3.mats.length; mi2++) { var mm2 = m3.mats[mi2]; if (mm2.transparent !== tr) mm2.transparent = tr; mm2.opacity = op; }
     }
   }
   function syncMeshes() {
@@ -1535,17 +1548,17 @@
     // HUD type — big Wantedo straight on screen, like a real cabinet
     var narrow = w < 720;
     var topLine = St.hi >= 0 ? ('HOLE ' + (St.hi + 1) + '/' + HOLES.length + ' · PAR ' + St.hole.par) : ('★ ' + (St.customName || St.hole.name));
-    hudTxt(c, topLine, 22, 36, narrow ? 15 : 19, COL.gold);
-    if (St.hi >= 0 && !narrow) hudTxt(c, St.hole.name, 22, 60, 15, 'rgba(243,238,221,.88)');
+    hudTxt(c, topLine, 22, 36, narrow ? 15 : 19, '#ffffff');
+    if (St.hi >= 0 && !narrow) hudTxt(c, St.hole.name, 22, 60, 15, 'rgba(255,255,255,.8)');
     var sy = narrow ? 86 : 112, ssz = narrow ? 38 : 50;
     var nw = hudTxt(c, String(St.strokes), 22, sy, ssz, COL.cream);
-    hudTxt(c, St.strokes === 1 ? 'STROKE' : 'STROKES', 30 + nw, sy, Math.round(ssz * 0.42), COL.gold);
-    if (St.holeBest != null) hudTxt(c, '★ BEST ' + St.holeBest, 22, sy + 26, 14, COL.gold);
+    hudTxt(c, St.strokes === 1 ? 'STROKE' : 'STROKES', 30 + nw, sy, Math.round(ssz * 0.42), '#ffffff');
+    if (St.holeBest != null) hudTxt(c, '★ BEST ' + St.holeBest, 22, sy + 26, 14, 'rgba(255,255,255,.85)');
     var dp = b ? Math.round(hyp(b.x - St.hole.cup.x, b.z - St.hole.cup.z)) : 0;
-    hudTxt(c, 'TO PIN', w - 22, 30, 13, COL.gold, 'right');
+    hudTxt(c, 'TO PIN', w - 22, 30, 13, 'rgba(255,255,255,.85)', 'right');
     hudTxt(c, dp + ' YD', w - 22, narrow ? 58 : 64, narrow ? 24 : 32, COL.cream, 'right');
     var tot = St.scores.reduce(function (a, cv) { return a + (cv || 0); }, 0), tp = tot - (St.parDone || 0);
-    if (!narrow && St.hi > 0) hudTxt(c, 'THRU ' + St.hi + ' · ' + tot + ' (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 34, 16, COL.gold, 'center');
+    if (!narrow && St.hi > 0) hudTxt(c, 'THRU ' + St.hi + ' · ' + tot + ' (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 34, 16, '#ffffff', 'center');
     if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpz = 1 + (St.coinPulse || 0) * 0.55, cyy = sy + (St.holeBest != null ? 50 : 28); c.save(); c.translate(22, cyy); c.scale(cpz, cpz); hudTxt(c, '🪙 ' + (St.coins || 0) + '   ★ ' + (St.points || 0), 0, 0, 17, (St.coinPulse || 0) > 0.25 ? '#fff0a0' : COL.gold); c.restore(); }
     // active power-up callouts — bare stroked type, no chips
     var badges = []; var pball = primeBall();
@@ -1554,10 +1567,10 @@
     if (pball && pball.shield) badges.push(['✦ SHIELD', '#55c6ff']);
     badges.forEach(function (bd, bi) { hudTxt(c, bd[0], w / 2, 64 + bi * 26, 17, bd[1], 'center'); });
     // bumper-combo meter — pulsing multiplier while the ball racks up hits this shot
-    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
+    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : '#ffffff'; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 92px Wantedo, Georgia'; c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 80px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.fillText(St.banner, w / 2, h * .17); c.globalAlpha = 1; }   // white, parked ABOVE the table - never on top of the playfield
     c.globalAlpha = 0.85;
     if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
     else if (St.state === 'roll') hudTxt(c, 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
