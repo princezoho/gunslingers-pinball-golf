@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 76 · SPAGHETTI WESTERN';
+  var BUILD = 'BUILD 77 · CINEMA';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -423,6 +423,14 @@
     } catch (e) { R3.ready = false; return false; }
   }
   function tex(key, w, h, paint, rep) { if (R3['_' + key]) return R3['_' + key]; var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; R3['_' + key] = t; return t; }
+  function photoTex(file, srgb, rp) {   // real photographic PBR maps (CC0, Poly Haven) — diffuse in sRGB, normal maps LINEAR or lighting breaks
+    var key = '_pt_' + file; if (R3[key]) return R3[key];
+    var t = new T.TextureLoader().load('assets/tex/' + file.split('#')[0]);
+    t.wrapS = t.wrapT = T.RepeatWrapping; if (rp) t.repeat.set(rp[0], rp[1]);
+    if (srgb && T.sRGBEncoding) t.encoding = T.sRGBEncoding;
+    if (R3.r && R3.r.capabilities) t.anisotropy = Math.min(8, R3.r.capabilities.getMaxAnisotropy());
+    return (R3[key] = t);
+  }
   function dualTex(key, w, paint2, rep) {   // builds a COLOR map + matching grayscale BUMP map in one pass (photoreal ground needs both)
     if (R3['_' + key]) return R3['_' + key];
     var ca = document.createElement('canvas'), cb = document.createElement('canvas'); ca.width = ca.height = cb.width = cb.height = w;
@@ -741,11 +749,13 @@
       var dEdge = Math.min(Math.abs(ax2 - bn.minX), Math.abs(bn.maxX - ax2), Math.abs(az2 - bn.minZ), Math.abs(bn.maxZ - az2));
       var inX = ax2 > bn.minX - 1 && ax2 < bn.maxX + 1, inZ = az2 > bn.minZ - 1 && az2 < bn.maxZ + 1;
       var sh3 = (inX && inZ) || dEdge < 240 ? 0.74 + 0.26 * clamp(dEdge / 240, 0, 1) : 1;
+      var mot = Math.sin(ax2 * 0.0041 + Math.sin(az2 * 0.0029) * 2.6) + Math.sin(az2 * 0.0053 + Math.sin(ax2 * 0.0023) * 2.2);   // organic world-space patchiness — breaks any texture tiling
+      sh3 *= 1 + mot * 0.045;
       aoArr[ai * 3] = aoArr[ai * 3 + 1] = aoArr[ai * 3 + 2] = sh3;
     }
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
-    var turfTB = turfTex2(); turfTB.bump.repeat.copy(turfTB.map.repeat);
-    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: turfTB.map, bumpMap: turfTB.bump, bumpScale: 2.6, color: hole.turf, vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: turfTB.map, bumpMap: turfTB.bump, bumpScale: 2.6, color: 0x839a52, vertexColors: true, roughness: .95, envMapIntensity: .25 });
+    var grassD = photoTex('grass_d.jpg', true, [6, 18]), grassN = photoTex('grass_n.jpg', false, [6, 18]);
+    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: 0xcdd3b0, vertexColors: true, roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
     (function () {
@@ -761,17 +771,24 @@
         }
         geo.setIndex(keep); geo.computeVertexNormals();
       }
-      var collarMat = turfMat.clone(); collarMat.vertexColors = true;   // mown apron: covers the blocky grid cut, shaded to melt into the surrounding green
-      var cInner = K.cupR, cOuter = openR + cell + 36, cgeo = new T.RingGeometry(cInner, cOuter, 48, 4);
-      var cp = cgeo.attributes.position, ccol = new Float32Array(cp.count * 3);
-      for (var ci = 0; ci < cp.count; ci++) { var rr = Math.sqrt(cp.getX(ci) * cp.getX(ci) + cp.getY(ci) * cp.getY(ci)), cf = clamp((rr - cInner) / (cOuter - cInner), 0, 1), csh = 1 - 0.2 * cf; ccol[ci * 3] = ccol[ci * 3 + 1] = ccol[ci * 3 + 2] = csh; }
+      var collarMat = turfMat.clone(); collarMat.vertexColors = true;   // invisible patch: same material, UVs continue the turf's own map across the ring so the grass never breaks
+      var cInner = K.cupR, cOuter = openR + cell + 36, cgeo = new T.RingGeometry(cInner, cOuter, 96, 4);
+      var cp = cgeo.attributes.position, cuv = cgeo.attributes.uv, ccol = new Float32Array(cp.count * 3);
+      var pxmin = (bn.minX + bn.maxX) / 2 - spanX / 2, pzmin = midZ - spanZ / 2;
+      for (var ci = 0; ci < cp.count; ci++) {
+        var lx = cp.getX(ci), ly = cp.getY(ci), wx2 = cuP.x + lx, wz2 = cuP.z - ly;   // ring is rotated -90° about X: local (x,y) -> world (x,-y)
+        cuv.setXY(ci, (wx2 - pxmin) / spanX, 1 - (wz2 - pzmin) / spanZ);
+        var rr = Math.sqrt(lx * lx + ly * ly), lip = clamp(1 - (rr - cInner) / 9, 0, 1), csh = 1 - 0.28 * lip;   // only the immediate lip darkens, like real worn turf at a cup
+        ccol[ci * 3] = ccol[ci * 3 + 1] = ccol[ci * 3 + 2] = csh;
+      }
       cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3));
       var collar = new T.Mesh(cgeo, collarMat); collar.rotation.x = -PI / 2; collar.position.set(cuP.x, ccy + 0.4, cuP.z); collar.receiveShadow = true; R3.group.add(collar);
     })();
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
-    var sandTB = sandTex2(), skirtT = sandTB.map, srep = Math.max(8, Math.round(pr / 190)); skirtT.repeat.set(srep, srep); sandTB.bump.repeat.set(srep, srep);   // TILE the sand so the desert ground shows real grain instead of one stretched blur
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtT, bumpMap: sandTB.bump, bumpScale: 3.2, color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
+    var srep = Math.max(8, Math.round(pr / 220)), sandD = photoTex('sand_d.jpg', true), sandN = photoTex('sand_n.jpg', false); sandD.repeat.set(srep, srep); sandN.repeat.set(srep, srep);
+    var skirtTint = new T.Color(GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.5);   // photographic sand already carries its own albedo — only a light theme tint
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: sandD, normalMap: sandN, color: skirtTint, roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
     if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
@@ -901,7 +918,7 @@
       }
     }
     // walls
-    var wm = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb07840, roughness: .72 }), capm = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .55, roughness: .38, envMapIntensity: .5 });
+    var wm = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb07840, roughness: .72 }), capm = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#cap', true), normalMap: photoTex('wood_n.jpg#cap', false), color: 0xd9b98a, roughness: .6, envMapIntensity: .4 });
     function turfDecal(cx, cz, r0, r1, segs, rings, mat, lift) {   // disc/annulus that FOLLOWS the turf ripples — flat decals z-fight the undulating ground into sawtooth tears
       var pos = [], idx = [], RG = rings;
       for (var ri = 0; ri <= RG; ri++) for (var si = 0; si <= segs; si++) {
@@ -912,7 +929,8 @@
       var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
       var mm = new T.Mesh(gg, mat); R3.group.add(mm); return mm;
     }
-    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: woodTex(), bumpMap: woodTex(), bumpScale: 1.6, color: s.c, roughness: .72 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: null, fade: 0, gy: gy }; });
+    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2); var wrep = Math.max(1, Math.round(L / 260)), wD = photoTex('wood_d.jpg#' + wrep, true), wN = photoTex('wood_n.jpg#' + wrep, false); wD.repeat.set(wrep, 1); wN.repeat.set(wrep, 1);   // repeat bucketed per wall length so planks never stretch (clone()-before-load is blank in r128, so each bucket is its own load)
+      var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: new T.Color(s.c).lerp(new T.Color(0xffffff), 0.35), roughness: .8 })); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 26), capm.clone()); cap.position.y = s.h; g.add(cap); g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { body: body, cap: cap, out: null, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
