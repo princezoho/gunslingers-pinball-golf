@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 88 · HELIX LOOP';
+  var BUILD = 'BUILD 89 · POCKET WEST';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -406,7 +406,7 @@
     if (!T) return false;
     try {
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-      R3.r.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // 1.5 cap: FXAA+MSAA keep edges clean, stays comfortably under 16ms   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
+      var coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches; R3.r.setPixelRatio(Math.min(coarse ? 1.2 : 1.5, window.devicePixelRatio || 1));   // phones get a lighter pixel load; FXAA+MSAA keep edges clean   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
       if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.08; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
@@ -680,7 +680,7 @@
         '  gl_FragColor = vec4((lB < lMin || lB > lMax) ? rA : rB, 1.0);',
         '}'].join('\n');
       var rt;
-      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = 4; }
+      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 2 : 4; }
       else rt = new T.WebGLRenderTarget(8, 8);
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
@@ -1595,7 +1595,7 @@
     if (St.holeBest != null) hudTxt(c, '★ BEST ' + St.holeBest, 22, sy + 26, 14, 'rgba(255,255,255,.85)');
     var dp = b ? Math.round(hyp(b.x - St.hole.cup.x, b.z - St.hole.cup.z)) : 0;
     hudTxt(c, 'TO PIN', w - 22, 30, 13, 'rgba(255,255,255,.85)', 'right');
-    hudTxt(c, dp + ' YD', w - 22, narrow ? 58 : 64, narrow ? 24 : 32, COL.cream, 'right');
+    hudTxt(c, dp + ' YD', w - 22, narrow ? 54 : 64, narrow ? 15 : 32, COL.cream, 'right');
     var tot = St.scores.reduce(function (a, cv) { return a + (cv || 0); }, 0), tp = tot - (St.parDone || 0);
     if (!narrow && St.hi > 0) hudTxt(c, 'THRU ' + St.hi + ' · ' + tot + ' (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 34, 16, '#ffffff', 'center');
     if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpz = 1 + (St.coinPulse || 0) * 0.55, cyy = sy + (St.holeBest != null ? 50 : 28); c.save(); c.translate(22, cyy); c.scale(cpz, cpz); hudTxt(c, '🪙 ' + (St.coins || 0) + '   ★ ' + (St.points || 0), 0, 0, 17, (St.coinPulse || 0) > 0.25 ? '#fff0a0' : COL.gold); c.restore(); }
@@ -1609,10 +1609,10 @@
     if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : '#ffffff'; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 80px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.fillText(St.banner, w / 2, h * .17); c.globalAlpha = 1; }   // white, parked ABOVE the table - never on top of the playfield
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; var bfs = 80; c.font = '900 80px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 28) bfs = Math.max(20, Math.floor(80 * (w - 28) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.fillText(St.banner, w / 2, h * .17); c.globalAlpha = 1; }   // white, parked ABOVE the table - never on top of the playfield
     c.globalAlpha = 0.85;
-    if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
-    else if (St.state === 'roll') hudTxt(c, 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
+    if (St.state === 'aim') hudTxt(c, narrow ? 'PULL BACK FROM THE BALL · RELEASE TO FIRE' : 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, narrow ? 10 : 13, COL.cream, 'center');
+    else if (St.state === 'roll') hudTxt(c, narrow ? 'TAP LEFT / RIGHT TO FIRE THE FLIPPERS' : 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, narrow ? 10 : 13, COL.cream, 'center');
     c.globalAlpha = 1;
   }
   // simulate the shot forward (gravity, terrain, roll friction, wall bounces) so the aim guide shows the real path + bank shots
@@ -1664,7 +1664,7 @@
     if (St.drag && St.drag.pull > 5) { c.strokeStyle = 'rgba(255,238,196,.6)'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(bs.x, bs.y); c.lineTo(St.drag.sx, St.drag.sy); c.stroke(); c.fillStyle = St.power > .8 ? COL.red : 'rgba(255,238,196,.92)'; c.beginPath(); c.arc(St.drag.sx, St.drag.sy, 9, 0, TAU); c.fill(); }
   }
   function powerMeter(c, w, h) {   // hard-edged powder-charge wedge: thin -> tall, solid fills, ink outline — no pills, no gradients
-    var bw = 280, bh = 26, x = w / 2 - bw / 2, yb = h - 44, p = St.power;
+    var narrow = w < 720, bw = narrow ? Math.min(280, w - 32) : 280, bh = 26, x = w / 2 - bw / 2, yb = narrow ? h - 150 : h - 44, p = St.power;
     function wedgePath(f) { var xe = x + bw * f, he = 5 + (bh - 5) * f; c.beginPath(); c.moveTo(x, yb); c.lineTo(xe, yb); c.lineTo(xe, yb - he); c.lineTo(x, yb - 5); c.closePath(); }
     c.lineJoin = 'round';
     wedgePath(1); c.fillStyle = 'rgba(16,8,3,.55)'; c.fill();

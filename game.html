@@ -41,6 +41,13 @@
   #load p { color:#c9a06a; font-size:3vmin; font-family:Wantedo,Georgia; }
   .spin { width:40px; height:40px; border-radius:50%; border:5px solid #3a2616; border-top-color:var(--gold); animation:s .9s linear infinite; }
   @keyframes s { to { transform:rotate(360deg); } }
+  /* phones: bigger touch targets, docks tucked tighter */
+  @media (max-width:720px) {
+    #cam { right:4px; gap:14px; }
+    #cam button { width:48px; height:48px; font-size:26px; }
+    #snd { right:4px; bottom:10px; }
+    #snd button { width:48px; height:48px; }
+  }
 </style>
 </head>
 <body>
@@ -67,6 +74,6 @@
     </div>
   </div>
   <script src="vendor/three.min.js"></script>
-  <script src="js/pingolf.js?v=132"></script>
+  <script src="js/pingolf.js?v=133"></script>
 </body>
 </html>
