@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 83 · NO PITS, REAL LOOPS';
+  var BUILD = 'BUILD 84 · FILM FADE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -408,7 +408,7 @@
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
       R3.r.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // 1.5 cap: FXAA+MSAA keep edges clean, stays comfortably under 16ms   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
-      if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 0.96; }
+      if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.08; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
       R3.scene = new T.Scene(); R3.scene.fog = new T.Fog(0xc9a06a, 2400, 6500);
       R3.cam = new T.PerspectiveCamera(58, 1, 1, 14000);
@@ -653,7 +653,8 @@
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
         '  col = mix(vec3(lum), col, 1.12);',
-        '  col = clamp((col - 0.5) * 1.2 + 0.5, 0.0, 1.0);',
+        '  col = clamp((col - 0.5) * 1.16 + 0.5, 0.0, 1.0);',
+        '  col = col * 0.93 + vec3(0.055, 0.050, 0.044);',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       // FXAA — edge smoothing on the final image: kills the jaggies on rounded silhouettes and the painted horizon line
@@ -687,7 +688,7 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.09 }, uVig: { value: 0.45 }, uDof: { value: 0.0036 }, uFocus: { value: 0.55 }, uBloom: { value: 0.68 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.14 }, uVig: { value: 0.33 }, uDof: { value: 0.0036 }, uFocus: { value: 0.55 }, uBloom: { value: 0.68 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
@@ -957,10 +958,10 @@
         var pcap = new T.Mesh(new T.SphereGeometry(9.5, 20, 12, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 2), s.h + 12, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
-    var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .1, envMapIntensity: 1.7 });
+    var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .07, envMapIntensity: 2.4 });
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
     var bumpGlass = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xfff2cf, metalness: .05, roughness: .05, transparent: true, opacity: .22, envMapIntensity: 2.0, clearcoat: 1, clearcoatRoughness: .04, side: T.DoubleSide }) : new T.MeshStandardMaterial({ color: 0xfff2cf, transparent: true, opacity: .22, roughness: .08 });
-    var glassM = new T.MeshPhysicalMaterial({ color: 0xfff6e0, metalness: 0, roughness: .04, transmission: .94, ior: 1.45, transparent: true, opacity: 1, envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: .03, side: T.DoubleSide });
+    var glassM = new T.MeshPhysicalMaterial({ color: 0xfff8ea, metalness: 0, roughness: .02, transmission: .96, ior: 1.5, transparent: true, opacity: 1, envMapIntensity: 3.2, clearcoat: 1, clearcoatRoughness: .02, side: T.DoubleSide });
     var brassM = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .92, roughness: .24, envMapIntensity: 1.6 });
     var darkIronM = new T.MeshStandardMaterial({ color: 0x3a3026, metalness: .8, roughness: .42, envMapIntensity: 1.0 });
     hole.bumpers.forEach(function (bm, bmi) {
@@ -1663,14 +1664,14 @@
 
   /* ================================================================ input */
   function ptr(e) { var r = St.scene.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-  function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'L' : 'R'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
+  function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'R' : 'L'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
   function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0, len = Math.sqrt(dx * dx + dy * dy); St.drag.pull = len; if (len > 8) St.aimYaw = St.drag.yaw0 + Math.atan2(dx, dy); St.power = clamp(len / K.pullPx, 0.05, 1); }   // SLINGSHOT: pull any way — the shot fires the opposite way, full 360° incl. backwards
   function onUp(e) { if (ED.on) { edUp(); return; } if (St.ptr) { var role = St.ptr[e.pointerId]; if (role === 'L' || role === 'R') { delete St.ptr[e.pointerId]; var any = false; for (var k in St.ptr) if (St.ptr[k] === role) any = true; flipPress(role, any); return; } delete St.ptr[e.pointerId]; } if (!St.drag) return; var pull = St.drag.pull; St.drag = null; if (pull >= 14) shoot(); }
   function onKey(down, e) {
     var k = e.code; if (ED.on || St.state === 'load') return;
     // A / D fire the flippers — available AT ANY TIME (they animate in every state; they bat the ball while it's rolling)
-    if (k === 'KeyA') { flipPress('L', down); e.preventDefault(); return; }
-    if (k === 'KeyD') { flipPress('R', down); e.preventDefault(); return; }
+    if (k === 'KeyA') { flipPress('R', down); e.preventDefault(); return; }   // camera looks down +z, so the world-'R' flipper (at +x) is the paddle on the LEFT of the screen
+    if (k === 'KeyD') { flipPress('L', down); e.preventDefault(); return; }
     // arrow keys drive the CAMERA only — left/right orbit, up/down zoom
     if (down) {
       if (k === 'ArrowLeft') { St.camOrbit -= 0.08; e.preventDefault(); }
