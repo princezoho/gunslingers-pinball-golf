@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 78 · TEN TIMES';
+  var BUILD = 'BUILD 79 · SHOWPIECE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -799,7 +799,7 @@
       var cacM = new T.MeshStandardMaterial({ color: 0x39702f, roughness: .8, envMapIntensity: .15 });
       var rokM = new T.MeshStandardMaterial({ color: 0xa88a66, roughness: .95 });
       var rokM2 = new T.MeshStandardMaterial({ color: 0x8a7458, roughness: .95 });
-      var fenM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6a3c, roughness: .8 });
+      var fenM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#fen', true), normalMap: photoTex('wood_n.jpg#fen', false), color: 0xb98c5a, roughness: .8 });
       var moonRokM = new T.MeshStandardMaterial({ color: 0x6a6280, roughness: .95, flatShading: true });
       var cacVM = new T.MeshStandardMaterial({ vertexColors: true, roughness: .72, envMapIntensity: .2 });
       var ribCol = function (geo, rib, c1, c2) {   // ridge/valley vertex shading — gives the ribs real depth under the sun
@@ -918,7 +918,7 @@
       }
     }
     // walls
-    var wm = new T.MeshStandardMaterial({ map: woodTex(), color: 0xb07840, roughness: .72 }), capm = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#cap', true), normalMap: photoTex('wood_n.jpg#cap', false), color: 0xd9b98a, roughness: .6, envMapIntensity: .4 });
+    var wm = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wm', true), normalMap: photoTex('wood_n.jpg#wm', false), color: 0xc89058, roughness: .72 }), capm = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#cap', true), normalMap: photoTex('wood_n.jpg#cap', false), color: 0xd9b98a, roughness: .6, envMapIntensity: .4 });
     function turfDecal(cx, cz, r0, r1, segs, rings, mat, lift) {   // disc/annulus that FOLLOWS the turf ripples — flat decals z-fight the undulating ground into sawtooth tears
       var pos = [], idx = [], RG = rings;
       for (var ri = 0; ri <= RG; ri++) for (var si = 0; si <= segs; si++) {
@@ -970,8 +970,8 @@
         var knob = new T.Mesh(new T.SphereGeometry(r * .14, 20, 14), brassM); knob.position.y = 33 + r * 1.18; g.add(knob); bm.btnM = null;
       } else if (kind === 2) {   // WHISKEY BARREL — coopered staves, iron hoops, amber glow seeping from the bung
         var bpts = []; for (var bi2 = 0; bi2 <= 18; bi2++) { var bt = bi2 / 18; bpts.push(new T.Vector2(r * (0.78 + Math.sin(bt * PI) * 0.3), 2 + bt * r * 1.5)); }
-        var barrel = new T.Mesh(new T.LatheGeometry(bpts, 112), new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6534, roughness: .62, envMapIntensity: .5 })); barrel.castShadow = true; g.add(barrel);
-        var lidM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x7e5128, roughness: .7 });
+        var barrel = new T.Mesh(new T.LatheGeometry(bpts, 112), new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0xb98050, roughness: .62, envMapIntensity: .5 })); barrel.castShadow = true; g.add(barrel);
+        var lidM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0x96683c, roughness: .7 });
         var lid = new T.Mesh(new T.CylinderGeometry(r * .78, r * .78, 5, 56), lidM); lid.position.y = 3 + r * 1.5; lid.castShadow = true; g.add(lid);
         [0.22, 0.5, 0.78].forEach(function (hh) { var hp = new T.Mesh(new T.TorusGeometry(r * (0.78 + Math.sin(hh * PI) * 0.3) + 1.5, 2.6, 12, 64), darkIronM); hp.rotation.x = -PI / 2; hp.position.y = 2 + hh * r * 1.5; g.add(hp); });
         var bungM = new T.MeshStandardMaterial({ color: 0xffba3a, emissive: 0xd97a10, emissiveIntensity: .8, roughness: .35 });
@@ -1005,8 +1005,15 @@
       g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g;
     });
     // flippers
-    var chrome = new T.MeshStandardMaterial({ color: 0xf0f4fa, metalness: .96, roughness: .1, envMapIntensity: 2.1 }), redM = new T.MeshStandardMaterial({ color: 0xc01818, roughness: .26, metalness: .2, envMapIntensity: 1.2 });
-    hole.flippers.forEach(function (f) { var gy = hole.terrain(f.px, f.pz), g = new T.Group(); var pad = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 18, bevelEnabled: true, bevelThickness: 3, bevelSize: 2.5, bevelSegments: 5 }), chrome); pad.rotation.x = -PI / 2; pad.position.y = 16; pad.castShadow = true; g.add(pad); var piv = new T.Mesh(new T.CylinderGeometry(18, 20, 24, 16), redM); piv.position.y = 10; g.add(piv); g.position.set(f.px, gy + 6, f.pz); R3.group.add(g); f.mesh = g; });
+    var steelM = new T.MeshStandardMaterial({ color: 0xd8dde6, metalness: .92, roughness: .22, envMapIntensity: 1.6 }), redM = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xb01418, roughness: .32, metalness: .1, clearcoat: .8, clearcoatRoughness: .2, envMapIntensity: 1.1 }) : new T.MeshStandardMaterial({ color: 0xb01418, roughness: .3 });
+    hole.flippers.forEach(function (f) {
+      var gy = hole.terrain(f.px, f.pz), g = new T.Group();
+      var pad = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 16, bevelEnabled: true, bevelThickness: 4, bevelSize: 3.5, bevelSegments: 8, curveSegments: 24 }), steelM); pad.rotation.x = -PI / 2; pad.position.y = 17; pad.castShadow = true; g.add(pad);
+      var rub = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 7, bevelEnabled: true, bevelThickness: 2, bevelSize: 4.5, bevelSegments: 6, curveSegments: 24 }), redM); rub.rotation.x = -PI / 2; rub.position.y = 12; g.add(rub);   // red rubber band wrapping the underside edge, like a real machine
+      var piv = new T.Mesh(new T.CylinderGeometry(17, 19, 26, 48), new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#pv', true), normalMap: photoTex('wood_n.jpg#pv', false), color: 0x9a7048, roughness: .7 })); piv.position.y = 11; g.add(piv);
+      var pivCap = new T.Mesh(new T.SphereGeometry(13, 32, 20), steelM); pivCap.scale.y = .55; pivCap.position.y = 25; g.add(pivCap);
+      g.position.set(f.px, gy + 6, f.pz); R3.group.add(g); f.mesh = g;
+    });
     // windmills
     hole.windmills.forEach(function (wmi) {
       var gy = hole.terrain(wmi.x, wmi.z);
@@ -1040,10 +1047,10 @@
         if (s < SEG) { var a0 = s * 2; lidx.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2); }
       }
       var dg = new T.BufferGeometry(); dg.setAttribute('position', new T.BufferAttribute(lpos, 3)); dg.setAttribute('uv', new T.BufferAttribute(luv, 2)); dg.setIndex(lidx); dg.computeVertexNormals();
-      var deck = new T.Mesh(dg, new T.MeshStandardMaterial({ map: woodTex(), color: 0xc08850, roughness: .68, side: T.DoubleSide })); deck.castShadow = true; R3.group.add(deck);
+      var deck = new T.Mesh(dg, new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#dk', true), normalMap: photoTex('wood_n.jpg#dk', false), color: 0xd0a268, roughness: .68, side: T.DoubleSide })); deck.castShadow = true; R3.group.add(deck);
       var railM = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .82, roughness: .28, envMapIntensity: 1.3 });
       [-1, 1].forEach(function (sd) { var rail = new T.Mesh(new T.TorusGeometry(r, 4.5, 10, 52), railM); rail.position.set(cx + px * sd * W / 2, cy, cz + pz * sd * W / 2); rail.rotation.y = lo.ang - PI / 2; rail.castShadow = true; R3.group.add(rail); });
-      var postM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x8a5c34, roughness: .8 });
+      var postM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#dk', true), normalMap: photoTex('wood_n.jpg#dk', false), color: 0xa87848, roughness: .8 });
       [-1, 1].forEach(function (sd) { var pgy = hole.terrain(cx + dx * sd * r * 0.92, cz + dz * sd * r * 0.92), ph2 = cy - pgy; var post = new T.Mesh(new T.CylinderGeometry(5.5, 8, ph2, 8), postM); post.position.set(cx + dx * sd * r * 0.92, pgy + ph2 / 2, cz + dz * sd * r * 0.92); post.castShadow = true; R3.group.add(post); });
       var base = new T.Mesh(new T.CircleGeometry(r * .6, 22), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .3 })); base.rotation.x = -PI / 2; base.position.set(lo.x, gy + 1.5, lo.z); R3.group.add(base);
     });
