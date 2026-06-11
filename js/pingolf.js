@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 81 · BRAND SKY BACK';
+  var BUILD = 'BUILD 82 · WINDMILL SAILS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1023,8 +1023,14 @@
       var gy = hole.terrain(wmi.x, wmi.z);
       [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.CylinderGeometry(7, 10, wmi.r * 1.2, 8), new T.MeshStandardMaterial({ color: 0x6e4524, roughness: .85 })); post.position.set(wmi.x + sgn * wmi.r * 1.04, gy + wmi.r * 0.6, wmi.z); post.castShadow = true; R3.group.add(post); });
       var hub = new T.Group(); hub.position.set(wmi.x, gy + wmi.r, wmi.z);
-      var bmatA = new T.MeshStandardMaterial({ color: 0xe8e0d0, roughness: .55 }), bmatB = new T.MeshStandardMaterial({ color: 0xc8442e, roughness: .6 });
-      for (var i = 0; i < wmi.n; i++) { var blade = new T.Mesh(new T.BoxGeometry(22, wmi.r * 0.96, 10), i % 2 ? bmatB : bmatA); blade.position.y = wmi.r * 0.5; blade.castShadow = true; var bo = new T.Group(); bo.rotation.z = i / wmi.n * TAU; bo.add(blade); hub.add(bo); }
+      var railM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wmr', true), normalMap: photoTex('wood_n.jpg#wmr', false), color: 0xb98a58, roughness: .8 });
+      var bmatA = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wma', true), normalMap: photoTex('wood_n.jpg#wma', false), color: 0xf0e6d2, roughness: .65 }), bmatB = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wmb', true), normalMap: photoTex('wood_n.jpg#wmb', false), color: 0xd86040, roughness: .65 });
+      for (var i = 0; i < wmi.n; i++) {   // built timber-frame sail: two rails carrying painted slats, like a real ranch windmill
+        var bo = new T.Group(), bl = wmi.r * 0.96;
+        [-1, 1].forEach(function (rs) { var rail = new T.Mesh(new T.BoxGeometry(5.5, bl, 6), railM); rail.position.set(rs * 10, bl / 2 + 8, 0); rail.castShadow = rs > 0; bo.add(rail); });
+        for (var sl = 0; sl < 5; sl++) { var slat = new T.Mesh(new T.BoxGeometry(27, bl / 5 - 4, 7), i % 2 ? bmatB : bmatA); slat.position.y = 8 + bl / 5 * (sl + 0.5); slat.rotation.x = (Math.sin(i * 7 + sl * 3) ) * 0.05; slat.castShadow = sl === 2; bo.add(slat); }
+        bo.rotation.z = i / wmi.n * TAU; hub.add(bo);
+      }
       var cap = new T.Mesh(new T.SphereGeometry(17, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .8, roughness: .3, envMapIntensity: 1.2 })); hub.add(cap);
       R3.group.add(hub); wmi.mesh = hub;
     });
