@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 69 · A/D FLIPPERS · ARROW CAM · DESERT FLOOR';
+  var BUILD = 'BUILD 70 · NO MAGIC ORBS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -715,14 +715,7 @@
     var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtT, color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
     if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
-    // ATMOSPHERE — drifting dust motes hang in the air and catch the golden light (near ones defocus into bokeh)
-    (function () {
-      var dn = 240, dpos = new Float32Array(dn * 3), drnd = function (n) { var x2 = Math.sin(n * 91.3 + 7.1) * 43758.5453; return x2 - Math.floor(x2); };
-      for (var di = 0; di < dn; di++) { dpos[di * 3] = bn.minX - 500 + drnd(di * 3) * (spanX + 1000); dpos[di * 3 + 1] = 6 + drnd(di * 3 + 1) * 640; dpos[di * 3 + 2] = bn.minZ - 500 + drnd(di * 3 + 2) * (spanZ + 1000); }
-      var dgeo = new T.BufferGeometry(); dgeo.setAttribute('position', new T.BufferAttribute(dpos, 3));
-      var dm = new T.PointsMaterial({ size: 12, map: moteTex(), transparent: true, opacity: .4, depthWrite: false, blending: T.AdditiveBlending, color: 0xffe6b0, sizeAttenuation: true });
-      R3.dust = new T.Points(dgeo, dm); R3.dust.userData.base = dpos.slice(0); R3.group.add(R3.dust);
-    })();
+    R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
