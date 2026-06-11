@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 67 · FLAT GREENS + FXAA';
+  var BUILD = 'BUILD 68 · REAL CUP + CLEAN HORIZON';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -508,7 +508,7 @@
   function panoAlpha() {   // vertical fade: painting melts into the ground skirt like distance haze (also hides the cylinder facet line)
     if (R3._panoA) return R3._panoA;
     var c = document.createElement('canvas'); c.width = 1; c.height = 256; var x = c.getContext('2d');
-    var g = x.createLinearGradient(0, 256, 0, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.3, 'rgba(255,255,255,0)'); g.addColorStop(0.45, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,1)');
+    var g = x.createLinearGradient(0, 256, 0, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.34, 'rgba(255,255,255,0)'); g.addColorStop(0.72, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,1)');   // LONG gradual ramp (0.34→0.72) so the painting's busy dune line dissolves into the ground like distance haze — no hard scalloped horizon edge
     x.fillStyle = g; x.fillRect(0, 0, 1, 256);
     var t = new T.CanvasTexture(c); t.wrapT = T.ClampToEdgeWrapping; R3._panoA = t; return t;
   }
@@ -601,10 +601,10 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0017 }, uGrain: { value: 0.085 }, uVig: { value: 0.42 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0032 }, uGrain: { value: 0.085 }, uVig: { value: 0.42 }, uDof: { value: 0.0014 }, uFocus: { value: 0.55 }, uBloom: { value: 0.55 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
-      R3.post = { on: true, ca: 0.0017, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+      R3.post = { on: true, ca: 0.0032, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
@@ -673,11 +673,32 @@
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
     var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: turfTex(), color: hole.turf, vertexColors: true, roughness: hole.theme === 'ice' ? .26 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? .9 : .3 }) : new T.MeshStandardMaterial({ map: turfTex(), color: 0x86b054, vertexColors: true, roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
+    // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
+    (function () {
+      var cuP = hole.cup, ccy = hole.terrain(cuP.x, cuP.z);
+      var cell = Math.max(spanX / segX, spanZ / segZ), openR = K.cupR + cell;
+      var idx = geo.index ? geo.index.array : null;
+      if (idx) {
+        var keep = [];
+        for (var t = 0; t < idx.length; t += 3) {
+          var i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
+          var mx = (pos.getX(i0) + pos.getX(i1) + pos.getX(i2)) / 3, mz = (pos.getZ(i0) + pos.getZ(i1) + pos.getZ(i2)) / 3;
+          if (hyp(mx - cuP.x, mz - cuP.z) > openR) keep.push(i0, i1, i2);
+        }
+        geo.setIndex(keep); geo.computeVertexNormals();
+      }
+      var collarMat = turfMat.clone(); collarMat.vertexColors = true;   // mown apron: covers the blocky grid cut, shaded to melt into the surrounding green
+      var cInner = K.cupR, cOuter = openR + cell + 36, cgeo = new T.RingGeometry(cInner, cOuter, 48, 4);
+      var cp = cgeo.attributes.position, ccol = new Float32Array(cp.count * 3);
+      for (var ci = 0; ci < cp.count; ci++) { var rr = Math.sqrt(cp.getX(ci) * cp.getX(ci) + cp.getY(ci) * cp.getY(ci)), cf = clamp((rr - cInner) / (cOuter - cInner), 0, 1), csh = 1 - 0.2 * cf; ccol[ci * 3] = ccol[ci * 3 + 1] = ccol[ci * 3 + 2] = csh; }
+      cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3));
+      var collar = new T.Mesh(cgeo, collarMat); collar.rotation.x = -PI / 2; collar.position.set(cuP.x, ccy + 0.4, cuP.z); collar.receiveShadow = true; R3.group.add(collar);
+    })();
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
     var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: skirtTex(), color: GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78), roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
-    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 96, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }
+    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
     // ATMOSPHERE — drifting dust motes hang in the air and catch the golden light (near ones defocus into bokeh)
     (function () {
       var dn = 240, dpos = new Float32Array(dn * 3), drnd = function (n) { var x2 = Math.sin(n * 91.3 + 7.1) * 43758.5453; return x2 - Math.floor(x2); };
