@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 85 · TRUE THEMES';
+  var BUILD = 'BUILD 86 · TRUE ASPECT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -954,7 +954,7 @@
         plank.position.y = ph2 * (pl + 0.5); plank.position.z = (prnd2(pl + 3) - .5) * 3; plank.rotation.z = (prnd2(pl + 5) - .5) * 0.004;
         plank.castShadow = pl === 1; plank.receiveShadow = true; g.add(plank);   // one course casts the shadow — same silhouette, half the shadow draws
       }
-      var capM2 = capm.clone(); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 27), capM2); cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);
+      var capM2 = new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: 0xd9b98a, roughness: .6, envMapIntensity: .4 }); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 27), capM2); cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);
       [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(9.5, 11, s.h + 16, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 2), (s.h + 16) / 2 - 4, 0); post.castShadow = true; g.add(post);
         var pcap = new T.Mesh(new T.SphereGeometry(9.5, 20, 12, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 2), s.h + 12, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
@@ -1129,7 +1129,7 @@
     // flagstick: painted pole rising from the cup, brass finial, CLOTH pennant that waves in the wind
     var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 232, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy - cupD + 116, cu.z); pole.castShadow = true; R3.group.add(pole);   // pole foot rests at the cup bottom
     var fin = new T.Mesh(new T.SphereGeometry(6.5, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .85, roughness: .25, envMapIntensity: 1.3 })); fin.position.set(cu.x, cy - cupD + 235, cu.z); R3.group.add(fin);
-    var FL = 92, FH = 42, fgeo = new T.PlaneGeometry(FL, FH, 14, 3); fgeo.translate(FL / 2 + 3, 0, 0);
+    var FL = 92, FH = 46, fgeo = new T.PlaneGeometry(FL, FH, 14, 3); fgeo.translate(FL / 2 + 3, 0, 0);
     R3.flag = new T.Mesh(fgeo, new T.MeshStandardMaterial({ map: flagTex(), side: T.DoubleSide, roughness: .85 }));
     R3.flag.position.set(cu.x, cy - cupD + 203, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
     R3.flagWave = { geo: fgeo, base: fgeo.attributes.position.array.slice(0), L: FL };
