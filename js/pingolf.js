@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 65 · SPAGHETTI WESTERN';
+  var BUILD = 'BUILD 66 · COURSE ARCHITECT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -108,34 +108,42 @@
   /* ================================================================ THE 9 HOLES */
   // every hole gets a bottom flipper V near the tee (where the ball drains back to you, like a real pinball table)
   function botFlip(b, tz) { var hw = b.hw || 410, px = hw - 50, fz = tz + 60; b.flip('L', -px, fz, 150).flip('R', px, fz, 150); return b; }
-  function H1() { // GREENHORN GULCH — learn it: slingshots, a bumper cluster, a speed pad
+  function H1() { // GREENHORN GULCH — hourglass fairway: thread the waist between the slingshots, then curl into the offset green
     var b = builder().box(-410, -40, 410, 1660, { h: 52 });
     botFlip(b, 110);
-    b.bumper(-250, 520, 38).bumper(250, 560, 38);            // slingshots off the flippers
-    b.bumper(0, 840, 50).bumper(-175, 1090, 44).bumper(175, 1130, 44);
-    b.booster(0, 1300, PI / 2, 130, 2800);
-    b.bumper(-130, 700, 34).bumper(130, 740, 34);
-    return finish(b, 'GREENHORN GULCH', 3, { x: 0, z: 110 }, { x: 0, z: 1520 }, -470, 470, -60, 1680);
+    b.wall(-410, 620, -130, 850, { h: 52, e: 0.62 }).wall(410, 620, 130, 850, { h: 52, e: 0.62 });    // the pinch
+    b.wall(-130, 850, -410, 1090, { h: 52, e: 0.62 }).wall(130, 850, 410, 1090, { h: 52, e: 0.62 });  // opens back out
+    b.bumper(-185, 740, 36).bumper(185, 740, 36);            // slingshots guard the waist
+    b.hill(-220, 1330, 280, 120);                            // bank behind the green curls the ball toward the cup
+    b.booster(-250, 1150, 0.62, 110, 2600);                  // ride the left lane into the green
+    b.coin(0, 850, 1).coin(-180, 1180, 1).coin(60, 1330, 2);
+    b.bumper(0, 1180, 40);
+    return finish(b, 'GREENHORN GULCH', 3, { x: 0, z: 110 }, { x: 140, z: 1460 }, -470, 470, -60, 1680);
   }
-  function H2() { // BUMPER BARN — a dense pinball field you ricochet through
+  function H2() { // BUMPER BARN — three stalls: brave the bumper alley up the middle or bank the clean side lanes
     var b = builder().box(-470, -40, 470, 1980, { h: 52 });
     botFlip(b, 120, 180);
-    b.bumper(-300, 560, 40).bumper(300, 560, 40);            // slingshots
-    var rows = [[3, 820], [2, 1030], [3, 1250], [2, 1480]];
-    rows.forEach(function (r, ri) { var n = r[0], z = r[1]; for (var i = 0; i < n; i++) { var x = (i - (n - 1) / 2) * 235; b.bumper(x + (ri % 2 ? 64 : -64), z, 46); } });
+    b.bumper(-300, 520, 40).bumper(300, 520, 40);            // slingshots
+    b.wall(-160, 760, -160, 1480, { h: 52 }).wall(160, 760, 160, 1480, { h: 52 });   // barn stalls
+    b.bumper(0, 900, 44).bumper(0, 1130, 46).bumper(0, 1360, 44);                    // the gauntlet lane
+    b.coin(-315, 900, 1).coin(-315, 1130, 1).coin(315, 900, 1).coin(315, 1130, 1);   // loot down the safe lanes
     b.booster(0, 1700, PI / 2, 130, 2900);
-    b.powerup(0, 700, 'shield');                            // tank the bumper chaos
-    b.bumper(-380, 1090, 40).bumper(380, 1130, 40);
+    b.powerup(0, 660, 'shield');                             // tank the alley
+    b.funnel(0, 1830, 160, 90);
     return finish(b, 'BUMPER BARN', 4, { x: 0, z: 120 }, { x: 0, z: 1830 }, -530, 530, -60, 2000);
   }
-  function H3() { // SLOPE SALOON — banked S-curve, gravity curls your roll
+  function H3() { // SLOPE SALOON — a true dogleg-left: drive long, bank off the corner, turn down the saloon corridor
     var b = builder().box(-490, -40, 490, 1920, { h: 52 });
     botFlip(b, 130);
-    b.hill(290, 720, 360, 160).hill(-290, 1240, 360, 160);  // two banks form an S
-    b.bumper(0, 980, 48).bumper(-150, 560, 38).bumper(170, 1360, 40);
-    b.booster(-260, 360, PI / 2, 130, 2800);
-    b.bumper(160, 560, 34).bumper(-180, 1540, 36);
-    return finish(b, 'SLOPE SALOON', 3, { x: -290, z: 130 }, { x: 290, z: 1780 }, -550, 550, -60, 1940);
+    b.wall(490, 1100, -40, 1100, { h: 52, e: 0.78 });        // the elbow — lively bank wall
+    b.wall(-40, 1100, -40, 1760, { h: 52, e: 0.6 });         // corridor wall (gap left at the top as an escape hatch)
+    b.hill(330, 940, 300, 150);                              // corner bank kicks the drive around the elbow
+    b.slope(-0.018, 0);                                      // the whole fairway leans toward the corridor
+    b.bumper(-250, 1280, 40);                                // corridor guard
+    b.booster(-270, 1180, PI / 2, 120, 2700);                // corridor speed pad to the green
+    b.coin(330, 800, 1).coin(-270, 1080, 1).coin(-270, 1420, 1);
+    b.powerup(150, 560, 'magnet');
+    return finish(b, 'SLOPE SALOON', 4, { x: 0, z: 130 }, { x: -280, z: 1720 }, -550, 550, -60, 1940);
   }
   function H4() { // THE BIG JUMP — blast up the ramp and fly to the green
     var b = builder().box(-390, -40, 390, 2120, { h: 52 });
@@ -148,14 +156,17 @@
     b.bumper(-150, 680, 34).bumper(150, 700, 34);
     return finish(b, 'THE BIG JUMP', 3, { x: 0, z: 120 }, { x: 0, z: 1990 }, -450, 450, -60, 2140);
   }
-  function H5() { // WINDMILL RUN — time the spinning blades, then finish past the bumpers
+  function H5() { // WINDMILL RUN — split fairway: the windmill guards the short right lane, the long left is a bumper run
     var b = builder().box(-410, -40, 410, 2020, { h: 52 });
     botFlip(b, 120);
-    b.bumper(-300, 600, 40).bumper(300, 640, 40);
-    b.windmill(0, 1080, 250, 4, 1.9);
-    b.bumper(-300, 1480, 40).bumper(300, 1520, 40);
+    b.bumper(-300, 560, 40).bumper(300, 560, 40);
+    b.wall(-110, 820, 110, 820, { h: 52 }).wall(110, 820, 110, 1400, { h: 52 }).wall(110, 1400, -110, 1400, { h: 52 }).wall(-110, 1400, -110, 820, { h: 52 });   // centre island
+    b.windmill(260, 1110, 195, 4, 2.0);                      // sweeps the short right lane
+    b.bumper(-260, 1000, 38).bumper(-260, 1240, 38);         // pinball down the long left lane
+    b.coin(260, 920, 2).coin(260, 1300, 2);                  // danger pay
     b.booster(0, 360, PI / 2, 130, 3000);
-    b.bumper(-340, 1080, 36).bumper(340, 1080, 36).bumper(0, 1720, 40);
+    b.funnel(0, 1860, 170, 90);
+    b.bumper(0, 1620, 42);
     return finish(b, 'WINDMILL RUN', 4, { x: 0, z: 120 }, { x: 0, z: 1860 }, -470, 470, -60, 2040);
   }
   function H6() { // SPIRAL FUNNEL — run into a round arena; the funnel curls the ball to the centre cup
@@ -170,16 +181,18 @@
     b.bumper(-500, 980, 44).bumper(500, 1280, 44);
     return finish(b, 'SPIRAL FUNNEL', 4, { x: 0, z: 120 }, { x: 0, z: 1120 }, -800, 800, -60, 1920);
   }
-  function H7() { // LASER GAUNTLET — time your run through the beams
+  function H7() { // LASER GAUNTLET — switchback trench: baffle walls zigzag the fairway and every gap is laser-gated
     var b = builder().box(-390, -40, 390, 2120, { h: 52 });
     botFlip(b, 120);
-    b.bumper(-280, 560, 40).bumper(280, 600, 40);
-    b.laser(-390, 900, 390, 900, 2.4, 0.4, 0.0);
-    b.laser(-390, 1400, 390, 1400, 2.4, 0.4, 1.2);
-    b.bumper(-250, 1740, 42).bumper(250, 1780, 42);
-    b.booster(0, 640, PI / 2, 140, 3400);
-    b.powerup(0, 760, 'shield');                            // block one laser zap
-    b.bumper(-300, 1150, 40).bumper(300, 1150, 40); b.laser(-400, 1180, 400, 1180, 2.8, 0.34, 0.7);
+    b.wall(-390, 700, 90, 900, { h: 52, e: 0.55 });          // baffle 1 — gap on the right
+    b.laser(90, 920, 390, 920, 2.4, 0.42, 0.0);
+    b.wall(390, 1150, -90, 1350, { h: 52, e: 0.55 });        // baffle 2 — gap on the left
+    b.laser(-390, 1370, -90, 1370, 2.4, 0.42, 1.2);
+    b.laser(-390, 1760, 390, 1760, 3.0, 0.32, 0.6);          // final full gate, generous window
+    b.bumper(250, 760, 38).bumper(-250, 1210, 38);           // gap guards
+    b.powerup(0, 560, 'shield');                             // block one zap
+    b.booster(240, 1010, PI / 2, 110, 2800);                 // slings you up the right gap
+    b.coin(250, 840, 1).coin(-250, 1290, 1).coin(0, 1560, 2);
     return finish(b, 'LASER GAUNTLET', 4, { x: 0, z: 120 }, { x: 0, z: 1990 }, -450, 450, -60, 2140);
   }
   function H8() { // HIGHRISE — blast up two ramps to a top-tier green
@@ -236,16 +249,16 @@
     b.bumper(-190, 1760, 40).bumper(190, 1800, 40);
     return finish(b, 'MOON CRATERS', 4, { x: 0, z: 120 }, { x: 0, z: 2020 }, -490, 490, -60, 2200);
   }
-  function H12() { // GHOST TOWN PORTALS — step into the portal, get spat out one of THREE random ways
+  function H12() { // GHOST TOWN PORTALS — the canyon wall seals the fairway: the vortex is the ONLY way through
     var b = builder().box(-470, -40, 470, 2160, { h: 56 });
     botFlip(b, 120);
     b.bumper(-300, 560, 40).bumper(300, 600, 40);
-    b.portal(0, 980, [{ x: -300, z: 1500 }, { x: 0, z: 1560 }, { x: 300, z: 1500 }], 56);   // 3-exit random teleport
-    b.coin(-90, 760, 1).coin(90, 760, 1).coin(0, 1300, 2);
-    b.bumper(-380, 1760, 40).bumper(380, 1760, 40);     // pushed to the rails — cup lane stays open
-    b.funnel(0, 2000, 150, 85);
+    b.wall(-470, 1210, 470, 1210, { h: 110, e: 0.7 });       // the canyon wall — bounces strays back toward the vortex
+    b.portal(0, 1120, [{ x: -300, z: 1520 }, { x: 0, z: 1580 }, { x: 300, z: 1520 }], 64);   // right at the wall's foot
+    b.coin(-90, 760, 1).coin(90, 760, 1).coin(0, 1380, 2);
+    b.funnel(0, 2000, 160, 90);
     b.booster(0, 320, PI / 2, 130, 3000);
-    b.bumper(-370, 1300, 40).bumper(370, 1340, 40);
+    b.bumper(-370, 1700, 40).bumper(370, 1700, 40);
     return finish(b, 'GHOST TOWN PORTALS', 4, { x: 0, z: 120 }, { x: 0, z: 2000 }, -530, 530, -60, 2180);
   }
   function H13() { // LOOP-DE-LOOP CITY — Sonic-style loops and speed boosters down the strip
