@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 74 · NO CHEAP SHAPES';
+  var BUILD = 'BUILD 75 · HIGH DETAIL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -405,7 +405,7 @@
     if (!T) return false;
     try {
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-      R3.r.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
+      R3.r.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // 1.5 cap: FXAA+MSAA keep edges clean, stays comfortably under 16ms   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
       if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 0.96; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
@@ -734,7 +734,45 @@
       var rokM = new T.MeshStandardMaterial({ color: 0xa88a66, roughness: .95 });
       var rokM2 = new T.MeshStandardMaterial({ color: 0x8a7458, roughness: .95 });
       var fenM = new T.MeshStandardMaterial({ map: woodTex(), color: 0x9a6a3c, roughness: .8 });
-      var moonRokM = new T.MeshStandardMaterial({ color: 0x6a6280, roughness: .95 });
+      var moonRokM = new T.MeshStandardMaterial({ color: 0x6a6280, roughness: .95, flatShading: true });
+      var cacVM = new T.MeshStandardMaterial({ vertexColors: true, roughness: .72, envMapIntensity: .2 });
+      var ribCol = function (geo, rib, c1, c2) {   // ridge/valley vertex shading — gives the ribs real depth under the sun
+        var pos = geo.attributes.position, col = new Float32Array(pos.count * 3), CA = new T.Color(c1), CB = new T.Color(c2); if (CA.convertSRGBToLinear) { CA.convertSRGBToLinear(); CB.convertSRGBToLinear(); }
+        for (var i = 0; i < pos.count; i++) { var th = Math.atan2(pos.getZ(i), pos.getX(i)), rv = Math.sin(th * rib) * 0.5 + 0.5, cc = CB.clone().lerp(CA, 0.3 + rv * 0.7); col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b; }
+        geo.setAttribute('color', new T.BufferAttribute(col, 3));
+      };
+      var ribDisp = function (geo, rib, amt) {   // pleat the surface into saguaro ribs
+        var pos = geo.attributes.position;
+        for (var i = 0; i < pos.count; i++) { var x = pos.getX(i), z = pos.getZ(i), rr = Math.sqrt(x * x + z * z); if (rr < 0.01) continue; var th = Math.atan2(z, x), f = 1 + (Math.sin(th * rib) * 0.5 + 0.5 - 0.5) * amt; pos.setX(i, x * f); pos.setZ(i, z * f); }
+        geo.computeVertexNormals();
+      };
+      var mkSaguaro = function (ch, cr, seed) {   // a REAL saguaro: ribbed pleated trunk with a gentle lean, domed crown, curved elbow arms (TubeGeometry)
+        var RIB = 12, cac = new T.Group();
+        var tg = new T.CylinderGeometry(cr * .8, cr, ch, 64, 20);
+        var tp = tg.attributes.position; var lean = (prnd(seed * 3.1) - .5) * cr * 0.5;
+        for (var i = 0; i < tp.count; i++) { var ty = (tp.getY(i) + ch / 2) / ch; tp.setX(i, tp.getX(i) + Math.sin(ty * PI * 0.5) * lean); }
+        ribDisp(tg, RIB, 0.15); ribCol(tg, RIB, 0x4d8438, 0x2c5722);
+        var trunk = new T.Mesh(tg, cacVM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk);
+        var cg = new T.SphereGeometry(cr * .8, 64, 24, 0, TAU, 0, PI / 2); ribDisp(cg, RIB, 0.15); ribCol(cg, RIB, 0x558e3e, 0x2c5722);
+        var crown = new T.Mesh(cg, cacVM); crown.position.set(lean, ch, 0); crown.castShadow = true; cac.add(crown);
+        var na = 1 + (prnd(seed + 17) > 0.45 ? 1 : 0);
+        for (var ai = 0; ai < na; ai++) {
+          var sgn = ai ? -1 : 1, ay = ch * (0.38 + prnd(seed + 19 + ai) * 0.22), al = ch * (0.3 + prnd(seed + 29 + ai) * 0.25), ar = cr * (0.5 + prnd(seed + 31 + ai) * 0.12);
+          var crv = new T.CatmullRomCurve3([new T.Vector3(sgn * cr * 0.5, ay, 0), new T.Vector3(sgn * cr * 2.1, ay + cr * 0.4, 0), new T.Vector3(sgn * cr * 2.7, ay + cr * 1.6, 0), new T.Vector3(sgn * cr * 2.8, ay + al, 0)]);
+          var ag = new T.TubeGeometry(crv, 32, ar, 24, false); ribCol(ag, RIB, 0x4d8438, 0x335f27);
+          var arm = new T.Mesh(ag, cacVM); arm.castShadow = true; cac.add(arm);
+          var eg = new T.SphereGeometry(ar, 32, 18); ribCol(eg, RIB, 0x558e3e, 0x36632a);
+          var ecap = new T.Mesh(eg, cacVM); ecap.position.set(sgn * cr * 2.8, ay + al, 0); ecap.castShadow = true; cac.add(ecap);
+        }
+        return cac;
+      };
+      var mkRock = function (R, seed, mat) {   // weathered boulder — noise-displaced, faceted like chiselled stone
+        var geo = new T.IcosahedronGeometry(R, 2), pos = geo.attributes.position, v = new T.Vector3();
+        for (var i = 0; i < pos.count; i++) { v.set(pos.getX(i), pos.getY(i), pos.getZ(i)); var n = Math.sin(v.x * 0.23 + seed) * .5 + Math.sin(v.y * 0.31 + seed * 2.1) * .3 + Math.sin((v.x + v.z) * 0.17 + seed * 3.7) * .4; v.multiplyScalar(1 + n * 0.16); pos.setXYZ(i, v.x, v.y, v.z); }
+        geo.computeVertexNormals();
+        var mm = mat.clone(); mm.flatShading = true;
+        return new T.Mesh(geo, mm);
+      };
       for (var k = 0; k < 26; k++) {
         var side = k % 4, px, pz, off = 80 + prnd(k * 3 + 1) * 170;
         if (side === 0) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.minZ - off; }
@@ -743,22 +781,16 @@
         else { px = bn.maxX + off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
         var py = hole.terrain(px, pz), t = prnd(k + 99);
         if (hole.theme === 'moon' || hole.theme === 'ice') {
-          if (t < 0.6) { var mr = new T.Mesh(new T.IcosahedronGeometry(26 + prnd(k + 7) * 40, 1), hole.theme === 'moon' ? moonRokM : rokM); mr.scale.y = 0.62; mr.position.set(px, py + 8, pz); mr.rotation.y = prnd(k + 3) * TAU; mr.castShadow = true; R3.group.add(mr); }
+          if (t < 0.6) { var mr = mkRock(26 + prnd(k + 7) * 40, k * 1.7, hole.theme === 'moon' ? moonRokM : rokM); mr.scale.y = 0.62; mr.position.set(px, py + 8, pz); mr.rotation.y = prnd(k + 3) * TAU; mr.castShadow = true; R3.group.add(mr); }
           continue;
         }
         if (!WESTERN[hole.theme || 'grass']) continue;
         if (t < 0.34) {
-          var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8, cac = new T.Group();
-          var trunk = new T.Mesh(new T.CylinderGeometry(cr * .82, cr, ch, 24), cacM); trunk.position.y = ch / 2; trunk.castShadow = true; cac.add(trunk); var tcap = new T.Mesh(new T.SphereGeometry(cr * .82, 22, 14), cacM); tcap.position.y = ch; cac.add(tcap);
-          var na = 1 + (prnd(k + 17) > 0.5 ? 1 : 0);
-          for (var ai = 0; ai < na; ai++) {
-            var sgn = ai ? -1 : 1, ay = ch * (0.42 + prnd(k + 19 + ai) * 0.2);
-            var armO = new T.Mesh(new T.CylinderGeometry(cr * .55, cr * .6, cr * 2.6, 20), cacM); armO.rotation.z = sgn * PI / 2; armO.position.set(sgn * cr * 1.6, ay, 0); cac.add(armO);
-            var armU = new T.Mesh(new T.CylinderGeometry(cr * .5, cr * .55, ch * 0.3, 20), cacM); var acap = new T.Mesh(new T.SphereGeometry(cr * .5, 18, 12), cacM); acap.position.set(sgn * cr * 2.7, ay + ch * 0.3, 0); cac.add(acap); armU.position.set(sgn * cr * 2.7, ay + ch * 0.15, 0); armU.castShadow = true; cac.add(armU);
-          }
+          var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8;
+          var cac = mkSaguaro(ch, cr, k);
           cac.position.set(px, py, pz); cac.rotation.y = prnd(k + 23) * TAU; R3.group.add(cac);
         } else if (t < 0.56) {
-          var rk = new T.Mesh(new T.IcosahedronGeometry(24 + prnd(k + 7) * 38, 1), prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; R3.group.add(rk);
+          var rk = mkRock(24 + prnd(k + 7) * 38, k * 2.3, prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; R3.group.add(rk);
         } else if (t < 0.8) {   // brand art cutouts: barrels, skulls, lanterns, dynamite from assets/
           var SPR = [['barrel', 130], ['skull', 84], ['Lantern_2.6_', 96], ['Dynamite_2.1_', 80]];
           var sp = SPR[Math.floor(prnd(k + 61) * SPR.length)], sh2 = sp[1] * (0.85 + prnd(k + 67) * 0.5);
@@ -1421,7 +1453,7 @@
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
   // AAA type straight on the glass — big Wantedo with a heavy ink outline, no boxes, no pills
-  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; var sz = Math.round(size * 1.25); c.font = '900 ' + sz + 'px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.8)'; c.shadowBlur = Math.max(4, sz * 0.18); c.shadowOffsetY = Math.max(1, sz * 0.05); c.fillStyle = col; c.fillText(txt, x, y); c.restore(); var ww = c.measureText(txt).width; return ww; }
+  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.font = '900 ' + Math.round(size * 1.5) + 'px Wantedo, Georgia'; c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }
   function drawHUD() {
     var c = St.hctx, w = St.w, h = St.h; c.setTransform(St.dpr, 0, 0, St.dpr, 0, 0); c.clearRect(0, 0, w, h);
     if (St.state === 'load') return;
@@ -1431,7 +1463,7 @@
     if (St.magnetT > 0 && b) drawMagnetPull(c, b);
     if (St.shocks) for (i = 0; i < St.shocks.length; i++) { var sw = St.shocks[i], sf = sw.t / sw.max, wr = 14 + sf * (sw.rmax || 165), ccs = project(sw.x, sw.y, sw.z), exs = project(sw.x + wr, sw.y, sw.z), ezs = project(sw.x, sw.y, sw.z + wr); if (!ccs.vis) continue; var rx = hyp(exs.x - ccs.x, exs.y - ccs.y), rz = hyp(ezs.x - ccs.x, ezs.y - ccs.y); c.globalAlpha = clamp(1 - sf, 0, 1) * 0.65; c.strokeStyle = sw.col; c.lineWidth = 2 + (1 - sf) * 3; c.beginPath(); if (c.ellipse) c.ellipse(ccs.x, ccs.y, Math.max(rx, 1), Math.max(rz, 1), 0, 0, TAU); else c.arc(ccs.x, ccs.y, Math.max(rx, 1), 0, TAU); c.stroke(); } c.globalAlpha = 1;
     for (i = 0; i < St.fx.length; i++) { var p = St.fx[i], s = project(p.x, p.y, p.z); if (!s.vis) continue; c.globalAlpha = clamp(p.life / p.max, 0, 1); c.fillStyle = p.col || (p.gold ? COL.gold : '#fff0c0'); c.beginPath(); c.arc(s.x, s.y, p.r || (p.gold ? 4 : 2.4), 0, TAU); c.fill(); } c.globalAlpha = 1;
-    c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 32px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.8)'; c.shadowBlur = 7; c.shadowOffsetY = 2; c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); c.restore(); } c.globalAlpha = 1;
+    c.textAlign = 'center'; for (i = 0; i < St.pops.length; i++) { var q = St.pops[i], qs = project(q.x, q.y, q.z); if (!qs.vis) continue; c.globalAlpha = clamp(q.life / q.max, 0, 1); c.font = '900 38px Wantedo, Georgia'; c.fillStyle = q.col; c.fillText(q.text, qs.x, qs.y); } c.globalAlpha = 1;
     if (St.state === 'aim' && b) drawAim(c, b);
     // HUD type — big Wantedo straight on screen, like a real cabinet
     var narrow = w < 720;
@@ -1455,10 +1487,10 @@
     if (pball && pball.shield) badges.push(['✦ SHIELD', '#55c6ff']);
     badges.forEach(function (bd, bi) { hudTxt(c, bd[0], w / 2, 64 + bi * 26, 17, bd[1], 'center'); });
     // bumper-combo meter — pulsing multiplier while the ball racks up hits this shot
-    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 32 : 44) + 'px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.8)'; c.shadowBlur = 9; c.shadowOffsetY = 2; c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.restore(); c.globalAlpha = 1; }
+    if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : COL.gold; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 76px Wantedo, Georgia'; c.save(); c.shadowColor = 'rgba(16,8,3,.85)'; c.shadowBlur = 14; c.shadowOffsetY = 3; c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.restore(); c.globalAlpha = 1; }
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.font = '900 92px Wantedo, Georgia'; c.fillStyle = COL.gold; c.fillText(St.banner, w / 2, h * .4); c.globalAlpha = 1; }
     c.globalAlpha = 0.85;
     if (St.state === 'aim') hudTxt(c, 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
     else if (St.state === 'roll') hudTxt(c, 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, 13, COL.cream, 'center');
