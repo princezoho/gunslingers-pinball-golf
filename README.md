@@ -14,7 +14,7 @@ No installs, no sign-up. Runs on Three.js + a single JS file.
 
 ---
 
-Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops and teleport portals — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **20 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
+Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops and teleport portals — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **27 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
 
 ## 📸 Screenshots
 
