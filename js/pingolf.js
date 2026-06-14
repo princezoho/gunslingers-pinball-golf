@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 91 · 27 HOLES';
+  var BUILD = 'BUILD 92 · LIVE PADDLES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1428,7 +1428,15 @@
       else { en0.ph += en0.speed * dt; var eu = Math.abs((en0.ph % 2) - 1); en0.cx = en0.x + (en0.ex - en0.x) * eu; en0.cz = en0.z + (en0.ez - en0.z) * eu; }
     }
     var frs0 = hole.firerings || []; for (i = 0; i < frs0.length; i++) { if (frs0[i].passedCd > 0) frs0[i].passedCd -= dt; }
-    if (St.state !== 'roll') return;
+    if (St.state !== 'roll') {
+      // PADDLES ALWAYS WORK: a live (up-swinging) flipper can knock a STOPPED/aiming ball — wake it back into a roll, no stroke charged (a pinball-style save)
+      if (St.state === 'aim') {
+        for (i = 0; i < St.balls.length; i++) { var rb = St.balls[i]; if (rb.sunk || rb.dead) continue; var rgy = hole.terrain(rb.x, rb.z);
+          for (var rf = 0; rf < hole.flippers.length; rf++) { var ff = hole.flippers[rf]; if (!ff.live) continue; var sp0 = hyp(rb.vx, rb.vz); collideFlipper(rb, ff, rgy); if (hyp(rb.vx, rb.vz) > sp0 + 40) { rb.settled = false; rb.stillT = 0; rb.air = false; St.state = 'roll'; St.combo = 0; if (St.drag) St.drag = null; } }
+        }
+      }
+      return;
+    }
     var anyMoving = false, anySunk = false;
     for (i = 0; i < St.balls.length; i++) { var b = St.balls[i]; if (b.sunk || b.dead) { if (b.sunk) anySunk = true; continue; } stepBall(b, dt, hole); if (b.sunk) anySunk = true; else if (!b.settled) anyMoving = true; }
     if (anySunk) { holeSunk(); return; }
