@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 89 · POCKET WEST';
+  var BUILD = 'BUILD 90 · REAL LIGHT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -492,7 +492,8 @@
   function ballBump() { return tex('ballB', 128, 128, function (x) { x.fillStyle = '#888'; x.fillRect(0, 0, 128, 128); for (var i = 12; i < 128; i += 22) for (var j = (i / 22 % 2 ? 22 : 10); j < 128; j += 22) { var g = x.createRadialGradient(j, i, 0.5, j, i, 4.6); g.addColorStop(0, '#3a3a3a'); g.addColorStop(.75, '#6a6a6a'); g.addColorStop(1, '#888'); x.fillStyle = g; x.beginPath(); x.arc(j, i, 4.6, 0, 7); x.fill(); } }); }
 
   /* ---------------- AAA film look: IBL env, gradient skies, wood grain, post FX ---------------- */
-  function initEnv() {   // warm desert equirect -> PMREM: gives every metal/gloss surface real reflections
+  function envFromEquirect(t) { try { var pm = new T.PMREMGenerator(R3.r); pm.compileEquirectangularShader(); var e = pm.fromEquirectangular(t).texture; pm.dispose(); return e; } catch (e2) { return null; } }
+  function initEnv() {   // REAL photographic desert HDRI -> PMREM image-based lighting: grounds every metal/glass/matte surface in a true light field (the believable-render lever). Procedural gradient is the instant fallback until the photo loads; the painted brand sky stays the VISIBLE backdrop (scene.background is never set).
     try {
       var c = document.createElement('canvas'); c.width = 256; c.height = 128; var x = c.getContext('2d');
       var g = x.createLinearGradient(0, 0, 0, 128);
@@ -501,8 +502,12 @@
       var sg = x.createRadialGradient(70, 44, 2, 70, 44, 36); sg.addColorStop(0, 'rgba(255,246,218,1)'); sg.addColorStop(0.3, 'rgba(255,226,162,.8)'); sg.addColorStop(1, 'rgba(255,214,140,0)');
       x.fillStyle = sg; x.fillRect(0, 0, 256, 128);
       var t = new T.CanvasTexture(c); t.mapping = T.EquirectangularReflectionMapping; if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
-      var pm = new T.PMREMGenerator(R3.r); pm.compileEquirectangularShader();
-      R3.env = pm.fromEquirectangular(t).texture; pm.dispose(); t.dispose();
+      R3.env = envFromEquirect(t); t.dispose();
+      new T.TextureLoader().load('assets/env-desert.jpg', function (ph) {   // swap to the real HDRI once decoded
+        ph.mapping = T.EquirectangularReflectionMapping; if (T.sRGBEncoding) ph.encoding = T.sRGBEncoding;
+        var real = envFromEquirect(ph); ph.dispose();
+        if (real) { R3.env = real; if (R3.scene && St.hole && St.hole.theme !== 'moon') R3.scene.environment = real; }
+      });
     } catch (e) { R3.env = null; }
   }
   var SKYGRAD = { grass: ['#7cc0cc', '#b7d8d2', '#eec79e'], ice: ['#e4d4ac', '#e9dcb4', '#dfcba4'], moon: ['#e6deb6', '#d8cdb2', '#bdaec6'], mud: ['#ee9e4a', '#f2b65a', '#f6c97c'], rubber: ['#d9cfa9', '#e0d7b1', '#e8dfbb'], speed: ['#70c2ac', '#8cccb6', '#eaa97c'], sand: ['#cfba82', '#dcc794', '#e8d4a2'] };   // gradient tops continue each painting's sky above the panorama
