@@ -99,7 +99,7 @@
   /* ===== screenshots: frameless, the game speaks for itself ===== */
   .shots{ margin-top:44px; display:grid; gap:34px 26px; grid-template-columns:1fr 1fr; }
   .shot{ display:block; text-decoration:none; }
-  .shot img{ display:block; width:100%; height:auto; aspect-ratio:16/9; object-fit:contain; box-shadow:0 22px 50px rgba(0,0,0,.55); }   /* contain + locked ratio: mathematically cannot stretch, skew, or crop */
+  .shot img{ display:block; width:100%; height:auto; box-shadow:0 22px 50px rgba(0,0,0,.55); }   /* canonical responsive image: width:100% + height:auto preserves the intrinsic 1280x720 ratio on EVERY browser — no aspect-ratio/object-fit combos that render inconsistently */
   .shot.wide{ grid-column:1 / -1; }
   .shot .tag{ display:block; margin-top:14px; color:var(--cream); font-family:Wantedo,Georgia; font-size:19px; letter-spacing:2.5px; text-align:center; }
   @media(max-width:680px){ .shots{ grid-template-columns:1fr; } }
