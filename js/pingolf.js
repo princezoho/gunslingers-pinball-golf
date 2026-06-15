@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 92 · LIVE PADDLES';
+  var BUILD = 'BUILD 93 · VARMINT CAST';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1238,12 +1238,14 @@
       var gem = new T.Mesh(new T.OctahedronGeometry(26, 0), new T.MeshStandardMaterial({ color: cfg.c, emissive: cfg.e, emissiveIntensity: .75, metalness: .5, roughness: .25 })); gem.position.set(pu.x, g + 48, pu.z); gem.castShadow = true; R3.group.add(gem); pu.mesh = gem;
       var halo = new T.Mesh(new T.TorusGeometry(34, 4, 8, 24), new T.MeshBasicMaterial({ color: cfg.c, transparent: true, opacity: .5 })); halo.rotation.x = -PI / 2; halo.position.set(pu.x, g + 12, pu.z); R3.group.add(halo); pu.halo = halo;
     });
+    var ENEMY_ART = { spiky: ['enemy-rat', 0.682], blob: ['enemy-opossum', 0.629], ghost: ['enemy-ghost', 1.438] };   // brand characters from the collection — the rat, the opossum, the demon — not procedural blobs
     (hole.enemies || []).forEach(function (en) {
-      var g = new T.Group(), col = en.type === 'blob' ? 0x2f9a3a : en.type === 'ghost' ? 0x8a4adf : 0x9a1f1f;
-      var body = new T.Mesh(new T.SphereGeometry(en.r, 32, 24), new T.MeshStandardMaterial({ color: col, roughness: .55, transparent: en.type === 'ghost', opacity: en.type === 'ghost' ? .6 : 1 })); body.position.y = en.r; body.castShadow = en.type !== 'ghost'; g.add(body);
-      if (en.type === 'spiky') for (var s = 0; s < 8; s++) { var a = s / 8 * TAU, spike = new T.Mesh(new T.ConeGeometry(en.r * .24, en.r * .6, 6), new T.MeshStandardMaterial({ color: 0x550f0f })); spike.position.set(Math.cos(a) * en.r * .92, en.r, Math.sin(a) * en.r * .92); spike.rotation.x = PI / 2; spike.rotation.z = -a; g.add(spike); }
-      [[-.42, .72], [.42, .72]].forEach(function (e) { var eye = new T.Mesh(new T.SphereGeometry(en.r * .2, 8, 8), new T.MeshStandardMaterial({ color: 0xffee44, emissive: 0xaa8800, emissiveIntensity: .7 })); eye.position.set(e[0] * en.r, en.r * 1.15, e[1] * en.r); g.add(eye); });
-      g.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); R3.group.add(g); en.mesh = g;
+      var g = new T.Group();
+      var art = ENEMY_ART[en.type] || ENEMY_ART.spiky, hgt = en.r * 3.0, wid = hgt * art[1];   // billboard cutout of the real hand-drawn character
+      var mat = spriteMat(art[0]); if (en.type === 'ghost') { mat = mat.clone(); mat.opacity = 0.78; mat.depthWrite = false; }
+      var bb = new T.Mesh(new T.PlaneGeometry(wid, hgt), mat); bb.position.y = hgt * 0.5; g.add(bb); en.bb = bb;
+      var sh = new T.Mesh(new T.CircleGeometry(en.r * 0.95, 22), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .34, depthWrite: false })); sh.rotation.x = -PI / 2; sh.position.y = 1.6; g.add(sh);   // grounding contact shadow
+      g.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); R3.group.add(g); en.mesh = g; en.billboard = true;
     });
     var cu = hole.cup, cy = hole.terrain(cu.x, cu.z), cupD = 46;   // a proper cup: vertical-walled cylinder cut straight DOWN from the flat green
     // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim flush with the turf
@@ -1698,7 +1700,7 @@
     for (i = 0; i < (hole.firerings || []).length; i++) { var fr = hole.firerings[i]; if (fr.mesh) { fr.mesh.material.emissiveIntensity = 0.7 + Math.sin(St.t * 20 + i) * 0.3 + (fr.flash || 0); var ffs = 1 + (fr.flash || 0) * 0.4; fr.mesh.scale.set(ffs, ffs, ffs); if (fr.flash > 0) fr.flash -= 0.04; } }
     for (i = 0; i < (hole.coins || []).length; i++) { var cn = hole.coins[i]; if (cn.mesh) { cn.mesh.visible = !cn.got; cn.mesh.rotation.y = St.t * 3.4; cn.mesh.position.y = hole.terrain(cn.x, cn.z) + 40 + Math.sin(St.t * 3 + cn.x * 0.01) * 4; } }
     for (i = 0; i < (hole.powerups || []).length; i++) { var pu = hole.powerups[i]; if (pu.mesh) { pu.mesh.visible = !pu.got; pu.mesh.rotation.y = St.t * 2.4; pu.mesh.rotation.x = St.t * 1.3; pu.mesh.position.y = hole.terrain(pu.x, pu.z) + 48 + Math.sin(St.t * 2.6 + pu.x * 0.01) * 5; } if (pu.halo) pu.halo.visible = !pu.got; }
-    for (i = 0; i < (hole.enemies || []).length; i++) { var en = hole.enemies[i]; if (en.mesh) { en.mesh.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); en.mesh.rotation.y = St.t * 2.4; var ws = en.flash > 0 ? 1 + en.flash : 1; en.mesh.scale.set(ws, ws, ws); if (en.flash > 0) en.flash -= 0.04; } }
+    for (i = 0; i < (hole.enemies || []).length; i++) { var en = hole.enemies[i]; if (en.mesh) { en.mesh.position.set(en.cx, hole.terrain(en.cx, en.cz), en.cz); if (en.billboard && R3.cam) en.mesh.rotation.y = Math.atan2(R3.cam.position.x - en.cx, R3.cam.position.z - en.cz); else en.mesh.rotation.y = St.t * 2.4; if (en.bb) en.bb.position.y = en.bb.geometry.parameters.height * 0.5 + Math.sin(St.t * 3 + en.cx * 0.01) * (en.r * 0.12); var ws = en.flash > 0 ? 1 + en.flash : 1; en.mesh.scale.set(ws, ws, ws); if (en.flash > 0) en.flash -= 0.04; } }
     for (i = 0; i < (hole.portals || []).length; i++) { var po = hole.portals[i]; if (po.flash > 0) po.flash -= 0.04; }
     if (R3.flag && R3.flagWave) {   // cloth simulation: ripples travel outward, pole edge pinned
       R3.flag.rotation.y = Math.sin(St.t * 0.7) * 0.35 + 0.2;
