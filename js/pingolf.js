@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 95 · GOLD & GRAIN';
+  var BUILD = 'BUILD 96 · REAL TIMBER';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1061,22 +1061,25 @@
       var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
       var mm = new T.Mesh(gg, mat); R3.group.add(mm); return mm;
     }
-    var postWoodM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#post', true), normalMap: photoTex('wood_n.jpg#post', false), color: 0xc8a070, roughness: .8 });
+    function plankMat(repX, repY, offY, tint, env) {   // real horizontal-plank timber: clean boards, straight grain, staggered seams (Planks011). per-wall offset breaks any visible tiling
+      var d = new T.TextureLoader().load('assets/tex/plank_d.jpg'), n = new T.TextureLoader().load('assets/tex/plank_n.jpg');
+      d.wrapS = d.wrapT = n.wrapS = n.wrapT = T.RepeatWrapping; if (T.sRGBEncoding) d.encoding = T.sRGBEncoding;
+      d.repeat.set(repX, repY); n.repeat.set(repX, repY); d.offset.set(0, offY); n.offset.set(0, offY);
+      if (R3.r && R3.r.capabilities) { d.anisotropy = n.anisotropy = Math.min(8, R3.r.capabilities.getMaxAnisotropy()); }
+      var m = new T.MeshStandardMaterial({ map: d, normalMap: n, color: tint, roughness: .82, envMapIntensity: env == null ? .55 : env }); m.normalScale = new T.Vector2(1.4, 1.4); return m;
+    }
+    var postWoodM = plankMat(1, 2.2, 0, 0xb58a5c, .5);
     hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2);
-      var wrep = Math.max(1, Math.round(L / 260)), wD = photoTex('wood_d.jpg#' + wrep, true), wN = photoTex('wood_n.jpg#' + wrep, false); wD.repeat.set(wrep, 1); wN.repeat.set(wrep, 1);
       var prnd2 = function (n) { var v = Math.sin((s.ax + s.az + n) * 12.97) * 43758.5453; return v - Math.floor(v); };
-      var nPl = Math.max(2, Math.round(s.h / 26));   // stacked plank courses — a built fence, not an extruded box
-      var pm = new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: new T.Color(s.c).lerp(new T.Color(0xffffff), 0.34), roughness: .82 }); pm.normalScale = new T.Vector2(1.8, 1.8);   // pronounced plank grain
+      var repX = Math.max(1.4, L / 360), repY = Math.max(0.55, s.h / 150), tint = new T.Color(s.c).lerp(new T.Color(0xffffff), 0.5);
+      var pm = plankMat(repX, repY, prnd2(1) * 0.7, tint, .5);   // per-wall vertical offset so neighbouring walls never show the same board row -> no obvious repeat
       var mats = [pm];
-      for (var pl = 0; pl < nPl; pl++) {
-        var ph2 = s.h / nPl;
-        var plank = new T.Mesh(new T.BoxGeometry(L + 14, ph2 - 1.6, 20 + prnd2(pl + 9) * 4), pm);
-        plank.position.y = ph2 * (pl + 0.5); plank.position.z = (prnd2(pl + 3) - .5) * 3; plank.rotation.z = (prnd2(pl + 5) - .5) * 0.004;
-        plank.castShadow = pl === 1; plank.receiveShadow = true; g.add(plank);   // one course casts the shadow — same silhouette, half the shadow draws
-      }
-      var capM2 = new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: 0xd9b98a, roughness: .6, envMapIntensity: .4 }); var cap = new T.Mesh(new T.BoxGeometry(L + 14, 8, 27), capM2); cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);
-      [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(9.5, 11, s.h + 16, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 2), (s.h + 16) / 2 - 4, 0); post.castShadow = true; g.add(post);
-        var pcap = new T.Mesh(new T.SphereGeometry(9.5, 20, 12, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 2), s.h + 12, 0); g.add(pcap); });
+      var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), pm); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body);
+      var aoM = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });   // grime/contact AO darkening along the base of the wall
+      var ao = new T.Mesh(new T.PlaneGeometry(L + 14, s.h * 0.34), aoM); ao.position.set(0, s.h * 0.17, 11.2); g.add(ao);
+      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.BoxGeometry(L + 16, 9, 27), capM2); cap.position.y = s.h + 3; cap.castShadow = true; g.add(cap); mats.push(capM2);
+      [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);
+        var pcap = new T.Mesh(new T.SphereGeometry(10.5, 22, 14, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = metalMat(0xf4f6fa, 1, 2.4);
