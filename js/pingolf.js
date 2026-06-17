@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 96 · REAL TIMBER';
+  var BUILD = 'BUILD 97 · GOLDEN HOUR';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -518,18 +518,18 @@
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
       var coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches; R3.r.setPixelRatio(Math.min(coarse ? 1.2 : 1.5, window.devicePixelRatio || 1));   // phones get a lighter pixel load; FXAA+MSAA keep edges clean   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
-      if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.08; }
+      if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.14; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
-      R3.scene = new T.Scene(); R3.scene.fog = new T.Fog(0xc9a06a, 2400, 6500);
+      R3.scene = new T.Scene(); R3.scene.fog = new T.Fog(0xc9a06a, 1700, 4300);
       R3.cam = new T.PerspectiveCamera(58, 1, 1, 14000);
-      R3.scene.add(new T.AmbientLight(0xffe2c0, 0.18));
-      R3.scene.add(new T.HemisphereLight(0xffdca6, 0x3a2c1c, 0.32));
-      var sun = new T.DirectionalLight(0xffd290, 1.32); sun.position.set(-700, 1400, -300); sun.castShadow = true;
+      R3.scene.add(new T.AmbientLight(0xffdcb0, 0.2));
+      R3.scene.add(new T.HemisphereLight(0xffe0ae, 0x4a3320, 0.42));
+      var sun = new T.DirectionalLight(0xffbf52, 1.6); sun.position.set(-820, 1250, -360); sun.castShadow = true;   // low, warm golden-hour sun
       sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
       var sc = sun.shadow.camera; sc.near = 100; sc.far = 4400; sc.left = -1150; sc.right = 1150; sc.top = 1150; sc.bottom = -1150;   // tight frustum around the table = much crisper shadows from the same 2048 map
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
-      var rim = new T.DirectionalLight(0x9ec8ff, 0.52); rim.position.set(600, 900, 1000); R3.scene.add(rim); R3.sunOff = { x: -950, y: 850, z: -550 };
+      var rim = new T.DirectionalLight(0xbfe0ff, 0.6); rim.position.set(650, 760, 1050); R3.scene.add(rim); var fill = new T.DirectionalLight(0xffcf8a, 0.28); fill.position.set(700, 380, -200); R3.scene.add(fill); R3.sunOff = { x: -1020, y: 760, z: -560 };   // cool back-rim + warm low fill = cinematic golden-hour separation
       initEnv(); initPost(); R3.zoom = 1; R3.ready = true; return true;
     } catch (e) { R3.ready = false; return false; }
   }
@@ -808,7 +808,7 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.14 }, uVig: { value: 0.33 }, uDof: { value: 0.0036 }, uFocus: { value: 0.55 }, uBloom: { value: 0.68 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
@@ -920,7 +920,8 @@
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
     var srep = Math.max(8, Math.round(pr / 220)), sandD = photoTex('sand_d.jpg', true), sandN = photoTex('sand_n.jpg', false); sandD.repeat.set(srep, srep); sandN.repeat.set(srep, srep);
     var skirtTint = new T.Color(GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.5);   // photographic sand already carries its own albedo — only a light theme tint
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.5, 96), new T.MeshStandardMaterial({ map: sandD, normalMap: sandN, color: skirtTint, roughness: 1 })); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -320, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
+    var skirtM = new T.MeshStandardMaterial({ map: sandD, normalMap: sandN, color: skirtTint, roughness: 1 }); skirtM.normalScale = new T.Vector2(1.4, 1.4);
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 2.4, 120), skirtM); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -34, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // desert sits just under the green so the hole reads as cut INTO the desert, not a floating mesa; huge radius + fog hide the edge   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
     var bgName = BGMAP[hole.theme || 'grass'];
     if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
@@ -1651,8 +1652,9 @@
     var target = St.holeYaw + St.camOrbit, dy = target - St.camYaw; while (dy > PI) dy -= TAU; while (dy < -PI) dy += TAU; St.camYaw += dy * 0.14;
     var f = { x: Math.sin(St.camYaw), z: Math.cos(St.camYaw) }, dist = 560 * R3.zoom, ht = 510 * R3.zoom;   // higher/steeper so walls never hide the ball
     var jx = St.shake ? (Math.random() - .5) * St.shake * 2 : 0, jz = St.shake ? (Math.random() - .5) * St.shake * 2 : 0;
-    R3.cam.position.set(b.x - f.x * dist + jx, b.y + ht, b.z - f.z * dist + jz);
-    R3.cam.lookAt(b.x + f.x * 230, b.y + 14, b.z + f.z * 230);
+    var gy0 = St.hole.terrain(b.x, b.z), camY = gy0 + (b.y - gy0) * 0.45;   // follow the ball up only partway: keeps the horizon grounded so a high shot never reveals the world's edge
+    R3.cam.position.set(b.x - f.x * dist + jx, camY + ht, b.z - f.z * dist + jz);
+    R3.cam.lookAt(b.x + f.x * 230, camY + 14, b.z + f.z * 230);
     var ff = clamp(hyp(b.vx, b.vz) / 4200, 0, 1), tf = 58 + ff * 14; R3.cam.fov += (tf - R3.cam.fov) * 0.1; R3.cam.updateProjectionMatrix();
     if (R3.sun) { R3.sun.position.set(b.x + R3.sunOff.x, R3.sunOff.y, b.z + R3.sunOff.z); R3.sun.target.position.set(b.x, b.y, b.z); R3.sun.target.updateMatrixWorld(); }
   }
