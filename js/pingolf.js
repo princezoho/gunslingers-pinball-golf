@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 99 · DESERT DETAIL';
+  var BUILD = 'BUILD 100 · MAIN STREET';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1005,35 +1005,26 @@
         }
       }
     })();
-    // WESTERN TOWN RING — false-front saloon buildings in the mid-distance so the hole sits in a TOWN, not empty desert (visual only; deterministic; fades into the painted backdrop via fog)
+    // (No 3D town boxes — the painted panorama backdrop IS the town. Procedural buildings clashed with the hand-drawn art; distant silhouettes only.)
+    // FAR TOWN SILHOUETTES — simple warm false-front shapes parked WAY out at the fog line so they read as a hazy skyline that melts into the painted backdrop, never as near 3D props
     if ({ grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 }[hole.theme || 'grass']) {
       (function () {
         var prnd = function (n) { var x = Math.sin(n * 71.3 + 9.1) * 43758.5453; return x - Math.floor(x); };
-        var cx0 = (bn.minX + bn.maxX) / 2, cz0 = (bn.minZ + bn.maxZ) / 2, ringR = Math.max(bn.maxX - bn.minX, bn.maxZ - bn.minZ) * 0.5 + 300;
-        var townD = photoTex('tex/plank_d.jpg#town', true), townN = photoTex('tex/plank_n.jpg#town', false);
-        var roofM = new T.MeshStandardMaterial({ color: 0x4a3526, roughness: .9, envMapIntensity: .3 });
-        var darkWin = new T.MeshStandardMaterial({ color: 0x241712, roughness: .5, metalness: .1 });
-        var litWin = new T.MeshStandardMaterial({ color: 0xffe1a0, emissive: 0xffb84e, emissiveIntensity: 1.9, roughness: .4, fog: false });
-        var N = 13;
+        var cx0 = (bn.minX + bn.maxX) / 2, cz0 = (bn.minZ + bn.maxZ) / 2, ringR = Math.max(bn.maxX - bn.minX, bn.maxZ - bn.minZ) * 0.5 + 2600;
+        var silM = new T.MeshBasicMaterial({ color: 0xb98a5e, fog: true, toneMapped: true });   // flat warm — fog desaturates it toward the backdrop haze; no lighting so it never reads as a lit 3D box
+        var N = 16;
         for (var i = 0; i < N; i++) {
-          var a = i / N * TAU + prnd(i) * 0.18, rr = ringR + prnd(i * 3) * 360;
+          var a = i / N * TAU + prnd(i) * 0.22, rr = ringR + prnd(i * 3) * 700;
           var bx2 = cx0 + Math.sin(a) * rr, bz2 = cz0 + Math.cos(a) * rr, by = hole.terrain(bx2, bz2) - 34;
-          var w = 200 + prnd(i * 5) * 150, h = 150 + prnd(i * 7) * 150, d = 150 + prnd(i * 9) * 90;
-          var grp = new T.Group(); var tint = new T.Color().setHSL(0.07 + prnd(i * 11) * 0.05, 0.4, 0.46 + prnd(i * 13) * 0.16);
-          var bodyM = new T.MeshStandardMaterial({ map: townD.clone(), normalMap: townN.clone(), color: tint, roughness: .85 }); bodyM.map.repeat.set(Math.max(1, w / 220), Math.max(1, h / 220)); bodyM.normalMap.repeat.copy(bodyM.map.repeat); bodyM.map.needsUpdate = bodyM.normalMap.needsUpdate = true; bodyM.normalScale = new T.Vector2(1.2, 1.2);
-          var body = new T.Mesh(new T.BoxGeometry(w, h, d), bodyM); body.position.y = h / 2; body.castShadow = body.receiveShadow = true; grp.add(body);
-          var ff = 40 + prnd(i * 17) * 50, front = new T.Mesh(new T.BoxGeometry(w + 6, h + ff, 14), bodyM); front.position.set(0, (h + ff) / 2, d / 2 + 5); front.castShadow = true; grp.add(front);   // tall false front
-          var roof = new T.Mesh(new T.BoxGeometry(w + 18, 12, d + 18), roofM); roof.position.y = h + 6; roof.castShadow = true; grp.add(roof);
-          var porch = new T.Mesh(new T.BoxGeometry(w + 30, 8, 70), roofM); porch.position.set(0, h * 0.52, d / 2 + 42); porch.castShadow = true; grp.add(porch);
-          [-1, 1].forEach(function (sgn) { var pp = new T.Mesh(new T.CylinderGeometry(5, 5, h * 0.52, 8), roofM); pp.position.set(sgn * (w / 2 - 12), h * 0.26, d / 2 + 72); grp.add(pp); });
-          var nWin = 3 + Math.floor(prnd(i * 19) * 3);
-          for (var wq = 0; wq < nWin; wq++) { var lit = prnd(i * 23 + wq) > 0.35; var win = new T.Mesh(new T.PlaneGeometry(34, 46), lit ? litWin : darkWin); win.position.set((wq - (nWin - 1) / 2) * 56, h * 0.58, d / 2 + 12.3); grp.add(win); }
-          var door = new T.Mesh(new T.PlaneGeometry(40, 70), darkWin); door.position.set((prnd(i * 29) - .5) * w * 0.4, 36, d / 2 + 12.2); grp.add(door);
-          grp.position.set(bx2, by, bz2); grp.rotation.y = -a + (prnd(i * 31) - .5) * 0.5; R3.group.add(grp);
+          var w = 240 + prnd(i * 5) * 220, h = 220 + prnd(i * 7) * 260;
+          var grp = new T.Group();
+          var body = new T.Mesh(new T.BoxGeometry(w, h, w * 0.7), silM); body.position.y = h / 2; grp.add(body);
+          var ff = h * (0.18 + prnd(i * 17) * 0.22), front = new T.Mesh(new T.BoxGeometry(w + 6, h + ff, 12), silM); front.position.set(0, (h + ff) / 2, w * 0.35 + 4); grp.add(front);
+          grp.position.set(bx2, by, bz2); grp.rotation.y = a + PI + (prnd(i * 31) - .5) * 0.4; R3.group.add(grp);
         }
       })();
     }
-    // MOON CRATERS — flat decorative craters scattered on the pale lunar ground (purely visual, no collision; deterministic so they don't jitter on editor rebuilds)
+        // MOON CRATERS — flat decorative craters scattered on the pale lunar ground (purely visual, no collision; deterministic so they don't jitter on editor rebuilds)
     if (hole.theme === 'moon') {
       var prnd = function (n) { var x = Math.sin(n * 127.1 + 0.7) * 43758.5453; return x - Math.floor(x); };
       var cFloorMat = new T.MeshStandardMaterial({ color: 0x5e5775, roughness: 1 }), cRimMat = new T.MeshStandardMaterial({ color: 0x423d54, roughness: 1 });
