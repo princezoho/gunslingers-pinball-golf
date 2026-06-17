@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 105 · MANY SKIES';
+  var BUILD = 'BUILD 106 · EVERY SKY UNIQUE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -702,20 +702,29 @@
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
   var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
   var GTEX = { grass: 'tex/ground-grass.jpg', sand: 'tex/ground-sand.jpg', mud: 'tex/ground-mud.jpg', speed: 'tex/ground-speed.jpg', rubber: 'tex/ground-rubber.jpg', moon: 'tex/ground-moon.jpg', ice: 'tex/ground-ice.jpg' };   // the FLOOR is each theme's OWN painting foreground (soft painterly band lifted from sky-<theme>.jpg) so the ground IS the gunslinger art and meets the painted horizon seamlessly
-  // BACKDROP VARIETY — most holes share the 'grass' gameplay theme (physics/turf), which would make every hole wear the same sky-grass painting now that the painting IS the whole world. So the BACKGROUND scene is chosen independently of theme and ROTATED per hole through the distinct brand desert paintings; the local ground patch is lifted from the SAME painting so floor + backdrop match. Themed holes (moon/ice/etc) keep their own thematic painting.
-  var SCENES = [
-    { bg: 'sky-grass.jpg', g: 'tex/ground-grass.jpg', fog: 0xd8895c, tint: 0xe7d8b8 },   // pink sunset mesas
-    { bg: 'sky-sand.jpg', g: 'tex/ground-sand.jpg', fog: 0xe0b878, tint: 0xe9cf9a },      // golden butte desert w/ crescent moon
-    { bg: 'sky-extra.jpg', g: 'tex/ground-extra.jpg', fog: 0xdca878, tint: 0xe6cbb0 },    // fiery orange sunset
-    { bg: 'sky-rubber.jpg', g: 'tex/ground-rubber.jpg', fog: 0xd9b58a, tint: 0xe6d2b0 },  // pale cream sky, crimson rocks
-    { bg: 'sky-mud.jpg', g: 'tex/ground-mud.jpg', fog: 0xc9a6b0, tint: 0xd9c2c0 }         // frontier town at dusk
+  // BACKDROP VARIETY — most holes share the 'grass' gameplay theme (physics/turf), so without this they'd all wear sky-grass now that the painting IS the whole world. The BACKGROUND scene is chosen independently of theme and ROTATED per hole through EVERY usable brand painting (13 of them) so each hole in a nine gets a unique sky and no two in a row repeat. The local ground patch + fog haze are lifted from the SAME painting so floor + backdrop match. oy shifts each painting so its own horizon sits at eye level; rep=2 for the close building scenes (less obvious tiling), 3 for wide landscapes. Themed moon/ice holes keep their thematic painting so the night/ice world stays consistent.
+  var POOL = [
+    { bg: 'sky-grass.jpg', g: 'tex/ground-grass.jpg', fog: 0xd8895c, tint: 0xe7d8b8, oy: 0, rep: 3 },      // pink sunset mesas
+    { bg: 'sky-sand.jpg', g: 'tex/ground-sand.jpg', fog: 0xe0b878, tint: 0xe9cf9a, oy: 0.22, rep: 3 },     // golden buttes + crescent moon
+    { bg: 'bg-9.png', g: 'tex/ground-bg9.jpg', fog: 0x71af84, tint: 0xaca488, oy: -0.02, rep: 3 },         // green alien sky, UFOs over mesas
+    { bg: 'sky-extra.jpg', g: 'tex/ground-extra.jpg', fog: 0xdca878, tint: 0xe6cbb0, oy: 0.10, rep: 3 },   // fiery orange sunset
+    { bg: 'bg-desert.png', g: 'tex/ground-bgdesert.jpg', fog: 0xada39b, tint: 0xc8c0b6, oy: 0.02, rep: 3 },// pastel blue sky, pink clouds
+    { bg: 'sky-mud.jpg', g: 'tex/ground-mud.jpg', fog: 0xc9a6b0, tint: 0xd9c2c0, oy: 0.05, rep: 3 },       // frontier town at dusk
+    { bg: 'sky-rubber.jpg', g: 'tex/ground-rubber.jpg', fog: 0xd9b58a, tint: 0xe6d2b0, oy: 0.12, rep: 3 }, // cream sky, crimson rocks
+    { bg: 'bg-5.png', g: 'tex/ground-bg5.jpg', fog: 0x5a5860, tint: 0xa4a4a8, oy: 0.34, rep: 3 },          // moonlit gray night desert
+    { bg: 'sky-speed.jpg', g: 'tex/ground-speed.jpg', fog: 0xc08c84, tint: 0xd8c0bc, oy: 0.05, rep: 3 },   // teal-orange dusk
+    { bg: 'bg-canyon.png', g: 'tex/ground-bgcanyon.jpg', fog: 0xa49795, tint: 0xc8bcb6, oy: 0, rep: 2 },   // pink canyon walls
+    { bg: 'bg-town.png', g: 'tex/ground-bgtown.jpg', fog: 0x877c84, tint: 0xc0b8be, oy: -0.05, rep: 2 },   // saloon street
+    { bg: 'bg-18.png', g: 'tex/ground-bg18.jpg', fog: 0x83624b, tint: 0xc0b090, oy: -0.05, rep: 2 },       // train depot
+    { bg: 'bg-12.png', g: 'tex/ground-bg12.jpg', fog: 0x9e3a36, tint: 0xc08a72, oy: -0.18, rep: 2 }        // burning town
   ];
   function nameHash(s) { s = s || ''; var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
-  function sceneFor(hole) {   // themed holes keep their painting; default/grass holes rotate the desert pool by hole index (adjacent holes differ) so no two backdrops in a row are the same
+  function sceneFor(hole) {   // moon/ice keep their thematic painting; every other hole rotates the full pool by hole index → unique sky per hole in a nine, never two in a row
     var th = hole.theme;
-    if (th && th !== 'grass' && BGMAP[th]) return { bg: BGMAP[th], g: GTEX[th] || GTEX.grass, fog: FOGC[th], tint: GROUNDC[th] };
+    if (th === 'moon') return { bg: 'sky-moon.jpg', g: GTEX.moon, fog: FOGC.moon, tint: GROUNDC.moon, oy: 0, rep: 3 };
+    if (th === 'ice') return { bg: 'sky-ice.jpg', g: GTEX.ice, fog: FOGC.ice, tint: GROUNDC.ice, oy: 0, rep: 3 };
     var idx = (typeof St !== 'undefined' && St.hi >= 0) ? St.hi : nameHash(hole.name);
-    return SCENES[idx % SCENES.length];
+    return POOL[idx % POOL.length];
   }
   function groundAlpha() {   // radial feather: the ground disc is solid under the play area, then dissolves to transparent at its rim so it melts into the painted horizon + fog — no hard circular edge cutting across the art
     if (R3._grndA) return R3._grndA;
@@ -745,12 +754,13 @@
     m.map = t;   // mirrored wrap = no visible seam (the paintings aren't tileable); land band at eye level, painted sky above, clamped sky-top blends into the gradient
     R3['_' + key] = m; return m;
   }
-  function domeMat(name) {   // the WHOLE world is one brand painting wrapped on a big sphere: the painting's desert plain (bottom of the image) becomes the far FLOOR all around, its mesas the skyline, its sky the sky — one continuous hand-drawn scene, NO geometry seam between ground and sky. Player stands inside it.
-    var key = 'dome_' + name; if (R3['_' + key]) return R3['_' + key];
+  function domeMat(name, rep, oy) {   // the WHOLE world is one brand painting wrapped on a big sphere: the painting's desert plain (bottom of the image) becomes the far FLOOR all around, its mesas the skyline, its sky the sky — one continuous hand-drawn scene, NO geometry seam between ground and sky. Player stands inside it.
+    rep = rep || 3; oy = oy || 0;
+    var key = 'dome_' + name + '_' + rep + '_' + oy; if (R3['_' + key]) return R3['_' + key];
     var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a }); if ('toneMapped' in m) m.toneMapped = false;
     var t = new T.TextureLoader().load('assets/' + name, function () { m.color.set(0xffffff); m.needsUpdate = true; });
     if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
-    t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(3, 1); t.offset.set(0, 0);   // x: mirror-tile the range 3× around the horizon (no seam); y: image bottom (desert plain) → sphere nadir, image top (sky) → sphere zenith, painted horizon lands at the equator
+    t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(rep, 1); t.offset.set(0, oy);   // x: mirror-tile rep× around the horizon (no seam); y: image bottom (desert plain)→nadir, top (sky)→zenith; oy shifts so THIS painting's horizon lands at the equator (eye level)
     m.map = t; R3['_' + key] = m; return m;
   }
   function metalMat(color, metalness, env, normScale) {   // realistic worn metal: scratched roughness + normal break up the reflection so it reads as REAL metal, not mirror plastic
@@ -953,7 +963,7 @@
     var scene = sceneFor(hole), bgName = scene.bg;   // per-hole backdrop painting (rotated for variety), with a matching ground tile
     if (R3.scene.fog) R3.scene.fog.color.setHex(scene.fog || skyC);   // haze tuned to THIS hole's painting horizon
     var domeR = pr * 2.7, domeY = 30;   // equator (painted horizon) sits ~at ground level; big enough that a high shot stays well inside
-    if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
+    if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName, scene.rep, scene.oy)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
     else { var dome = new T.Mesh(new T.SphereGeometry(domeR, 48, 32), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
     // LOCAL GROUND PATCH — a real textured desert floor only under/around the playfield (for the ball + cast shadows), lifted from the SAME painting's foreground so it matches. It DISSOLVES (radial feather) into the painted desert plain on the dome behind it — the feather reveals painted GROUND, never sky, so there is no visible rim. Fog hazes it toward the horizon tone.
     var gr = Math.max(spanX, spanZ) * 0.85 + 700;
