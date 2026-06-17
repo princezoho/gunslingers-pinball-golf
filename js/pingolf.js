@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 98 · BOOMTOWN';
+  var BUILD = 'BUILD 99 · DESERT DETAIL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -972,7 +972,7 @@
         var mm = mat.clone(); mm.flatShading = true;
         return new T.Mesh(geo, mm);
       };
-      for (var k = 0; k < 26; k++) {
+      for (var k = 0; k < 40; k++) {
         var side = k % 4, px, pz, off = 80 + prnd(k * 3 + 1) * 170;
         if (side === 0) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.minZ - off; }
         else if (side === 1) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.maxZ + off; }
@@ -1026,8 +1026,8 @@
           var roof = new T.Mesh(new T.BoxGeometry(w + 18, 12, d + 18), roofM); roof.position.y = h + 6; roof.castShadow = true; grp.add(roof);
           var porch = new T.Mesh(new T.BoxGeometry(w + 30, 8, 70), roofM); porch.position.set(0, h * 0.52, d / 2 + 42); porch.castShadow = true; grp.add(porch);
           [-1, 1].forEach(function (sgn) { var pp = new T.Mesh(new T.CylinderGeometry(5, 5, h * 0.52, 8), roofM); pp.position.set(sgn * (w / 2 - 12), h * 0.26, d / 2 + 72); grp.add(pp); });
-          var nWin = 2 + Math.floor(prnd(i * 19) * 3);
-          for (var wq = 0; wq < nWin; wq++) { var lit = prnd(i * 23 + wq) > 0.45; var win = new T.Mesh(new T.PlaneGeometry(28, 38), lit ? litWin : darkWin); win.position.set((wq - (nWin - 1) / 2) * 52, h * 0.6, d / 2 + 12.2); grp.add(win); }
+          var nWin = 3 + Math.floor(prnd(i * 19) * 3);
+          for (var wq = 0; wq < nWin; wq++) { var lit = prnd(i * 23 + wq) > 0.35; var win = new T.Mesh(new T.PlaneGeometry(34, 46), lit ? litWin : darkWin); win.position.set((wq - (nWin - 1) / 2) * 56, h * 0.58, d / 2 + 12.3); grp.add(win); }
           var door = new T.Mesh(new T.PlaneGeometry(40, 70), darkWin); door.position.set((prnd(i * 29) - .5) * w * 0.4, 36, d / 2 + 12.2); grp.add(door);
           grp.position.set(bx2, by, bz2); grp.rotation.y = -a + (prnd(i * 31) - .5) * 0.5; R3.group.add(grp);
         }
