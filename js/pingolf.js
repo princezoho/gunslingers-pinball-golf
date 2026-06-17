@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 104 · INSIDE THE PAINTING';
+  var BUILD = 'BUILD 105 · MANY SKIES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -702,6 +702,21 @@
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
   var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
   var GTEX = { grass: 'tex/ground-grass.jpg', sand: 'tex/ground-sand.jpg', mud: 'tex/ground-mud.jpg', speed: 'tex/ground-speed.jpg', rubber: 'tex/ground-rubber.jpg', moon: 'tex/ground-moon.jpg', ice: 'tex/ground-ice.jpg' };   // the FLOOR is each theme's OWN painting foreground (soft painterly band lifted from sky-<theme>.jpg) so the ground IS the gunslinger art and meets the painted horizon seamlessly
+  // BACKDROP VARIETY — most holes share the 'grass' gameplay theme (physics/turf), which would make every hole wear the same sky-grass painting now that the painting IS the whole world. So the BACKGROUND scene is chosen independently of theme and ROTATED per hole through the distinct brand desert paintings; the local ground patch is lifted from the SAME painting so floor + backdrop match. Themed holes (moon/ice/etc) keep their own thematic painting.
+  var SCENES = [
+    { bg: 'sky-grass.jpg', g: 'tex/ground-grass.jpg', fog: 0xd8895c, tint: 0xe7d8b8 },   // pink sunset mesas
+    { bg: 'sky-sand.jpg', g: 'tex/ground-sand.jpg', fog: 0xe0b878, tint: 0xe9cf9a },      // golden butte desert w/ crescent moon
+    { bg: 'sky-extra.jpg', g: 'tex/ground-extra.jpg', fog: 0xdca878, tint: 0xe6cbb0 },    // fiery orange sunset
+    { bg: 'sky-rubber.jpg', g: 'tex/ground-rubber.jpg', fog: 0xd9b58a, tint: 0xe6d2b0 },  // pale cream sky, crimson rocks
+    { bg: 'sky-mud.jpg', g: 'tex/ground-mud.jpg', fog: 0xc9a6b0, tint: 0xd9c2c0 }         // frontier town at dusk
+  ];
+  function nameHash(s) { s = s || ''; var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+  function sceneFor(hole) {   // themed holes keep their painting; default/grass holes rotate the desert pool by hole index (adjacent holes differ) so no two backdrops in a row are the same
+    var th = hole.theme;
+    if (th && th !== 'grass' && BGMAP[th]) return { bg: BGMAP[th], g: GTEX[th] || GTEX.grass, fog: FOGC[th], tint: GROUNDC[th] };
+    var idx = (typeof St !== 'undefined' && St.hi >= 0) ? St.hi : nameHash(hole.name);
+    return SCENES[idx % SCENES.length];
+  }
   function groundAlpha() {   // radial feather: the ground disc is solid under the play area, then dissolves to transparent at its rim so it melts into the painted horizon + fog — no hard circular edge cutting across the art
     if (R3._grndA) return R3._grndA;
     var c = document.createElement('canvas'); c.width = c.height = 256; var x = c.getContext('2d');
@@ -935,15 +950,15 @@
     // GUNSLINGERS PAINTED WORLD — the player stands INSIDE the brand painting. One big sphere wears the whole hand-drawn scene: the painting's desert plain wraps down to become the far floor in every direction, its mesas the skyline, its sky the sky — ground and sky are ONE continuous image, so there is NO geometry seam/edge to stair-step at any camera angle.
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), pcx = (bn.minX + bn.maxX) / 2;
     var theme = hole.theme || 'grass';
-    var fogHex = FOGC[theme] || skyC;
-    var bgName = BGMAP[theme];
+    var scene = sceneFor(hole), bgName = scene.bg;   // per-hole backdrop painting (rotated for variety), with a matching ground tile
+    if (R3.scene.fog) R3.scene.fog.color.setHex(scene.fog || skyC);   // haze tuned to THIS hole's painting horizon
     var domeR = pr * 2.7, domeY = 30;   // equator (painted horizon) sits ~at ground level; big enough that a high shot stays well inside
     if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
     else { var dome = new T.Mesh(new T.SphereGeometry(domeR, 48, 32), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
-    // LOCAL GROUND PATCH — a real textured desert floor only under/around the playfield (for the ball + cast shadows), lifted from this painting's own foreground so it matches. It DISSOLVES (radial feather) into the painted desert plain on the dome behind it — the feather reveals painted GROUND, never sky, so there is no visible rim. Fog hazes it toward the horizon tone.
+    // LOCAL GROUND PATCH — a real textured desert floor only under/around the playfield (for the ball + cast shadows), lifted from the SAME painting's foreground so it matches. It DISSOLVES (radial feather) into the painted desert plain on the dome behind it — the feather reveals painted GROUND, never sky, so there is no visible rim. Fog hazes it toward the horizon tone.
     var gr = Math.max(spanX, spanZ) * 0.85 + 700;
-    var grep = Math.max(3, Math.round(gr / 520)), grndD = photoTex(GTEX[theme] || GTEX.grass, true); grndD.repeat.set(grep, grep);
-    var patchTint = new T.Color(GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.12);
+    var grep = Math.max(3, Math.round(gr / 520)), grndD = photoTex(scene.g || GTEX.grass, true); grndD.repeat.set(grep, grep);
+    var patchTint = new T.Color(scene.tint || GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.12);
     var patchM = new T.MeshStandardMaterial({ map: grndD, color: patchTint, roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
     var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
