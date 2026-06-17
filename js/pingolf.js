@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 109 · PAINTED FLOOR BACK';
+  var BUILD = 'BUILD 110 · REAL TURF TINTED';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -704,26 +704,27 @@
   var GTEX = { grass: 'tex/ground-grass.jpg', sand: 'tex/ground-sand.jpg', mud: 'tex/ground-mud.jpg', speed: 'tex/ground-speed.jpg', rubber: 'tex/ground-rubber.jpg', moon: 'tex/ground-moon.jpg', ice: 'tex/ground-ice.jpg' };   // the FLOOR is each theme's OWN painting foreground (soft painterly band lifted from sky-<theme>.jpg) so the ground IS the gunslinger art and meets the painted horizon seamlessly
   // BACKDROP VARIETY — most holes share the 'grass' gameplay theme (physics/turf), so without this they'd all wear sky-grass now that the painting IS the whole world. The BACKGROUND scene is chosen independently of theme and ROTATED per hole through EVERY usable brand painting (13 of them) so each hole in a nine gets a unique sky and no two in a row repeat. The local ground patch + fog haze are lifted from the SAME painting so floor + backdrop match. oy shifts each painting so its own horizon sits at eye level; rep=2 for the close building scenes (less obvious tiling), 3 for wide landscapes. Themed moon/ice holes keep their thematic painting so the night/ice world stays consistent.
   // g = the PAINTERLY ground tile (a crop of THIS painting's own foreground), so the floor is the actual gunslinger art, not a flat color. gt = a color multiplier (solved empirically) on that textured tile so the lit+tonemapped floor still RENDERS to the painting's ground-half average — painted look AND matched color. fog = horizon haze.
+  // gt = the surface texture's tint (linear). The ground keeps its REAL surface texture (grass blades / ice / regolith craters, desaturated to gray detail) and gt colors it to THIS painting's ground-average — so it reads as grass/ice/crater IN the backdrop's color. Solved so (grayTexMean≈0.585 × gt) renders to the painting ground-half average.
   var POOL = [
-    { bg: 'sky-grass.jpg', g: 'ground-grass.jpg', fog: 0xd8895c, gt: [0.46, 0.42, 0.42], oy: 0, rep: 3 },        // pink sunset mesas
-    { bg: 'sky-sand.jpg', g: 'ground-sand.jpg', fog: 0xe0b878, gt: [0.48, 0.43, 0.4], oy: 0.22, rep: 3 },        // golden buttes + crescent moon
-    { bg: 'bg-9.png', g: 'ground-bg9.jpg', fog: 0x71af84, gt: [0.46, 0.46, 0.42], oy: -0.02, rep: 3 },            // green alien sky, UFOs over mesas
-    { bg: 'sky-extra.jpg', g: 'ground-extra.jpg', fog: 0xdca878, gt: [0.45, 0.42, 0.44], oy: 0.10, rep: 3 },       // fiery orange sunset
-    { bg: 'bg-desert.png', g: 'ground-bgdesert.jpg', fog: 0xada39b, gt: [0.52, 0.49, 0.47], oy: 0.02, rep: 3 },   // pastel blue sky, pink clouds
-    { bg: 'sky-mud.jpg', g: 'ground-mud.jpg', fog: 0xc9a6b0, gt: [0.45, 0.42, 0.45], oy: 0.05, rep: 3 },          // frontier town at dusk
-    { bg: 'sky-rubber.jpg', g: 'ground-rubber.jpg', fog: 0xd9b58a, gt: [0.45, 0.44, 0.41], oy: 0.12, rep: 3 },     // cream sky, crimson rocks
-    { bg: 'bg-5.png', g: 'ground-bg5.jpg', fog: 0x5a5860, gt: [0.66, 0.68, 0.78], oy: 0.34, rep: 3 },              // moonlit gray night desert
-    { bg: 'sky-speed.jpg', g: 'ground-speed.jpg', fog: 0xc08c84, gt: [0.47, 0.44, 0.44], oy: 0.05, rep: 3 },      // teal-orange dusk
-    { bg: 'bg-canyon.png', g: 'ground-bgcanyon.jpg', fog: 0xa49795, gt: [0.47, 0.45, 0.45], oy: 0, rep: 2 },      // pink canyon walls
-    { bg: 'bg-town.png', g: 'ground-bgtown.jpg', fog: 0x877c84, gt: [0.5, 0.5, 0.55], oy: -0.05, rep: 2 },        // saloon street
-    { bg: 'bg-18.png', g: 'ground-bg18.jpg', fog: 0x83624b, gt: [0.5, 0.45, 0.41], oy: -0.05, rep: 2 },          // train depot
-    { bg: 'bg-12.png', g: 'ground-bg12.jpg', fog: 0x9e3a36, gt: [0.55, 0.36, 0.36], oy: -0.18, rep: 2 }           // burning town
+    { bg: 'sky-grass.jpg', fog: 0xd8895c, gt: [0.185, 0.082, 0.087], oy: 0, rep: 3 },        // pink sunset mesas
+    { bg: 'sky-sand.jpg', fog: 0xe0b878, gt: [0.162, 0.080, 0.056], oy: 0.22, rep: 3 },      // golden buttes + crescent moon
+    { bg: 'bg-9.png', fog: 0x71af84, gt: [0.189, 0.167, 0.100], oy: -0.02, rep: 3 },          // green alien sky, UFOs over mesas
+    { bg: 'sky-extra.jpg', fog: 0xdca878, gt: [0.124, 0.085, 0.128], oy: 0.10, rep: 3 },     // fiery orange sunset
+    { bg: 'bg-desert.png', fog: 0xada39b, gt: [0.321, 0.189, 0.165], oy: 0.02, rep: 3 },     // pastel blue sky, pink clouds
+    { bg: 'sky-mud.jpg', fog: 0xc9a6b0, gt: [0.146, 0.075, 0.128], oy: 0.05, rep: 3 },       // frontier town at dusk
+    { bg: 'sky-rubber.jpg', fog: 0xd9b58a, gt: [0.126, 0.099, 0.082], oy: 0.12, rep: 3 },    // cream sky, crimson rocks
+    { bg: 'bg-5.png', fog: 0x5a5860, gt: [0.056, 0.065, 0.114], oy: 0.34, rep: 3 },           // moonlit gray night desert
+    { bg: 'sky-speed.jpg', fog: 0xc08c84, gt: [0.187, 0.104, 0.131], oy: 0.05, rep: 3 },     // teal-orange dusk
+    { bg: 'bg-canyon.png', fog: 0xa49795, gt: [0.129, 0.111, 0.131], oy: 0, rep: 2 },         // pink canyon walls
+    { bg: 'bg-town.png', fog: 0x877c84, gt: [0.080, 0.087, 0.148], oy: -0.05, rep: 2 },       // saloon street
+    { bg: 'bg-18.png', fog: 0x83624b, gt: [0.247, 0.117, 0.077], oy: -0.05, rep: 2 },         // train depot
+    { bg: 'bg-12.png', fog: 0x9e3a36, gt: [0.170, 0.029, 0.032], oy: -0.18, rep: 2 }          // burning town
   ];
   function nameHash(s) { s = s || ''; var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
   function sceneFor(hole) {   // moon/ice keep their thematic painting; every other hole rotates the full pool by hole index → unique sky per hole in a nine, never two in a row
     var th = hole.theme;
-    if (th === 'moon') return { bg: 'sky-moon.jpg', g: 'ground-moon.jpg', fog: FOGC.moon, gt: [0.7, 0.68, 0.92], oy: 0, rep: 3 };   // brighter gt to lift the painted floor out of moon's DARK night lighting
-    if (th === 'ice') return { bg: 'sky-ice.jpg', g: 'ground-ice.jpg', fog: FOGC.ice, gt: [0.55, 0.5, 0.52], oy: 0, rep: 3 };   // ice gloss reduced so the painted floor color shows, not a sky reflection
+    if (th === 'moon') return { bg: 'sky-moon.jpg', fog: FOGC.moon, gt: [0.078, 0.077, 0.248], oy: 0, rep: 3 };   // regolith crater texture in the moon-night lavender
+    if (th === 'ice') return { bg: 'sky-ice.jpg', fog: FOGC.ice, gt: [0.083, 0.065, 0.097], oy: 0, rep: 3 };   // ice texture in the ice-painting tone
     var idx = (typeof St !== 'undefined' && St.hi >= 0) ? St.hi : nameHash(hole.name);
     return POOL[idx % POOL.length];
   }
@@ -925,7 +926,8 @@
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
     var TGROUND = { ice: ['snow_d.jpg', 'snow_n.jpg'], moon: ['snow_d.jpg', 'snow_n.jpg'], mud: ['mud_d.jpg', 'mud_n.jpg'], speed: ['asph_d.jpg', 'asph_n.jpg'], rubber: ['asph_d.jpg', 'asph_n.jpg'], sand: ['sand_d.jpg', 'sand_n.jpg'] };   // each theme gets its OWN photographic ground — ice is ice, moon is regolith, not green grass
     var tgf = TGROUND[hole.theme], tgN = photoTex((tgf ? tgf[1] : 'grass_n.jpg') + '#turf', false, [5, 15]);
-    var grndTile = photoTex((scene.g || 'ground-grass.jpg') + '#turf', true, [Math.max(4, Math.round(spanX / 360)), Math.max(6, Math.round(spanZ / 360))]);
+    var gtex = (tgf ? tgf[0] : 'grass_d.jpg').replace('_d.', '_g.');   // the REAL surface texture, desaturated to gray detail (grass blades / snow / regolith) — gt tints it to the backdrop color
+    var grndTile = photoTex(gtex + '#turf', true, [Math.max(6, Math.round(spanX / 200)), Math.max(10, Math.round(spanZ / 200))]);
     var _ice = hole.theme === 'ice';
     var turfMat = new T.MeshStandardMaterial({ map: grndTile, normalMap: tgN, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), vertexColors: true, roughness: _ice ? .6 : .95, metalness: 0, envMapIntensity: _ice ? .25 : .3 });   // the playfield is THIS hole's painted desert (its own painting foreground tile) + theme normal-map relief; the gt tint nudges the lit+tonemapped result to the painting's ground-average color — painted look AND matched color
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
@@ -969,9 +971,9 @@
     var domeR = pr * 2.7, domeY = 30;   // equator (painted horizon) sits ~at ground level; big enough that a high shot stays well inside
     if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName, scene.rep, scene.oy)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
     else { var dome = new T.Mesh(new T.SphereGeometry(domeR, 48, 32), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
-    // LOCAL GROUND PATCH — the floor under/around the playfield (for the ball + cast shadows): the SAME painted tile + gt tint as the turf, so it's the painting's own desert and DISSOLVES (radial feather) seamlessly into the painted desert plain on the dome behind it — same painted art + color on both sides of the feather, no visible rim.
+    // LOCAL GROUND PATCH — the floor under/around the playfield (for the ball + cast shadows): the SAME grayscale surface texture + gt tint as the turf, so it reads as the same grass/ice/crater in the backdrop color and DISSOLVES (radial feather) into the painted desert on the dome — matched color on both sides of the feather, no visible rim.
     var gr = Math.max(spanX, spanZ) * 0.85 + 700;
-    var patchTile = photoTex((scene.g || 'ground-grass.jpg') + '#patch', true, [Math.max(5, Math.round(gr / 320)), Math.max(5, Math.round(gr / 320))]);
+    var patchTile = photoTex(gtex + '#patch', true, [Math.max(8, Math.round(gr / 180)), Math.max(8, Math.round(gr / 180))]);
     var patchM = new T.MeshStandardMaterial({ map: patchTile, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
     var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
