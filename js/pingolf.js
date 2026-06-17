@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 100 · MAIN STREET';
+  var BUILD = 'BUILD 101 · CLEAN HORIZON';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1005,25 +1005,7 @@
         }
       }
     })();
-    // (No 3D town boxes — the painted panorama backdrop IS the town. Procedural buildings clashed with the hand-drawn art; distant silhouettes only.)
-    // FAR TOWN SILHOUETTES — simple warm false-front shapes parked WAY out at the fog line so they read as a hazy skyline that melts into the painted backdrop, never as near 3D props
-    if ({ grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 }[hole.theme || 'grass']) {
-      (function () {
-        var prnd = function (n) { var x = Math.sin(n * 71.3 + 9.1) * 43758.5453; return x - Math.floor(x); };
-        var cx0 = (bn.minX + bn.maxX) / 2, cz0 = (bn.minZ + bn.maxZ) / 2, ringR = Math.max(bn.maxX - bn.minX, bn.maxZ - bn.minZ) * 0.5 + 2600;
-        var silM = new T.MeshBasicMaterial({ color: 0xb98a5e, fog: true, toneMapped: true });   // flat warm — fog desaturates it toward the backdrop haze; no lighting so it never reads as a lit 3D box
-        var N = 16;
-        for (var i = 0; i < N; i++) {
-          var a = i / N * TAU + prnd(i) * 0.22, rr = ringR + prnd(i * 3) * 700;
-          var bx2 = cx0 + Math.sin(a) * rr, bz2 = cz0 + Math.cos(a) * rr, by = hole.terrain(bx2, bz2) - 34;
-          var w = 240 + prnd(i * 5) * 220, h = 220 + prnd(i * 7) * 260;
-          var grp = new T.Group();
-          var body = new T.Mesh(new T.BoxGeometry(w, h, w * 0.7), silM); body.position.y = h / 2; grp.add(body);
-          var ff = h * (0.18 + prnd(i * 17) * 0.22), front = new T.Mesh(new T.BoxGeometry(w + 6, h + ff, 12), silM); front.position.set(0, (h + ff) / 2, w * 0.35 + 4); grp.add(front);
-          grp.position.set(bx2, by, bz2); grp.rotation.y = a + PI + (prnd(i * 31) - .5) * 0.4; R3.group.add(grp);
-        }
-      })();
-    }
+    // NO procedural town geometry of any kind — the painted panorama backdrop IS the town. Both near 3D boxes and far silhouettes tore horizontal seams across the hand-drawn mesa/sky; any flat box at the horizon stair-steps against the painting. The desert dressing (cacti/rocks/fences/brand props) below carries the world; the backdrop carries the skyline.
         // MOON CRATERS — flat decorative craters scattered on the pale lunar ground (purely visual, no collision; deterministic so they don't jitter on editor rebuilds)
     if (hole.theme === 'moon') {
       var prnd = function (n) { var x = Math.sin(n * 127.1 + 0.7) * 43758.5453; return x - Math.floor(x); };
