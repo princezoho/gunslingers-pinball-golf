@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 93 · VARMINT CAST';
+  var BUILD = 'BUILD 94 · REAL METAL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -722,6 +722,10 @@
     m.map = t;   // mirrored wrap = no visible seam (the paintings aren't tileable); land band at eye level, painted sky above, clamped sky-top blends into the gradient
     R3['_' + key] = m; return m;
   }
+  function metalMat(color, metalness, env, normScale) {   // realistic worn metal: scratched roughness + normal break up the reflection so it reads as REAL metal, not mirror plastic
+    var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 1.8 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
+    m.normalScale = new T.Vector2(normScale == null ? 0.32 : normScale, normScale == null ? 0.32 : normScale); return m;
+  }
   function spriteMat(name) {
     var key = 'sprm_' + name; if (R3['_' + key]) return R3['_' + key];
     var m = new T.MeshStandardMaterial({ transparent: true, alphaTest: .45, side: T.DoubleSide, roughness: .9, opacity: 0 });
@@ -1074,12 +1078,12 @@
         var pcap = new T.Mesh(new T.SphereGeometry(9.5, 20, 12, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 2), s.h + 12, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
-    var chromeB = new T.MeshStandardMaterial({ color: 0xf4f6fa, metalness: .96, roughness: .07, envMapIntensity: 2.4 });
-    var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .24, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .12 }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
+    var chromeB = metalMat(0xf4f6fa, 1, 2.4);
+    var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .85, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .14, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
     var bumpGlass = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xfff2cf, metalness: .05, roughness: .05, transparent: true, opacity: .22, envMapIntensity: 2.0, clearcoat: 1, clearcoatRoughness: .04, side: T.DoubleSide }) : new T.MeshStandardMaterial({ color: 0xfff2cf, transparent: true, opacity: .22, roughness: .08 });
     var glassM = new T.MeshPhysicalMaterial({ color: 0xfff8ea, metalness: 0, roughness: .02, transmission: .96, ior: 1.5, transparent: true, opacity: 1, envMapIntensity: 3.2, clearcoat: 1, clearcoatRoughness: .02, side: T.DoubleSide });
-    var brassM = new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .92, roughness: .24, envMapIntensity: 1.6 });
-    var darkIronM = new T.MeshStandardMaterial({ color: 0x3a3026, metalness: .8, roughness: .42, envMapIntensity: 1.0 });
+    var brassM = metalMat(0xd9a44e, 1, 1.7);
+    var darkIronM = metalMat(0x3a3026, .9, 1.0, 0.7);
     hole.bumpers.forEach(function (bm, bmi) {
       var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r, kind = bmi % 3;
       turfDecal(bm.x, bm.z, 0, r * 1.4, 40, 3, new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .35, depthWrite: false }), 1.6);
@@ -1134,7 +1138,7 @@
       g.position.set(z.x, gy, z.z); g.rotation.y = -Math.atan2(z.dx, z.dz); R3.group.add(g); z.mesh = g;
     });
     // flippers
-    var steelM = new T.MeshStandardMaterial({ color: 0xd8dde6, metalness: .92, roughness: .22, envMapIntensity: 1.6 }), redM = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xb01418, roughness: .32, metalness: .1, clearcoat: .8, clearcoatRoughness: .2, envMapIntensity: 1.1 }) : new T.MeshStandardMaterial({ color: 0xb01418, roughness: .3 });
+    var steelM = metalMat(0xd8dde6, 1, 1.8); var redM = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0xb01418, roughness: 1, metalness: .1, clearcoat: .85, clearcoatRoughness: .25, envMapIntensity: 1.1, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) }) : new T.MeshStandardMaterial({ color: 0xb01418, roughness: .3 });
     hole.flippers.forEach(function (f) {
       var gy = hole.terrain(f.px, f.pz), g = new T.Group();
       var pad = new T.Mesh(new T.ExtrudeGeometry(flipperShape(f.len), { depth: 16, bevelEnabled: true, bevelThickness: 4, bevelSize: 3.5, bevelSegments: 8, curveSegments: 24 }), steelM); pad.rotation.x = -PI / 2; pad.position.y = 17; pad.castShadow = true; g.add(pad);
@@ -1224,8 +1228,8 @@
     });
     (hole.coins || []).forEach(function (cn) {
       var g = hole.terrain(cn.x, cn.z);
-      var coinM = new T.MeshStandardMaterial({ color: 0xffd54a, emissive: 0xc89a10, emissiveIntensity: .5, metalness: .9, roughness: .22, envMapIntensity: 1.4 });
-      var coinM2 = new T.MeshStandardMaterial({ color: 0xa97c10, emissive: 0x6e4f06, emissiveIntensity: .45, metalness: .9, roughness: .32 });
+      var coinM = metalMat(0xffd54a, 1, 1.5); coinM.emissive = new T.Color(0xc89a10); coinM.emissiveIntensity = .42;
+      var coinM2 = metalMat(0xa97c10, 1, 1.2); coinM2.emissive = new T.Color(0x6e4f06); coinM2.emissiveIntensity = .4;
       var grp = new T.Group();
       var disc = new T.Mesh(new T.CylinderGeometry(24, 24, 6, 64), coinM); disc.rotation.x = PI / 2; disc.castShadow = true; grp.add(disc);
       var crim = new T.Mesh(new T.CylinderGeometry(26.5, 26.5, 3.2, 64), coinM2); crim.rotation.x = PI / 2; grp.add(crim);   // milled darker edge ring
@@ -1251,7 +1255,7 @@
     // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim flush with the turf
     var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, cupD, 64, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - cupD / 2, cu.z); R3.group.add(liner);   // top edge flush at green level (cy), walls drop straight down
     var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 64), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - cupD + 1, cu.z); R3.group.add(pitB);
-    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 10, 30), new T.MeshStandardMaterial({ color: 0xf5c542, metalness: .85, roughness: .22, envMapIntensity: 1.4 })); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 0.5, cu.z); R3.group.add(rim);   // brass rim sits flush in the flat turf
+    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 14, 48), metalMat(0xf5c542, 1, 1.5)); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 0.5, cu.z); R3.group.add(rim);   // brass rim sits flush in the flat turf
     R3.cupGlow = new T.Mesh(new T.RingGeometry(dimR * 0.96, dimR * 1.1, 36), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .3, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 1, cu.z); R3.group.add(R3.cupGlow);   // thin pulsing lip ring hugging the cup
     // flagstick: painted pole rising from the cup, brass finial, CLOTH pennant that waves in the wind
     var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 232, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy - cupD + 116, cu.z); pole.castShadow = true; R3.group.add(pole);   // pole foot rests at the cup bottom
