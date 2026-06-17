@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 106 · EVERY SKY UNIQUE';
+  var BUILD = 'BUILD 107 · MATCHED TURF';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -899,6 +899,7 @@
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
     R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
     R3.scene.environment = (hole.theme === 'moon') ? null : (R3.env || null);   // night scene: no warm desert IBL
+    var scene = sceneFor(hole);   // this hole's backdrop painting + matching ground/fog/tint — computed up front so the turf can harmonize with it
     var bn = hole.bounds, midZ = (bn.minZ + bn.maxZ) / 2, spanX = bn.maxX - bn.minX + 600, spanZ = bn.maxZ - bn.minZ + 600;
     // terrain mesh
     var segX = 70, segZ = Math.round(spanZ / 30), geo = new T.PlaneGeometry(spanX, spanZ, segX, segZ);
@@ -923,7 +924,7 @@
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
     var TGROUND = { ice: ['snow_d.jpg', 'snow_n.jpg'], moon: ['snow_d.jpg', 'snow_n.jpg'], mud: ['mud_d.jpg', 'mud_n.jpg'], speed: ['asph_d.jpg', 'asph_n.jpg'], rubber: ['asph_d.jpg', 'asph_n.jpg'], sand: ['sand_d.jpg', 'sand_n.jpg'] };   // each theme gets its OWN photographic ground — ice is ice, moon is regolith, not green grass
     var tgf = TGROUND[hole.theme], tgD = photoTex((tgf ? tgf[0] : 'grass_d.jpg') + '#turf', true, [5, 15]), tgN = photoTex((tgf ? tgf[1] : 'grass_n.jpg') + '#turf', false, [5, 15]);
-    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), hole.theme === 'ice' || hole.theme === 'moon' ? 0.6 : 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .22 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? 1.1 : .3 }) : new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: 0xf0f2e4, vertexColors: true, roughness: .95, envMapIntensity: .25 });
+    var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), hole.theme === 'ice' || hole.theme === 'moon' ? 0.6 : 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .22 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? 1.1 : .3 }) : new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: new T.Color(scene.tint || 0xf0f2e4).lerp(new T.Color(0xffffff), 0.18), vertexColors: true, roughness: .95, envMapIntensity: .25 });   // grass HARMONIZES with this hole's backdrop: the green photo × the painting's own ground tint = a golden-hour desert turf that matches the sky (warm under a sunset, cool gray under a night sky, green under the alien sky) instead of one jarring bright green everywhere
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
     (function () {
@@ -960,7 +961,7 @@
     // GUNSLINGERS PAINTED WORLD — the player stands INSIDE the brand painting. One big sphere wears the whole hand-drawn scene: the painting's desert plain wraps down to become the far floor in every direction, its mesas the skyline, its sky the sky — ground and sky are ONE continuous image, so there is NO geometry seam/edge to stair-step at any camera angle.
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), pcx = (bn.minX + bn.maxX) / 2;
     var theme = hole.theme || 'grass';
-    var scene = sceneFor(hole), bgName = scene.bg;   // per-hole backdrop painting (rotated for variety), with a matching ground tile
+    var bgName = scene.bg;   // per-hole backdrop painting (rotated for variety), with a matching ground tile (scene computed up top)
     if (R3.scene.fog) R3.scene.fog.color.setHex(scene.fog || skyC);   // haze tuned to THIS hole's painting horizon
     var domeR = pr * 2.7, domeY = 30;   // equator (painted horizon) sits ~at ground level; big enough that a high shot stays well inside
     if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName, scene.rep, scene.oy)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
