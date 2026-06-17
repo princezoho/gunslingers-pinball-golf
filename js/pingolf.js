@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 94 · REAL METAL';
+  var BUILD = 'BUILD 95 · GOLD & GRAIN';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -726,6 +726,7 @@
     var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 1.8 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
     m.normalScale = new T.Vector2(normScale == null ? 0.32 : normScale, normScale == null ? 0.32 : normScale); return m;
   }
+  function goldMat(env) { var m = metalMat(0xffce5c, 1, env == null ? 2.6 : env, 0.24); m.emissive = new T.Color(0x3a2600); m.emissiveIntensity = 0.18; return m; }   // rich warm gold: bright reflective metal with a faint warm glow so it reads as real gold, not flat yellow
   function spriteMat(name) {
     var key = 'sprm_' + name; if (R3['_' + key]) return R3['_' + key];
     var m = new T.MeshStandardMaterial({ transparent: true, alphaTest: .45, side: T.DoubleSide, roughness: .9, opacity: 0 });
@@ -874,13 +875,13 @@
       var dEdge = Math.min(Math.abs(ax2 - bn.minX), Math.abs(bn.maxX - ax2), Math.abs(az2 - bn.minZ), Math.abs(bn.maxZ - az2));
       var inX = ax2 > bn.minX - 1 && ax2 < bn.maxX + 1, inZ = az2 > bn.minZ - 1 && az2 < bn.maxZ + 1;
       var sh3 = (inX && inZ) || dEdge < 240 ? 0.74 + 0.26 * clamp(dEdge / 240, 0, 1) : 1;
-      var mot = Math.sin(ax2 * 0.0041 + Math.sin(az2 * 0.0029) * 2.6) + Math.sin(az2 * 0.0053 + Math.sin(ax2 * 0.0023) * 2.2);   // organic world-space patchiness — breaks any texture tiling
-      sh3 *= 1 + mot * 0.045;
+      var mot = Math.sin(ax2 * 0.0041 + Math.sin(az2 * 0.0029) * 2.6) + Math.sin(az2 * 0.0053 + Math.sin(ax2 * 0.0023) * 2.2) + 0.6 * Math.sin(ax2 * 0.0017 + az2 * 0.0013);   // multi-scale world-space patchiness — masks the texture tile grid
+      sh3 *= 1 + mot * 0.13;
       aoArr[ai * 3] = aoArr[ai * 3 + 1] = aoArr[ai * 3 + 2] = sh3;
     }
     geo.setAttribute('color', new T.BufferAttribute(aoArr, 3));
     var TGROUND = { ice: ['snow_d.jpg', 'snow_n.jpg'], moon: ['snow_d.jpg', 'snow_n.jpg'], mud: ['mud_d.jpg', 'mud_n.jpg'], speed: ['asph_d.jpg', 'asph_n.jpg'], rubber: ['asph_d.jpg', 'asph_n.jpg'], sand: ['sand_d.jpg', 'sand_n.jpg'] };   // each theme gets its OWN photographic ground — ice is ice, moon is regolith, not green grass
-    var tgf = TGROUND[hole.theme], tgD = photoTex((tgf ? tgf[0] : 'grass_d.jpg') + '#turf', true, [8, 24]), tgN = photoTex((tgf ? tgf[1] : 'grass_n.jpg') + '#turf', false, [8, 24]);
+    var tgf = TGROUND[hole.theme], tgD = photoTex((tgf ? tgf[0] : 'grass_d.jpg') + '#turf', true, [5, 15]), tgN = photoTex((tgf ? tgf[1] : 'grass_n.jpg') + '#turf', false, [5, 15]);
     var turfMat = (hole.theme && hole.theme !== 'grass' && hole.turf) ? new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: new T.Color(hole.turf).lerp(new T.Color(0xffffff), hole.theme === 'ice' || hole.theme === 'moon' ? 0.6 : 0.45), vertexColors: true, roughness: hole.theme === 'ice' ? .22 : .95, metalness: hole.theme === 'ice' ? .18 : 0, envMapIntensity: hole.theme === 'ice' ? 1.1 : .3 }) : new T.MeshStandardMaterial({ map: tgD, normalMap: tgN, color: 0xf0f2e4, vertexColors: true, roughness: .95, envMapIntensity: .25 });
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
@@ -1065,7 +1066,7 @@
       var wrep = Math.max(1, Math.round(L / 260)), wD = photoTex('wood_d.jpg#' + wrep, true), wN = photoTex('wood_n.jpg#' + wrep, false); wD.repeat.set(wrep, 1); wN.repeat.set(wrep, 1);
       var prnd2 = function (n) { var v = Math.sin((s.ax + s.az + n) * 12.97) * 43758.5453; return v - Math.floor(v); };
       var nPl = Math.max(2, Math.round(s.h / 26));   // stacked plank courses — a built fence, not an extruded box
-      var pm = new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: new T.Color(s.c).lerp(new T.Color(0xffffff), 0.34), roughness: .8 });
+      var pm = new T.MeshStandardMaterial({ map: wD, normalMap: wN, color: new T.Color(s.c).lerp(new T.Color(0xffffff), 0.34), roughness: .82 }); pm.normalScale = new T.Vector2(1.8, 1.8);   // pronounced plank grain
       var mats = [pm];
       for (var pl = 0; pl < nPl; pl++) {
         var ph2 = s.h / nPl;
@@ -1088,7 +1089,7 @@
       var gy = hole.terrain(bm.x, bm.z), g = new T.Group(), r = bm.r, kind = bmi % 3;
       turfDecal(bm.x, bm.z, 0, r * 1.4, 40, 3, new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .35, depthWrite: false }), 1.6);
       bm.glow = turfDecal(bm.x, bm.z, 0, r * 1.95, 40, 3, new T.MeshBasicMaterial({ color: 0xffc24e, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false }), 2.6);
-      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 24, 128), chromeB); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
+      var ring = new T.Mesh(new T.TorusGeometry(r * 1.0, 5.5, 24, 128), goldMat()); ring.rotation.x = -PI / 2; ring.position.y = 32; ring.castShadow = true; g.add(ring); bm.ring = ring; bm.ringY0 = 32;
       var halo = new T.Mesh(new T.SphereGeometry(r * 0.92, 32, 20), new T.MeshBasicMaterial({ color: 0xffd86a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false })); halo.position.y = 30; g.add(halo); bm.halo = halo;
       if (kind === 1) {   // SALOON OIL LANTERN — brass body, real glass chimney, a living flame inside
         var lbase = new T.Mesh(new T.CylinderGeometry(r * .8, r * 1.05, 14, 96), brassM); lbase.position.y = 7; lbase.castShadow = true; g.add(lbase);
@@ -1101,7 +1102,7 @@
         var knob = new T.Mesh(new T.SphereGeometry(r * .14, 20, 14), brassM); knob.position.y = 33 + r * 1.18; g.add(knob); bm.btnM = null;
       } else if (kind === 2) {   // WHISKEY BARREL — coopered staves, iron hoops, amber glow seeping from the bung
         var bpts = []; for (var bi2 = 0; bi2 <= 18; bi2++) { var bt = bi2 / 18; bpts.push(new T.Vector2(r * (0.78 + Math.sin(bt * PI) * 0.3), 2 + bt * r * 1.5)); }
-        var barrel = new T.Mesh(new T.LatheGeometry(bpts, 112), new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0xb98050, roughness: .62, envMapIntensity: .5 })); barrel.castShadow = true; g.add(barrel);
+        var barrelM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0xb98050, roughness: .66, envMapIntensity: .5 }); barrelM.normalScale = new T.Vector2(1.6, 1.6); var barrel = new T.Mesh(new T.LatheGeometry(bpts, 112), barrelM); barrel.castShadow = true; g.add(barrel);
         var lidM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0x96683c, roughness: .7 });
         var lid = new T.Mesh(new T.CylinderGeometry(r * .78, r * .78, 5, 56), lidM); lid.position.y = 3 + r * 1.5; lid.castShadow = true; g.add(lid);
         [0.22, 0.5, 0.78].forEach(function (hh) { var hp = new T.Mesh(new T.TorusGeometry(r * (0.78 + Math.sin(hh * PI) * 0.3) + 1.5, 2.6, 12, 64), darkIronM); hp.rotation.x = -PI / 2; hp.position.y = 2 + hh * r * 1.5; g.add(hp); });
@@ -1160,7 +1161,7 @@
         for (var sl = 0; sl < 5; sl++) { var slat = new T.Mesh(new T.BoxGeometry(27, bl / 5 - 4, 7), i % 2 ? bmatB : bmatA); slat.position.y = 8 + bl / 5 * (sl + 0.5); slat.rotation.x = (Math.sin(i * 7 + sl * 3) ) * 0.05; slat.castShadow = sl === 2; bo.add(slat); }
         bo.rotation.z = i / wmi.n * TAU; hub.add(bo);
       }
-      var cap = new T.Mesh(new T.SphereGeometry(17, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .8, roughness: .3, envMapIntensity: 1.2 })); hub.add(cap);
+      var cap = new T.Mesh(new T.SphereGeometry(17, 24, 16), goldMat(2.2)); hub.add(cap);
       R3.group.add(hub); wmi.mesh = hub;
     });
     // lasers
@@ -1255,11 +1256,11 @@
     // REAL golf cup: white plastic liner you look down into, black depth at the bottom, polished brass rim flush with the turf
     var liner = new T.Mesh(new T.CylinderGeometry(K.cupR - 1, K.cupR - 2.5, cupD, 64, 1, true), new T.MeshStandardMaterial({ color: 0xe9e4d8, roughness: .45, side: T.BackSide })); liner.position.set(cu.x, cy - cupD / 2, cu.z); R3.group.add(liner);   // top edge flush at green level (cy), walls drop straight down
     var pitB = new T.Mesh(new T.CircleGeometry(K.cupR - 2.5, 64), new T.MeshBasicMaterial({ color: 0x050308 })); pitB.rotation.x = -PI / 2; pitB.position.set(cu.x, cy - cupD + 1, cu.z); R3.group.add(pitB);
-    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 14, 48), metalMat(0xf5c542, 1, 1.5)); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 0.5, cu.z); R3.group.add(rim);   // brass rim sits flush in the flat turf
+    var rim = new T.Mesh(new T.TorusGeometry(K.cupR + 0.5, 3, 16, 56), goldMat(2.4)); rim.rotation.x = -PI / 2; rim.position.set(cu.x, cy + 0.5, cu.z); R3.group.add(rim);   // brass rim sits flush in the flat turf
     R3.cupGlow = new T.Mesh(new T.RingGeometry(dimR * 0.96, dimR * 1.1, 36), new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: .3, side: T.DoubleSide })); R3.cupGlow.rotation.x = -PI / 2; R3.cupGlow.position.set(cu.x, cy + 1, cu.z); R3.group.add(R3.cupGlow);   // thin pulsing lip ring hugging the cup
     // flagstick: painted pole rising from the cup, brass finial, CLOTH pennant that waves in the wind
     var pole = new T.Mesh(new T.CylinderGeometry(2.8, 3.8, 232, 10), new T.MeshStandardMaterial({ color: 0xf0ebe0, roughness: .5 })); pole.position.set(cu.x, cy - cupD + 116, cu.z); pole.castShadow = true; R3.group.add(pole);   // pole foot rests at the cup bottom
-    var fin = new T.Mesh(new T.SphereGeometry(6.5, 12, 10), new T.MeshStandardMaterial({ color: 0xd9a44e, metalness: .85, roughness: .25, envMapIntensity: 1.3 })); fin.position.set(cu.x, cy - cupD + 235, cu.z); R3.group.add(fin);
+    var fin = new T.Mesh(new T.SphereGeometry(6.5, 20, 14), goldMat(2.4)); fin.position.set(cu.x, cy - cupD + 235, cu.z); R3.group.add(fin);
     var FL = 92, FH = 46, fgeo = new T.PlaneGeometry(FL, FH, 14, 3); fgeo.translate(FL / 2 + 3, 0, 0);
     R3.flag = new T.Mesh(fgeo, new T.MeshStandardMaterial({ map: flagTex(), side: T.DoubleSide, roughness: .85 }));
     R3.flag.position.set(cu.x, cy - cupD + 203, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
