@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 102 · PAINTED WORLD';
+  var BUILD = 'BUILD 103 · PAINTED FLOOR';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -705,7 +705,7 @@
   function groundAlpha() {   // radial feather: the ground disc is solid under the play area, then dissolves to transparent at its rim so it melts into the painted horizon + fog — no hard circular edge cutting across the art
     if (R3._grndA) return R3._grndA;
     var c = document.createElement('canvas'); c.width = c.height = 256; var x = c.getContext('2d');
-    var g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, '#fff'); g.addColorStop(0.5, '#fff'); g.addColorStop(0.96, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    var g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, '#fff'); g.addColorStop(0.55, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)');   // broad feather over the outer ~45%: at the grazing game camera this melts the painted floor into the horizon-haze backing disc over a wide visible band, not a hard rim
     x.fillStyle = g; x.fillRect(0, 0, 256, 256);
     var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.ClampToEdgeWrapping; R3._grndA = t; return t;
   }
@@ -927,15 +927,18 @@
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
     var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 1.25, pcx = (bn.minX + bn.maxX) / 2;
     var theme = hole.theme || 'grass';
-    // PAINTED GROUND — the floor is the theme painting's own foreground (soft band), tinted to match, with a radial feather so it dissolves into the painted horizon. No more photographic "scraggly" sand, no hard circular seam.
-    var grep = Math.max(3, Math.round(pr / 900)), grndD = photoTex(GTEX[theme] || GTEX.grass, true); grndD.repeat.set(grep, grep);
-    var skirtTint = new T.Color(GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.35);
-    var skirtM = new T.MeshStandardMaterial({ map: grndD, color: skirtTint, roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: true });   // painterly flat (no normal map) to match the hand-drawn art; radial alpha feathers the rim into the painting + fog
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.7, 96), skirtM); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -34, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
-    // SKY DOME — a full enclosing sphere of the theme's sky gradient, far bigger than the play area, so a high shot can NEVER see over the top / out of the game; the painting feathers into it
-    var domeR = pr * 2.7, dome = new T.Mesh(new T.SphereGeometry(domeR, 40, 24), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, -34, midZ); dome.renderOrder = -2; R3.group.add(dome);
+    var fogHex = FOGC[theme] || skyC;
+    // HORIZON-HAZE BACKING DISC — an OPAQUE disc the exact color of the painting's horizon haze, laid under everything out past the painted cylinder. This is the floor the painted ground feathers INTO, so the rim melts to the horizon tone instead of revealing the empty sky dome (the old mint-arc bug). Reaches beyond the cylinder (>pr) so no gap can show the dome's lower hemisphere.
+    var haze = new T.Mesh(new T.CircleGeometry(pr * 1.85, 64), new T.MeshBasicMaterial({ color: fogHex, fog: false })); haze.rotation.x = -PI / 2; haze.position.set(pcx, -38, midZ); haze.renderOrder = -1; R3.group.add(haze);
+    // PAINTED GROUND — the floor IS this theme's painting foreground (sunlit desert band lifted from sky-<theme>.jpg), tinted warm, radial-feathered at the rim so it dissolves into the haze disc above → a smooth painted desert that melts into the painted sky. No photographic scraggle, no hard seam.
+    var grep = Math.max(4, Math.round(pr / 650)), grndD = photoTex(GTEX[theme] || GTEX.grass, true); grndD.repeat.set(grep, grep);
+    var skirtTint = new T.Color(GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.16);
+    var skirtM = new T.MeshStandardMaterial({ map: grndD, color: skirtTint, roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });   // painterly flat (no normal map) to match the hand-drawn art; feathers into the haze disc beneath
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.85, 96), skirtM); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -34, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    // SKY DOME — full enclosing sphere of the theme sky gradient, far bigger than the play area, so a high shot can NEVER see over the top / out of the game. Only ever seen ABOVE the horizon (the haze disc + painted cylinder occlude it at/below the horizon), so it only ever reads as sky.
+    var domeR = pr * 2.9, dome = new T.Mesh(new T.SphereGeometry(domeR, 40, 24), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, -38, midZ); dome.renderOrder = -3; R3.group.add(dome);
     var bgName = BGMAP[theme];
-    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.30, midZ); pano.renderOrder = -1; R3.group.add(pano); }   // taller cylinder, sits just inside the dome; top + bottom feathered (panoAlpha) so it melts into sky above and ground below
+    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.30, midZ); pano.renderOrder = -2; R3.group.add(pano); }   // taller cylinder, sits inside the dome; top + bottom feathered (panoAlpha) so it melts into sky above and the haze/ground below
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
