@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 103 · PAINTED FLOOR';
+  var BUILD = 'BUILD 104 · INSIDE THE PAINTING';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -730,6 +730,14 @@
     m.map = t;   // mirrored wrap = no visible seam (the paintings aren't tileable); land band at eye level, painted sky above, clamped sky-top blends into the gradient
     R3['_' + key] = m; return m;
   }
+  function domeMat(name) {   // the WHOLE world is one brand painting wrapped on a big sphere: the painting's desert plain (bottom of the image) becomes the far FLOOR all around, its mesas the skyline, its sky the sky — one continuous hand-drawn scene, NO geometry seam between ground and sky. Player stands inside it.
+    var key = 'dome_' + name; if (R3['_' + key]) return R3['_' + key];
+    var m = new T.MeshBasicMaterial({ side: T.BackSide, fog: false, color: 0xbfa98a }); if ('toneMapped' in m) m.toneMapped = false;
+    var t = new T.TextureLoader().load('assets/' + name, function () { m.color.set(0xffffff); m.needsUpdate = true; });
+    if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
+    t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(3, 1); t.offset.set(0, 0);   // x: mirror-tile the range 3× around the horizon (no seam); y: image bottom (desert plain) → sphere nadir, image top (sky) → sphere zenith, painted horizon lands at the equator
+    m.map = t; R3['_' + key] = m; return m;
+  }
   function metalMat(color, metalness, env, normScale) {   // realistic worn metal: scratched roughness + normal break up the reflection so it reads as REAL metal, not mirror plastic
     var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 1.8 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
     m.normalScale = new T.Vector2(normScale == null ? 0.32 : normScale, normScale == null ? 0.32 : normScale); return m;
@@ -924,21 +932,20 @@
       cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3));
       var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar);
     })();
-    // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
-    var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 1.25, pcx = (bn.minX + bn.maxX) / 2;
+    // GUNSLINGERS PAINTED WORLD — the player stands INSIDE the brand painting. One big sphere wears the whole hand-drawn scene: the painting's desert plain wraps down to become the far floor in every direction, its mesas the skyline, its sky the sky — ground and sky are ONE continuous image, so there is NO geometry seam/edge to stair-step at any camera angle.
+    var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), pcx = (bn.minX + bn.maxX) / 2;
     var theme = hole.theme || 'grass';
     var fogHex = FOGC[theme] || skyC;
-    // HORIZON-HAZE BACKING DISC — an OPAQUE disc the exact color of the painting's horizon haze, laid under everything out past the painted cylinder. This is the floor the painted ground feathers INTO, so the rim melts to the horizon tone instead of revealing the empty sky dome (the old mint-arc bug). Reaches beyond the cylinder (>pr) so no gap can show the dome's lower hemisphere.
-    var haze = new T.Mesh(new T.CircleGeometry(pr * 1.85, 64), new T.MeshBasicMaterial({ color: fogHex, fog: false })); haze.rotation.x = -PI / 2; haze.position.set(pcx, -38, midZ); haze.renderOrder = -1; R3.group.add(haze);
-    // PAINTED GROUND — the floor IS this theme's painting foreground (sunlit desert band lifted from sky-<theme>.jpg), tinted warm, radial-feathered at the rim so it dissolves into the haze disc above → a smooth painted desert that melts into the painted sky. No photographic scraggle, no hard seam.
-    var grep = Math.max(4, Math.round(pr / 650)), grndD = photoTex(GTEX[theme] || GTEX.grass, true); grndD.repeat.set(grep, grep);
-    var skirtTint = new T.Color(GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.16);
-    var skirtM = new T.MeshStandardMaterial({ map: grndD, color: skirtTint, roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });   // painterly flat (no normal map) to match the hand-drawn art; feathers into the haze disc beneath
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.85, 96), skirtM); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -34, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
-    // SKY DOME — full enclosing sphere of the theme sky gradient, far bigger than the play area, so a high shot can NEVER see over the top / out of the game. Only ever seen ABOVE the horizon (the haze disc + painted cylinder occlude it at/below the horizon), so it only ever reads as sky.
-    var domeR = pr * 2.9, dome = new T.Mesh(new T.SphereGeometry(domeR, 40, 24), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, -38, midZ); dome.renderOrder = -3; R3.group.add(dome);
     var bgName = BGMAP[theme];
-    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.30, midZ); pano.renderOrder = -2; R3.group.add(pano); }   // taller cylinder, sits inside the dome; top + bottom feathered (panoAlpha) so it melts into sky above and the haze/ground below
+    var domeR = pr * 2.7, domeY = 30;   // equator (painted horizon) sits ~at ground level; big enough that a high shot stays well inside
+    if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
+    else { var dome = new T.Mesh(new T.SphereGeometry(domeR, 48, 32), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
+    // LOCAL GROUND PATCH — a real textured desert floor only under/around the playfield (for the ball + cast shadows), lifted from this painting's own foreground so it matches. It DISSOLVES (radial feather) into the painted desert plain on the dome behind it — the feather reveals painted GROUND, never sky, so there is no visible rim. Fog hazes it toward the horizon tone.
+    var gr = Math.max(spanX, spanZ) * 0.85 + 700;
+    var grep = Math.max(3, Math.round(gr / 520)), grndD = photoTex(GTEX[theme] || GTEX.grass, true); grndD.repeat.set(grep, grep);
+    var patchTint = new T.Color(GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.12);
+    var patchM = new T.MeshStandardMaterial({ map: grndD, color: patchTint, roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
+    var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
