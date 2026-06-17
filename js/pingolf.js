@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 101 · CLEAN HORIZON';
+  var BUILD = 'BUILD 102 · PAINTED WORLD';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -701,12 +701,20 @@
   }
   // THE GUNSLINGERS AESTHETIC — the brand's painted backgrounds wrap the scene; brand prop cutouts dress the diorama
   var BGMAP = { grass: 'sky-grass.jpg', sand: 'sky-sand.jpg', mud: 'sky-mud.jpg', speed: 'sky-speed.jpg', rubber: 'sky-rubber.jpg', moon: 'sky-moon.jpg', ice: 'sky-ice.jpg' };
+  var GTEX = { grass: 'tex/ground-grass.jpg', sand: 'tex/ground-sand.jpg', mud: 'tex/ground-mud.jpg', speed: 'tex/ground-speed.jpg', rubber: 'tex/ground-rubber.jpg', moon: 'tex/ground-moon.jpg', ice: 'tex/ground-ice.jpg' };   // the FLOOR is each theme's OWN painting foreground (soft painterly band lifted from sky-<theme>.jpg) so the ground IS the gunslinger art and meets the painted horizon seamlessly
+  function groundAlpha() {   // radial feather: the ground disc is solid under the play area, then dissolves to transparent at its rim so it melts into the painted horizon + fog — no hard circular edge cutting across the art
+    if (R3._grndA) return R3._grndA;
+    var c = document.createElement('canvas'); c.width = c.height = 256; var x = c.getContext('2d');
+    var g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, '#fff'); g.addColorStop(0.5, '#fff'); g.addColorStop(0.96, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+    var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.ClampToEdgeWrapping; R3._grndA = t; return t;
+  }
   var GROUNDC = { grass: 0xe3d2a8, sand: 0xe6c486, mud: 0xddaab0, speed: 0xc89894, rubber: 0xd6c290, moon: 0xa89cc2, ice: 0xd0b890 };   // warm desert-beige sand tints (grass = pure beige to match the sunset backdrop floor)
   var FOGC = { grass: 0xd8895c, sand: 0xe0b878, mud: 0xdfa3ac, speed: 0xc08c84, rubber: 0xd4c08c, moon: 0xa898c4, ice: 0xceb084 };   // distance haze tuned to each painting's horizon so the skirt melts into the art
   function panoAlpha() {   // vertical fade: painting melts into the ground skirt like distance haze (also hides the cylinder facet line)
     if (R3._panoA) return R3._panoA;
     var c = document.createElement('canvas'); c.width = 1; c.height = 256; var x = c.getContext('2d');
-    var g = x.createLinearGradient(0, 256, 0, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.34, 'rgba(255,255,255,0)'); g.addColorStop(0.72, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,1)');   // LONG gradual ramp (0.34→0.72) so the painting's busy dune line dissolves into the ground like distance haze — no hard scalloped horizon edge
+    var g = x.createLinearGradient(0, 256, 0, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.30, 'rgba(255,255,255,0)'); g.addColorStop(0.50, 'rgba(255,255,255,1)'); g.addColorStop(0.82, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');   // feather BOTH ends: bottom (0→0.30) dissolves into the ground, top (0.82→1) dissolves into the sky dome so the cylinder's top rim never reads as a hard horizontal edge when the camera tilts up
     x.fillStyle = g; x.fillRect(0, 0, 1, 256);
     var t = new T.CanvasTexture(c); t.wrapT = T.ClampToEdgeWrapping; R3._panoA = t; return t;
   }
@@ -917,13 +925,17 @@
       var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar);
     })();
     // GUNSLINGERS PAINTED PANORAMA — close-in cylinder so the painting FILLS the horizon at game camera pitch; the ground skirt is a disc that stops at the cylinder so they meet in a clean circle
-    var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 0.85, pcx = (bn.minX + bn.maxX) / 2;
-    var srep = Math.max(8, Math.round(pr / 220)), sandD = photoTex('sand_d.jpg', true), sandN = photoTex('sand_n.jpg', false); sandD.repeat.set(srep, srep); sandN.repeat.set(srep, srep);
-    var skirtTint = new T.Color(GROUNDC[hole.theme || 'grass'] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.5);   // photographic sand already carries its own albedo — only a light theme tint
-    var skirtM = new T.MeshStandardMaterial({ map: sandD, normalMap: sandN, color: skirtTint, roughness: 1 }); skirtM.normalScale = new T.Vector2(1.4, 1.4);
-    var skirt = new T.Mesh(new T.CircleGeometry(pr * 2.4, 120), skirtM); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -34, midZ); skirt.receiveShadow = true; R3.group.add(skirt);   // desert sits just under the green so the hole reads as cut INTO the desert, not a floating mesa; huge radius + fog hide the edge   // overlaps through the pano wall → the junction is a clean per-pixel line, no polygon stair-steps
-    var bgName = BGMAP[hole.theme || 'grass'];
-    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.23, midZ); R3.group.add(pano); }   // 160 radial segs = smoother cylinder silhouette
+    var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), ph = pr * 1.25, pcx = (bn.minX + bn.maxX) / 2;
+    var theme = hole.theme || 'grass';
+    // PAINTED GROUND — the floor is the theme painting's own foreground (soft band), tinted to match, with a radial feather so it dissolves into the painted horizon. No more photographic "scraggly" sand, no hard circular seam.
+    var grep = Math.max(3, Math.round(pr / 900)), grndD = photoTex(GTEX[theme] || GTEX.grass, true); grndD.repeat.set(grep, grep);
+    var skirtTint = new T.Color(GROUNDC[theme] || new T.Color(skyC).multiplyScalar(0.78)).lerp(new T.Color(0xffffff), 0.35);
+    var skirtM = new T.MeshStandardMaterial({ map: grndD, color: skirtTint, roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: true });   // painterly flat (no normal map) to match the hand-drawn art; radial alpha feathers the rim into the painting + fog
+    var skirt = new T.Mesh(new T.CircleGeometry(pr * 1.7, 96), skirtM); skirt.rotation.x = -PI / 2; skirt.position.set(pcx, -34, midZ); skirt.receiveShadow = true; R3.group.add(skirt);
+    // SKY DOME — a full enclosing sphere of the theme's sky gradient, far bigger than the play area, so a high shot can NEVER see over the top / out of the game; the painting feathers into it
+    var domeR = pr * 2.7, dome = new T.Mesh(new T.SphereGeometry(domeR, 40, 24), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, -34, midZ); dome.renderOrder = -2; R3.group.add(dome);
+    var bgName = BGMAP[theme];
+    if (bgName) { var pano = new T.Mesh(new T.CylinderGeometry(pr, pr, ph, 160, 1, true), panoMat(bgName)); pano.position.set(pcx, pr * 0.30, midZ); pano.renderOrder = -1; R3.group.add(pano); }   // taller cylinder, sits just inside the dome; top + bottom feathered (panoAlpha) so it melts into sky above and ground below
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
     // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
     (function () {
