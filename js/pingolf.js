@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 115 · VARIED PROPS';
+  var BUILD = 'BUILD 116 · ISLANDS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -65,6 +65,10 @@
       terrainFeatures: [], noBox: false,
       wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32 }); return this; },   // editor can raise height up to 240
       box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
+      shape: function (poly, o) {   // ORGANIC FAIRWAY — poly is a closed ring of {x,z}; curb walls run along every edge and the green is rendered to this exact outline (island holes). No rectangle.
+        for (var i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length]; this.wall(a.x, a.z, bp.x, bp.z, o); }
+        this.shape = poly; var mx = 0; for (var j = 0; j < poly.length; j++) mx = Math.max(mx, Math.abs(poly[j].x)); this.hw = mx; return this;
+      },
       ring: function (cx, cz, r, n, o, a0, a1) { a0 = a0 || 0; a1 = a1 == null ? TAU : a1; n = n || 22; var prev = null; for (var i = 0; i <= n; i++) { var a = a0 + (a1 - a0) * i / n, p = { x: cx + Math.cos(a) * r, z: cz + Math.sin(a) * r }; if (prev) this.wall(prev.x, prev.z, p.x, p.z, o); prev = p; } return this; },
       spiral: function (cx, cz, r0, r1, turns, n, o) { var prevIn = null, prevOut = null, w = (r1 - r0) * 0.18 + 60; for (var i = 0; i <= n; i++) { var t = i / n, a = t * turns * TAU, r = lerp(r1, r0, t); var inn = { x: cx + Math.cos(a) * (r - w / 2), z: cz + Math.sin(a) * (r - w / 2) }, out = { x: cx + Math.cos(a) * (r + w / 2), z: cz + Math.sin(a) * (r + w / 2) }; if (prevIn) { this.wall(prevIn.x, prevIn.z, inn.x, inn.z, o); this.wall(prevOut.x, prevOut.z, out.x, out.z, o); } prevIn = inn; prevOut = out; } return this; },
       bumper: function (x, z, r) { this.bumpers.push({ x: x, z: z, r: r || 40, flash: 0 }); return this; },
@@ -495,10 +499,42 @@
     return finish(b, 'THE RECKONING', 4, { x:0, z:120 }, { x:0, z:2620 }, -540, 540, -60, 2840);
   }
 
+  /* ===================== ISLANDS 9 — organic free-form fairways floating over the sea (no rectangles) ===================== */
+  function ribbon(wp, width) {   // build a curvy fairway polygon: smooth the waypoints into a spline, then offset ±width/2 to get left+right banks → an organic outline
+    var v = wp.map(function (p) { return new T.Vector3(p[0], 0, p[1]); });
+    var curve = new T.CatmullRomCurve3(v, false, 'catmullrom', 0.5);
+    var N = 30, pts = curve.getSpacedPoints(N), L = [], R = [];
+    for (var i = 0; i <= N; i++) {
+      var p = pts[i], p0 = pts[Math.max(0, i - 1)], p1 = pts[Math.min(N, i + 1)];
+      var tx = p1.x - p0.x, tz = p1.z - p0.z, tl = hyp(tx, tz) || 1; tx /= tl; tz /= tl;
+      var nx = -tz, nz = tx, t = i / N, w = (typeof width === 'function' ? width(t) : width) / 2;
+      L.push({ x: p.x + nx * w, z: p.z + nz * w }); R.push({ x: p.x - nx * w, z: p.z - nz * w });
+    }
+    return L.concat(R.reverse());
+  }
+  function isl(name, par, wp, width, fn) {   // tee = first waypoint, cup = last; pure putting (no flippers), organic outline
+    var b = builder().shape(ribbon(wp, width), { h: 44, e: 0.55, c: 0x9c5a34 });
+    b.island = true; b.theme = 'island';
+    var tee = { x: wp[0][0], z: wp[0][1] + 40 }, cup = { x: wp[wp.length - 1][0], z: wp[wp.length - 1][1] - 30 };
+    if (fn) fn(b, tee, cup);
+    var poly = b.shape, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+    poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
+    return finish(b, name, par, tee, cup, minX - 40, maxX + 40, minZ - 40, maxZ + 40);
+  }
+  function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.bumper(-40, 1040, 40).coin(-160, 520, 1).coin(240, 1040, 1).coin(40, 1560, 2); }); }
+  function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
+  function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
+  function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.bumper(320, 420, 36).bumper(-320, 840, 36).bumper(320, 1260, 36).coin(0, 1680, 2); }); }
+  function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.bumper(-220, 1000, 44).bumper(220, 1000, 44).coin(0, 700, 1).coin(0, 1500, 2); }); }
+  function ISL6() { return isl('SEA SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
+  function ISL7() { return isl('CASTAWAY COVE', 4, [[0, 0], [40, 820], [-360, 1180], [-660, 1480], [-520, 1860]], 500, function (b) { b.bumper(40, 820, 40).bumper(-360, 1180, 40).coin(-660, 1480, 2); }); }
+  function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
+  function ISL9() { return isl('LAGOON LEAP', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
+  var ISLANDS9 = [ISL1, ISL2, ISL3, ISL4, ISL5, ISL6, ISL7, ISL8, ISL9];
   var FRONT9 = [N1, N2, N3, N4, N5, N6, N7, N8, N9];
   var MIDDLE9 = [H1, H2, H3, H4, H5, H6, H7, H8, H9];
   var BACK9  = [H10, H11, H12, H13, H14, H15, H16, H17, H18];
-  var HOLES = FRONT9.concat(MIDDLE9, BACK9);
+  var HOLES = FRONT9.concat(MIDDLE9, BACK9, ISLANDS9);
 
 
   /* ================================================================ STATE */
@@ -765,6 +801,33 @@
     t.wrapS = T.MirroredRepeatWrapping; t.wrapT = T.ClampToEdgeWrapping; t.repeat.set(rep, 1); t.offset.set(0, oy);   // x: mirror-tile rep× around the horizon (no seam); y: image bottom (desert plain)→nadir, top (sky)→zenith; oy shifts so THIS painting's horizon lands at the equator (eye level)
     m.map = t; R3['_' + key] = m; return m;
   }
+  function islandSky() {   // soft sea-and-sky gradient (cream zenith → blue → teal horizon) for the floating-island holes — no painted backdrop
+    if (R3._islSky) return R3._islSky;
+    var c = document.createElement('canvas'); c.width = 4; c.height = 256; var x = c.getContext('2d');
+    var g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#e7d8a6'); g.addColorStop(0.16, '#b6d2cc'); g.addColorStop(0.40, '#6aacb7'); g.addColorStop(0.62, '#3a929c'); g.addColorStop(1, '#176870');
+    x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+    var t = new T.CanvasTexture(c); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; t.wrapS = t.wrapT = T.ClampToEdgeWrapping; R3._islSky = t; return t;
+  }
+  function buildIsland(hole, bn, midZ, spanX, spanZ) {   // ORGANIC FLOATING GREEN — renders hole.shape (a curvy polygon) as a green island on brown cliffs over the sea, with a gradient sky. Hides the rectangular turf/collar + skips the painted desert dome.
+    if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false;
+    var poly = hole.shape, pcx = (bn.minX + bn.maxX) / 2;
+    var shp = new T.Shape(); shp.moveTo(poly[0].x, poly[0].z); for (var i = 1; i < poly.length; i++) shp.lineTo(poly[i].x, poly[i].z); shp.closePath();
+    // the GREEN — flat low-poly fairway clipped to the organic outline
+    var gg = new T.ShapeGeometry(shp); gg.rotateX(PI / 2);
+    var _gc = new T.Color(0x1f6e1a); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // deep saturated grass green — darkened so the warm sun + bloom don't blow it to pale tan
+    var green = new T.Mesh(gg, new T.MeshStandardMaterial({ color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.08 })); green.position.y = 1; green.receiveShadow = true; R3.group.add(green); R3.turf = green;
+    // CLIFF SIDES — a brown skirt dropping from every edge of the outline down to the waterline
+    var cliffH = 420, verts = [], idx = [];
+    for (i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length], base = verts.length / 3; verts.push(a.x, 2, a.z, bp.x, 2, bp.z, bp.x, -cliffH, bp.z, a.x, -cliffH, a.z); idx.push(base, base + 2, base + 1, base, base + 3, base + 2); }
+    var cg = new T.BufferGeometry(); cg.setAttribute('position', new T.Float32BufferAttribute(verts, 3)); cg.setIndex(idx); cg.computeVertexNormals();
+    var cliff = new T.Mesh(cg, new T.MeshStandardMaterial({ color: 0x6e3c1d, roughness: 1, flatShading: true, envMapIntensity: 0.1 })); cliff.castShadow = true; R3.group.add(cliff);
+    var capG = new T.ShapeGeometry(shp); capG.rotateX(-PI / 2); var cap = new T.Mesh(capG, new T.MeshStandardMaterial({ color: 0x5e351c, roughness: 1 })); cap.position.y = -cliffH; R3.group.add(cap);
+    // THE SEA — big flat teal plane (fog:false so distance doesn't wash it pale) + a horizon sky dome
+    var _wc = new T.Color(0x167079); if (_wc.convertSRGBToLinear) _wc.convertSRGBToLinear();
+    var water = new T.Mesh(new T.PlaneGeometry(60000, 60000), new T.MeshBasicMaterial({ color: _wc, fog: false })); if ('toneMapped' in water.material) water.material.toneMapped = false; water.rotation.x = -PI / 2; water.position.set(pcx, -cliffH * 0.5, midZ); water.renderOrder = -1; R3.group.add(water);
+    var sky = new T.Mesh(new T.SphereGeometry(Math.max(11000, spanZ * 5), 40, 24), new T.MeshBasicMaterial({ map: islandSky(), side: T.BackSide, fog: false })); if ('toneMapped' in sky.material) sky.material.toneMapped = false; sky.position.set(pcx, -cliffH * 0.5, midZ); sky.renderOrder = -2; R3.group.add(sky);
+    R3.scene.background = islandSky(); if (R3.scene.fog) { R3.scene.fog.color.setHex(0x3a929c); R3.scene.fog.near = 4000; R3.scene.fog.far = Math.max(16000, spanZ * 8); }
+  }
   function metalMat(color, metalness, env, normScale) {   // realistic worn metal: scratched roughness + normal break up the reflection so it reads as REAL metal, not mirror plastic
     var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 1.8 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
     m.normalScale = new T.Vector2(normScale == null ? 0.32 : normScale, normScale == null ? 0.32 : normScale); return m;
@@ -961,22 +1024,25 @@
       }
       cgeo.computeVertexNormals();
       cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3));
-      var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar);
+      var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar); R3._collar = collar;
     })();
+    if (hole.island) { buildIsland(hole, bn, midZ, spanX, spanZ); }
     // GUNSLINGERS PAINTED WORLD — the player stands INSIDE the brand painting. One big sphere wears the whole hand-drawn scene: the painting's desert plain wraps down to become the far floor in every direction, its mesas the skyline, its sky the sky — ground and sky are ONE continuous image, so there is NO geometry seam/edge to stair-step at any camera angle.
-    var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), pcx = (bn.minX + bn.maxX) / 2;
-    var theme = hole.theme || 'grass';
-    var bgName = scene.bg;   // per-hole backdrop painting (rotated for variety), with a matching ground tile (scene computed up top)
-    if (R3.scene.fog) R3.scene.fog.color.setHex(scene.fog || skyC);   // haze tuned to THIS hole's painting horizon
-    var domeR = pr * 2.7, domeY = 30;   // equator (painted horizon) sits ~at ground level; big enough that a high shot stays well inside
-    if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName, scene.rep, scene.oy)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
-    else { var dome = new T.Mesh(new T.SphereGeometry(domeR, 48, 32), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
-    // LOCAL GROUND PATCH — the floor under/around the playfield (for the ball + cast shadows): the SAME grayscale surface texture + gt tint as the turf, so it reads as the same grass/ice/crater in the backdrop color and DISSOLVES (radial feather) into the painted desert on the dome — matched color on both sides of the feather, no visible rim.
-    var gr = Math.max(spanX, spanZ) * 0.85 + 700;
-    var patchTile = photoTex(gtex + '#patch', true, [Math.max(8, Math.round(gr / 180)), Math.max(8, Math.round(gr / 180))]);
-    var patchM = new T.MeshStandardMaterial({ map: patchTile, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
-    var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
+    if (!hole.island) {   // PAINTED DESERT WORLD (the painted dome + ground patch) — skipped on island holes, which get sea + gradient sky from buildIsland()
+      var pr = Math.max(2600, spanZ * 0.62 + 600, spanX * 0.62 + 600), pcx = (bn.minX + bn.maxX) / 2;
+      var theme = hole.theme || 'grass';
+      var bgName = scene.bg;
+      if (R3.scene.fog) R3.scene.fog.color.setHex(scene.fog || skyC);
+      var domeR = pr * 2.7, domeY = 30;
+      if (bgName) { var dome = new T.Mesh(new T.SphereGeometry(domeR, 64, 48), domeMat(bgName, scene.rep, scene.oy)); dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
+      else { var dome = new T.Mesh(new T.SphereGeometry(domeR, 48, 32), new T.MeshBasicMaterial({ map: skyTex(theme, skyC), side: T.BackSide, fog: false })); if ('toneMapped' in dome.material) dome.material.toneMapped = false; dome.position.set(pcx, domeY, midZ); dome.renderOrder = -2; R3.group.add(dome); }
+      var gr = Math.max(spanX, spanZ) * 0.85 + 700;
+      var patchTile = photoTex(gtex + '#patch', true, [Math.max(8, Math.round(gr / 180)), Math.max(8, Math.round(gr / 180))]);
+      var patchM = new T.MeshStandardMaterial({ map: patchTile, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
+      var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
+    }
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
+    if (!hole.island)   // desert dressing is skipped on island holes (props would float on the sea)
     // DIORAMA DRESSING — props on the apron just outside the walls (visual only, no collision). PER-HOLE: the RNG is salted by the hole so every hole gets DIFFERENT props in DIFFERENT spots (before, it was seeded only by prop index → identical cacti on every level), and each hole draws from its own "biome" palette (saguaro / crystal field / fungal grove / boulder badlands / oasis / frontier / alien garden).
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
@@ -1602,7 +1668,7 @@
   }
   function nextHole() { var base = St.setBase || 0; if (St.hi >= base + 8) { finishGame(); return; } loadHole(St.hi + 1); }
   function finishGame() { var base = St.setBase || 0, t = 0; for (var i = base; i < base + 9; i++) t += (St.scores[i] || 0); St.total = t; St.state = 'done'; St.banner = (SETS[base / 9] ? SETS[base / 9].name : 'NINE') + ' COMPLETE'; St.bannerT = 2.5; showScorecard(); }
-  var SETS = [{ base: 0, name: 'FRONT 9', sub: '9 brand-new holes — the toughest run' }, { base: 9, name: 'MIDDLE 9', sub: 'the original desert gauntlet' }, { base: 18, name: 'BACK 9', sub: 'ice, moon, ghost town & the loops' }];
+  var SETS = [{ base: 0, name: 'FRONT 9', sub: '9 brand-new holes — the toughest run' }, { base: 9, name: 'MIDDLE 9', sub: 'the original desert gauntlet' }, { base: 18, name: 'BACK 9', sub: 'ice, moon, ghost town & the loops' }, { base: 27, name: 'ISLANDS 9', sub: 'free-form greens floating over the sea' }];
   function chooseSet() {
     var old = document.getElementById('pg-chooser'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-chooser';
