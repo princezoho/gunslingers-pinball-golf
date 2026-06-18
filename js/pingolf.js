@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 114 · CONTINUOUS GROUND';
+  var BUILD = 'BUILD 115 · VARIED PROPS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -977,10 +977,11 @@
     var patchM = new T.MeshStandardMaterial({ map: patchTile, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
     var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
-    // WILD-WEST DIORAMA DRESSING — cacti, rocks and broken ranch fences on the turf apron just outside the walls (visual only, no collision; deterministic)
+    // DIORAMA DRESSING — props on the apron just outside the walls (visual only, no collision). PER-HOLE: the RNG is salted by the hole so every hole gets DIFFERENT props in DIFFERENT spots (before, it was seeded only by prop index → identical cacti on every level), and each hole draws from its own "biome" palette (saguaro / crystal field / fungal grove / boulder badlands / oasis / frontier / alien garden).
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
-      var prnd = function (n) { var x = Math.sin(n * 113.7 + 3.3) * 43758.5453; return x - Math.floor(x); };
+      var HS = (typeof St !== 'undefined' && St.hi >= 0) ? St.hi : nameHash(hole.name || '');   // per-hole salt
+      var prnd = function (n) { var x = Math.sin((n + HS * 97.31 + 11) * 113.7 + 3.3) * 43758.5453; return x - Math.floor(x); };
       var cacM = new T.MeshStandardMaterial({ color: 0x39702f, roughness: .8, envMapIntensity: .15 });
       var rokM = new T.MeshStandardMaterial({ color: 0xa88a66, roughness: .95 });
       var rokM2 = new T.MeshStandardMaterial({ color: 0x8a7458, roughness: .95 });
@@ -1024,31 +1025,76 @@
         var mm = mat.clone(); mm.flatShading = true;
         return new T.Mesh(geo, mm);
       };
-      for (var k = 0; k < 40; k++) {
+      var mkCrystal = function (h, seed) {   // a faceted gem cluster — glowing teal/violet spires (the reference's crystal props)
+        var g = new T.Group(), n = 2 + Math.floor(prnd(seed) * 3), hue = 0.46 + prnd(seed + 5) * 0.2;
+        for (var i = 0; i < n; i++) {
+          var ch2 = h * (0.55 + prnd(seed + i) * 0.7), r = ch2 * 0.2;
+          var cm = new T.MeshStandardMaterial({ color: new T.Color().setHSL(hue, 0.75, 0.5), roughness: 0.18, metalness: 0.0, flatShading: true, emissive: new T.Color().setHSL(hue, 0.85, 0.42), emissiveIntensity: 0.85, envMapIntensity: 0.2 });
+          var cr2 = new T.Mesh(new T.ConeGeometry(r, ch2, 5), cm); cr2.castShadow = true;
+          var ang = prnd(seed + i * 3) * TAU, rad = r * 1.3 * i; cr2.position.set(Math.cos(ang) * rad, ch2 / 2, Math.sin(ang) * rad);
+          cr2.rotation.z = (prnd(seed + i * 7) - 0.5) * 0.5; cr2.rotation.y = prnd(seed + i) * TAU; g.add(cr2);
+        }
+        return g;
+      };
+      var mkMushroom = function (seed) {   // a cluster of toadstools — cream stems, candy caps (the reference's mushroom props)
+        var g = new T.Group(), n = 2 + Math.floor(prnd(seed) * 4);
+        var stemM = new T.MeshStandardMaterial({ color: 0xe9e0cd, roughness: 0.9 });
+        var capM = new T.MeshStandardMaterial({ color: new T.Color().setHSL(0.95 + prnd(seed + 3) * 0.12, 0.62, 0.56), roughness: 0.7, flatShading: true });
+        for (var i = 0; i < n; i++) {
+          var sh = 18 + prnd(seed + i) * 34, sr = sh * 0.18, cr = sh * 0.52, m = new T.Group();
+          var stem = new T.Mesh(new T.CylinderGeometry(sr * 0.8, sr, sh, 8), stemM); stem.position.y = sh / 2; stem.castShadow = true; m.add(stem);
+          var cap = new T.Mesh(new T.SphereGeometry(cr, 12, 7, 0, TAU, 0, PI / 2), capM); cap.scale.y = 0.66; cap.position.y = sh; cap.castShadow = true; m.add(cap);
+          var ang = prnd(seed + i * 5) * TAU, rad = prnd(seed + i * 2) * cr * 1.6; m.position.set(Math.cos(ang) * rad, 0, Math.sin(ang) * rad); m.scale.setScalar(0.7 + prnd(seed + i) * 0.6); g.add(m);
+        }
+        return g;
+      };
+      var mkTree = function (seed) {   // low-poly conifer — stacked cone tiers on a stubby trunk
+        var g = new T.Group(), th2 = 80 + prnd(seed) * 90, tr = th2 * 0.06;
+        var trunkM = new T.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.9, flatShading: true });
+        var _lc = new T.Color().setHSL(0.33, 0.6, 0.26 + prnd(seed + 1) * 0.08); if (_lc.convertSRGBToLinear) _lc.convertSRGBToLinear();   // deep pine green (converted to linear so the warm sun doesn't wash it to pale cyan)
+        var leafM = new T.MeshStandardMaterial({ color: _lc, roughness: 0.85, flatShading: true, envMapIntensity: 0.2 });
+        var trunk = new T.Mesh(new T.CylinderGeometry(tr * 0.7, tr, th2 * 0.4, 7), trunkM); trunk.position.y = th2 * 0.2; trunk.castShadow = true; g.add(trunk);
+        for (var i = 0; i < 3; i++) { var tw = th2 * (0.34 - i * 0.07), tht = th2 * 0.32, cone = new T.Mesh(new T.ConeGeometry(tw, tht, 7), leafM); cone.position.y = th2 * (0.35 + i * 0.22) + tht / 2; cone.castShadow = true; g.add(cone); }
+        return g;
+      };
+      var pick = function (pal, r) { var s = 0, i; for (i = 0; i < pal.length; i++) s += pal[i][1]; var x = r * s; for (i = 0; i < pal.length; i++) { x -= pal[i][1]; if (x <= 0) return pal[i][0]; } return pal[pal.length - 1][0]; };
+      // PER-HOLE BIOME PALETTES — each hole picks one, so its dressing has a distinct character instead of the same cactus mix everywhere
+      var PALETTES = [
+        [['cactus', 5], ['rock', 2], ['tree', 1], ['brand', 1], ['fence', 1]],   // saguaro flats
+        [['crystal', 5], ['rock', 2], ['mushroom', 1], ['cactus', 1]],            // crystal field
+        [['mushroom', 5], ['tree', 2], ['rock', 1], ['cactus', 1]],               // fungal grove
+        [['rock', 5], ['cactus', 2], ['crystal', 1], ['fence', 1]],               // boulder badlands
+        [['tree', 4], ['cactus', 2], ['mushroom', 2], ['rock', 1]],               // oasis
+        [['fence', 3], ['brand', 3], ['cactus', 2], ['rock', 1]],                 // frontier ranch
+        [['crystal', 3], ['mushroom', 3], ['tree', 2], ['rock', 1]]               // alien garden
+      ];
+      var isLunar = hole.theme === 'moon' || hole.theme === 'ice';
+      var pal = isLunar ? [['crystal', 4], ['rock', 5]] : PALETTES[HS % PALETTES.length];   // moon/ice: rocks + glowing crystals
+      var nProps = 30 + Math.floor(prnd(HS * 7 + 1) * 22);   // density varies per hole (30–52)
+      for (var k = 0; k < nProps; k++) {
         var side = k % 4, px, pz, off = 80 + prnd(k * 3 + 1) * 170;
         if (side === 0) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.minZ - off; }
         else if (side === 1) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.maxZ + off; }
         else if (side === 2) { px = bn.minX - off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
         else { px = bn.maxX + off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
-        var py = hole.terrain(px, pz), t = prnd(k + 99);
-        if (hole.theme === 'moon' || hole.theme === 'ice') {
-          if (t < 0.6) { var mr = mkRock(26 + prnd(k + 7) * 40, k * 1.7, hole.theme === 'moon' ? moonRokM : rokM); mr.scale.y = 0.62; mr.position.set(px, py + 8, pz); mr.rotation.y = prnd(k + 3) * TAU; mr.castShadow = true; R3.group.add(mr); }
-          continue;
-        }
-        if (!WESTERN[hole.theme || 'grass']) continue;
-        if (t < 0.34) {
-          var ch = 95 + prnd(k + 11) * 150, cr = 12 + prnd(k + 13) * 8;
-          var cac = mkSaguaro(ch, cr, k);
-          cac.position.set(px, py, pz); cac.rotation.y = prnd(k + 23) * TAU; R3.group.add(cac);
-        } else if (t < 0.56) {
-          var rk = mkRock(24 + prnd(k + 7) * 38, k * 2.3, prnd(k + 29) > .5 ? rokM : rokM2); rk.scale.y = 0.6; rk.position.set(px, py + 8, pz); rk.rotation.y = prnd(k + 31) * TAU; rk.castShadow = true; R3.group.add(rk);
-        } else if (t < 0.8) {   // brand art cutouts: barrels, skulls, lanterns, dynamite from assets/
+        var py = hole.terrain(px, pz), type = pick(pal, prnd(k + 99)), ob;
+        if (type === 'cactus') {
+          ob = mkSaguaro(95 + prnd(k + 11) * 150, 12 + prnd(k + 13) * 8, k); ob.position.set(px, py, pz); ob.rotation.y = prnd(k + 23) * TAU; R3.group.add(ob);
+        } else if (type === 'rock') {
+          ob = mkRock(24 + prnd(k + 7) * 38, k * 2.3, isLunar ? (hole.theme === 'moon' ? moonRokM : rokM) : (prnd(k + 29) > .5 ? rokM : rokM2)); ob.scale.y = 0.6; ob.position.set(px, py + 8, pz); ob.rotation.y = prnd(k + 31) * TAU; ob.castShadow = true; R3.group.add(ob);
+        } else if (type === 'crystal') {
+          ob = mkCrystal(70 + prnd(k + 9) * 90, k * 1.9); ob.position.set(px, py, pz); ob.rotation.y = prnd(k + 5) * TAU; R3.group.add(ob);
+        } else if (type === 'mushroom') {
+          ob = mkMushroom(k * 2.7); ob.position.set(px, py, pz); ob.rotation.y = prnd(k + 8) * TAU; R3.group.add(ob);
+        } else if (type === 'tree') {
+          ob = mkTree(k * 3.1); ob.position.set(px, py, pz); ob.rotation.y = prnd(k + 12) * TAU; R3.group.add(ob);
+        } else if (type === 'brand') {   // brand art cutouts: barrels, skulls, lanterns, dynamite
           var SPR = [['barrel', 130], ['skull', 84], ['Lantern_2.6_', 96], ['Dynamite_2.1_', 80]];
           var sp = SPR[Math.floor(prnd(k + 61) * SPR.length)], sh2 = sp[1] * (0.85 + prnd(k + 67) * 0.5);
           var bb = new T.Mesh(new T.PlaneGeometry(sh2, sh2), spriteMat(sp[0]));
-          bb.position.set(px, py + sh2 / 2 - 8, pz); bb.rotation.y = PI + (prnd(k + 71) - .5) * 0.7; R3.group.add(bb);   // sunk into the dirt so cutouts sit ON the ground, never float
+          bb.position.set(px, py + sh2 / 2 - 8, pz); bb.rotation.y = PI + (prnd(k + 71) - .5) * 0.7; R3.group.add(bb);
           var bsh2 = new T.Mesh(new T.CircleGeometry(sh2 * 0.34, 14), new T.MeshBasicMaterial({ color: 0x07040a, transparent: true, opacity: .4 })); bsh2.rotation.x = -PI / 2; bsh2.position.set(px, py + 1.6, pz); R3.group.add(bsh2);
-        } else {
+        } else {   // fence
           var fg = new T.Group();
           for (var fp = 0; fp < 3; fp++) { var post = new T.Mesh(new T.BoxGeometry(9, 52 + prnd(k + fp) * 14, 9), fenM); post.position.set(fp * 56 - 56, 30, 0); post.castShadow = true; fg.add(post); }
           var rail = new T.Mesh(new T.BoxGeometry(150, 7, 5), fenM); rail.position.set(0, 46, 0); rail.rotation.z = (prnd(k + 41) - 0.5) * 0.16; fg.add(rail);
