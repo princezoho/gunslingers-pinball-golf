@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 111 · LIGHTER TURF';
+  var BUILD = 'BUILD 112 · MATCH BACKDROP';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -706,25 +706,25 @@
   // g = the PAINTERLY ground tile (a crop of THIS painting's own foreground), so the floor is the actual gunslinger art, not a flat color. gt = a color multiplier (solved empirically) on that textured tile so the lit+tonemapped floor still RENDERS to the painting's ground-half average — painted look AND matched color. fog = horizon haze.
   // gt = the surface texture's tint (linear). The ground keeps its REAL surface texture (grass blades / ice / regolith craters, desaturated to gray detail) and gt colors it to THIS painting's ground-average — so it reads as grass/ice/crater IN the backdrop's color. Solved so (grayTexMean≈0.585 × gt) renders to the painting ground-half average.
   var POOL = [
-    { bg: 'sky-grass.jpg', fog: 0xd8895c, gt: [0.55, 0.42, 0.38], oy: 0, rep: 3 },        // pink sunset mesas
-    { bg: 'sky-sand.jpg', fog: 0xe0b878, gt: [0.58, 0.45, 0.33], oy: 0.22, rep: 3 },      // golden buttes + crescent moon
-    { bg: 'bg-9.png', fog: 0x71af84, gt: [0.54, 0.5, 0.36], oy: -0.02, rep: 3 },          // green alien sky, UFOs over mesas
-    { bg: 'sky-extra.jpg', fog: 0xdca878, gt: [0.54, 0.43, 0.42], oy: 0.10, rep: 3 },     // fiery orange sunset
-    { bg: 'bg-desert.png', fog: 0xada39b, gt: [0.6, 0.53, 0.48], oy: 0.02, rep: 3 },     // pastel blue sky, pink clouds
-    { bg: 'sky-mud.jpg', fog: 0xc9a6b0, gt: [0.5, 0.42, 0.46], oy: 0.05, rep: 3 },       // frontier town at dusk
-    { bg: 'sky-rubber.jpg', fog: 0xd9b58a, gt: [0.53, 0.49, 0.4], oy: 0.12, rep: 3 },    // cream sky, crimson rocks
-    { bg: 'bg-5.png', fog: 0x5a5860, gt: [0.4, 0.42, 0.5], oy: 0.34, rep: 3 },           // moonlit gray night desert
-    { bg: 'sky-speed.jpg', fog: 0xc08c84, gt: [0.55, 0.45, 0.45], oy: 0.05, rep: 3 },     // teal-orange dusk
-    { bg: 'bg-canyon.png', fog: 0xa49795, gt: [0.5, 0.46, 0.46], oy: 0, rep: 2 },         // pink canyon walls
-    { bg: 'bg-town.png', fog: 0x877c84, gt: [0.44, 0.45, 0.52], oy: -0.05, rep: 2 },       // saloon street
-    { bg: 'bg-18.png', fog: 0x83624b, gt: [0.6, 0.46, 0.34], oy: -0.05, rep: 2 },         // train depot
-    { bg: 'bg-12.png', fog: 0x9e3a36, gt: [0.58, 0.32, 0.3], oy: -0.18, rep: 2 }          // burning town
+    { bg: 'sky-grass.jpg', fog: 0xd8895c, gt: [0.338, 0.12, 0.143], oy: 0, rep: 3 },        // pink sunset mesas
+    { bg: 'sky-sand.jpg', fog: 0xe0b878, gt: [0.31, 0.169, 0.103], oy: 0.22, rep: 3 },      // golden buttes + crescent moon
+    { bg: 'bg-9.png', fog: 0x71af84, gt: [0.089, 0.232, 0.176], oy: -0.02, rep: 3 },        // green alien sky, UFOs over mesas
+    { bg: 'sky-extra.jpg', fog: 0xdca878, gt: [0.356, 0.195, 0.232], oy: 0.10, rep: 3 },    // fiery orange sunset
+    { bg: 'bg-desert.png', fog: 0xada39b, gt: [0.242, 0.209, 0.246], oy: 0.02, rep: 3 },    // pastel blue sky, pink clouds
+    { bg: 'sky-mud.jpg', fog: 0xc9a6b0, gt: [0.093, 0.074, 0.167], oy: 0.05, rep: 3 },      // frontier town at dusk
+    { bg: 'sky-rubber.jpg', fog: 0xd9b58a, gt: [0.289, 0.22, 0.173], oy: 0.12, rep: 3 },    // cream sky, crimson rocks
+    { bg: 'bg-5.png', fog: 0x5a5860, gt: [0.168, 0.17, 0.288], oy: 0.34, rep: 3 },          // moonlit gray night desert
+    { bg: 'sky-speed.jpg', fog: 0xc08c84, gt: [0.324, 0.232, 0.26], oy: 0.05, rep: 3 },     // teal-orange dusk
+    { bg: 'bg-canyon.png', fog: 0xa49795, gt: [0.197, 0.172, 0.232], oy: 0, rep: 2 },       // pink canyon walls
+    { bg: 'bg-town.png', fog: 0x877c84, gt: [0.13, 0.108, 0.176], oy: -0.05, rep: 2 },      // saloon street
+    { bg: 'bg-18.png', fog: 0x83624b, gt: [0.179, 0.096, 0.074], oy: -0.05, rep: 2 },       // train depot
+    { bg: 'bg-12.png', fog: 0x9e3a36, gt: [0.213, 0.038, 0.026], oy: -0.18, rep: 2 }        // burning town
   ];
   function nameHash(s) { s = s || ''; var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
   function sceneFor(hole) {   // moon/ice keep their thematic painting; every other hole rotates the full pool by hole index → unique sky per hole in a nine, never two in a row
     var th = hole.theme;
-    if (th === 'moon') return { bg: 'sky-moon.jpg', fog: FOGC.moon, gt: [0.46, 0.45, 0.62], oy: 0, rep: 3 };   // regolith crater texture in the moon-night lavender
-    if (th === 'ice') return { bg: 'sky-ice.jpg', fog: FOGC.ice, gt: [0.54, 0.54, 0.6], oy: 0, rep: 3 };   // ice texture in the ice-painting tone
+    if (th === 'moon') return { bg: 'sky-moon.jpg', fog: FOGC.moon, gt: [0.22, 0.195, 0.506], oy: 0, rep: 3 };   // regolith crater texture in the moon-night lavender
+    if (th === 'ice') return { bg: 'sky-ice.jpg', fog: FOGC.ice, gt: [0.162, 0.092, 0.117], oy: 0, rep: 3 };   // ice texture in the ice-painting tone
     var idx = (typeof St !== 'undefined' && St.hi >= 0) ? St.hi : nameHash(hole.name);
     return POOL[idx % POOL.length];
   }
