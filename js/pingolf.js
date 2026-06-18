@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 118 · SHAPED HOLES';
+  var BUILD = 'BUILD 119 · TUBES & TIERS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -77,6 +77,7 @@
       windmill: function (x, z, r, blades, speed) { this.windmills.push({ x: x, z: z, r: r || 200, n: blades || 4, speed: speed || 1.6, ang: 0, om: 0 }); return this; },
       loopde: function (x, z, r, ang) { this.loops.push({ x: x, z: z, r: r || 130, ang: ang == null ? 0 : ang }); return this; },   // ang 0 = the loop runs DOWN the lane (tee->cup) like a traditional loop-de-loop; PI/2 was sideways
       warp: function (x, z, ex, ez, r) { this.warps.push({ x: x, z: z, ex: ex == null ? x : ex, ez: ez == null ? z + 360 : ez, r: r || 50, flash: 0 }); return this; },
+      tube: function (ax, az, bx, bz, r) { this.warps.push({ x: ax, z: az, ex: bx, ez: bz, r: r || 58, flash: 0, tube: true }); return this; },   // a PIPE the ball rolls into and shoots out the far end (uses the warp teleport physics, drawn as an arcing tube)
       portal: function (x, z, exits, r) { this.portals.push({ x: x, z: z, exits: (exits && exits.length) ? exits : [{ x: x + 320, z: z }], r: r || 46, flash: 0 }); return this; },
       firering: function (x, z, r, h, points, period) { this.firerings.push({ x: x, z: z, r: r || 120, h: h == null ? 170 : h, points: points == null ? 100 : points, period: period || 2.4, on: true, flash: 0, passedCd: 0, passed: false }); return this; },
       enemy: function (x, z, ex, ez, r, speed, type, behavior, effect) { this.enemies.push({ x: x, z: z, ex: ex == null ? x + 420 : ex, ez: ez == null ? z : ez, r: r || 42, speed: speed || 0.8, type: type || 'spiky', behavior: behavior || 'patrol', effect: effect || 'knockback', ph: 0, cx: x, cz: z, flash: 0 }); return this; },
@@ -523,14 +524,14 @@
     return finish(b, name, par, tee, cup, minX - 40, maxX + 40, minZ - 40, maxZ + 40);
   }
   function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.hill(-160, 1040, 320, 90).hill(60, 1660, 280, 80); b.bumper(-40, 1040, 40).coin(-160, 520, 1).coin(240, 1040, 1).coin(40, 1560, 2); }); }
-  function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 110, 9999); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
+  function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 140, 9999); b.tube(20, 560, 560, 1240, 64); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
   function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.hill(60, 900, 280, 90); b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
   function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bumper(320, 1260, 36).coin(0, 1680, 2); }); }
   function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.hill(0, 1000, 460, 150); b.bumper(-260, 1000, 44).bumper(260, 1000, 44).coin(0, 700, 1).coin(0, 1500, 2); }); }
-  function ISL6() { return isl('SEA SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
+  function ISL6() { return isl('CANYON SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.tube(-300, 560, -300, 1500, 66); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
   function ISL7() { return isl('CASTAWAY COVE', 4, [[0, 0], [40, 820], [-360, 1180], [-660, 1480], [-520, 1860]], 500, function (b) { b.hill(-360, 1180, 300, 90); b.bumper(40, 820, 40).bumper(-360, 1180, 40).coin(-660, 1480, 2); }); }
   function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.tier(1500, 120, 9999); b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
-  function ISL9() { return isl('LAGOON LEAP', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.tier(1080, 120, 9999); b.hill(40, 760, 260, 80); b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
+  function ISL9() { return isl('SNAKE CANYON', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.tier(1080, 150, 9999); b.tube(-240, 560, 220, 1500, 64); b.hill(40, 760, 260, 80); b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
   var ISLANDS9 = [ISL1, ISL2, ISL3, ISL4, ISL5, ISL6, ISL7, ISL8, ISL9];
   var FRONT9 = [N1, N2, N3, N4, N5, N6, N7, N8, N9];
   var MIDDLE9 = [H1, H2, H3, H4, H5, H6, H7, H8, H9];
@@ -1383,6 +1384,15 @@
     });
     (hole.warps || []).forEach(function (wp) {
       var gy = hole.terrain(wp.x, wp.z), gy2 = hole.terrain(wp.ex, wp.ez);
+      if (wp.tube) {   // a wooden PIPE that arcs from the entrance up and over to the exit
+        var dxt = wp.ex - wp.x, dzt = wp.ez - wp.z, dist = hyp(dxt, dzt), arc = 200 + dist * 0.22, R = wp.r;
+        var crv = new T.CatmullRomCurve3([new T.Vector3(wp.x, gy + R * 0.5, wp.z), new T.Vector3(wp.x + dxt * 0.28, gy + arc * 0.7 + R, wp.z + dzt * 0.28), new T.Vector3(wp.x + dxt * 0.5, gy + arc + R, wp.z + dzt * 0.5), new T.Vector3(wp.x + dxt * 0.72, gy2 + arc * 0.7 + R, wp.z + dzt * 0.72), new T.Vector3(wp.ex, gy2 + R * 0.5, wp.ez)]);
+        var tubeMat = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#tube', true), normalMap: photoTex('wood_n.jpg#tube', false), color: 0xc6924f, roughness: .7, metalness: .1, side: T.DoubleSide });
+        var pipe = new T.Mesh(new T.TubeGeometry(crv, 40, R, 18, false), tubeMat); pipe.castShadow = true; R3.group.add(pipe);
+        var rimM = new T.MeshStandardMaterial({ color: 0x6e4a25, roughness: .8 });
+        [[wp.x, gy, wp.z], [wp.ex, gy2, wp.ez]].forEach(function (e, ei) { var mouth = new T.Mesh(new T.CylinderGeometry(R * 1.08, R * 1.08, 26, 20, 1, true), rimM); mouth.position.set(e[0], e[1] + R * 0.5, e[2]); R3.group.add(mouth); var hole2 = new T.Mesh(new T.CircleGeometry(R * 0.92, 20), new T.MeshBasicMaterial({ color: 0x0a0608 })); hole2.rotation.x = -PI / 2; hole2.position.set(e[0], e[1] + 2.5, e[2]); R3.group.add(hole2); if (ei === 0) wp.mesh = mouth; });
+        return;
+      }
       var pit = new T.Mesh(new T.CylinderGeometry(wp.r, wp.r * .7, 80, 22), new T.MeshStandardMaterial({ color: 0x0a0616, roughness: 1 })); pit.position.set(wp.x, gy - 38, wp.z); R3.group.add(pit);
       var ring1 = new T.Mesh(new T.TorusGeometry(wp.r, 6, 10, 24), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466cc, emissiveIntensity: .85, roughness: .35 })); ring1.rotation.x = -PI / 2; ring1.position.set(wp.x, gy + 2, wp.z); R3.group.add(ring1); wp.mesh = ring1;
       var ring2 = new T.Mesh(new T.TorusGeometry(wp.r * .9, 5, 10, 24), new T.MeshStandardMaterial({ color: 0x2aff9a, emissive: 0x12a866, emissiveIntensity: .75, roughness: .35 })); ring2.rotation.x = -PI / 2; ring2.position.set(wp.ex, gy2 + 2, wp.ez); R3.group.add(ring2);
@@ -1535,7 +1545,9 @@
         }
         hole._hull = hu;
       }
-      if (hu && (b.x < hu.minX || b.x > hu.maxX || b.z < hu.minZ || b.z > hu.maxZ)) {
+      var oob = (hu && (b.x < hu.minX || b.x > hu.maxX || b.z < hu.minZ || b.z > hu.maxZ));
+      if (!oob && Array.isArray(hole.shape) && !inPoly(hole.shape, b.x, b.z)) oob = true;   // shaped holes: rolling off the organic green onto the desert apron (inside the wall bbox, outside the polygon) is OUT
+      if (oob) {
         b.stillT = 0; b.settled = false;   // never settle out there — the rescue below always gets its chance
         b.oobT = (b.oobT || 0) + dt;
         if (b.oobT > 0.55) {
@@ -1561,7 +1573,7 @@
     // drop holes / warps — roll in, fall to the linked exit (lower tier)
     if (b.warpCd > 0) b.warpCd -= dt;
     var wps = hole.warps || [];
-    for (i = 0; i < wps.length; i++) { var wp = wps[i]; if (b.warpCd <= 0 && !b.air && hyp(b.x - wp.x, b.z - wp.z) < wp.r) { wp.flash = .3; b.x = wp.ex; b.z = wp.ez; b.y = hole.terrain(wp.ex, wp.ez) + K.R + 240; b.vx *= 0.3; b.vz *= 0.3; b.vy = 0; b.air = true; b.warpCd = 0.8; b.stillT = 0; b.settled = false; pop3d(wp.x, wp.z, hole.terrain(wp.x, wp.z), 'DROP!', COL.blue); spark(wp.x, hole.terrain(wp.x, wp.z) + 12, wp.z, 14); spawnShock(wp.x, hole.terrain(wp.x, wp.z), wp.z, COL.blue); St.shake = Math.min(10, St.shake + 6); sfx('boost'); return; } }
+    for (i = 0; i < wps.length; i++) { var wp = wps[i]; if (b.warpCd <= 0 && !b.air && hyp(b.x - wp.x, b.z - wp.z) < wp.r) { wp.flash = .3; b.x = wp.ex; b.z = wp.ez; b.y = hole.terrain(wp.ex, wp.ez) + K.R + 240; b.vx *= 0.3; b.vz *= 0.3; b.vy = 0; b.air = true; b.warpCd = 0.8; b.stillT = 0; b.settled = false; pop3d(wp.x, wp.z, hole.terrain(wp.x, wp.z), wp.tube ? 'TUBE!' : 'DROP!', COL.blue); spark(wp.x, hole.terrain(wp.x, wp.z) + 12, wp.z, 14); spawnShock(wp.x, hole.terrain(wp.x, wp.z), wp.z, COL.blue); St.shake = Math.min(10, St.shake + 6); sfx('boost'); return; } }
     // portals — teleport to the linked twin, keeping speed & direction
     if (b.portalCd > 0) b.portalCd -= dt;
     var prt = hole.portals || [];
