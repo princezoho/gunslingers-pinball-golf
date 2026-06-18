@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 123 · CANNONS & BOUNCERS';
+  var BUILD = 'BUILD 124 · CLEAN CURBS & CUPS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -63,9 +63,10 @@
     var b = {
       walls: [], bumpers: [], boosters: [], flippers: [], windmills: [], lasers: [], loops: [], warps: [], portals: [], firerings: [], enemies: [], coins: [], powerups: [], spinners: [], cannons: [], bouncers: [], multiball: null,
       terrainFeatures: [], noBox: false,
-      wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32 }); return this; },   // editor can raise height up to 240
+      wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32, curve: !!o.curve }); return this; },   // curve:true = part of an organic curb (rendered as one smooth rail, no per-segment posts)
       box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
-      shape: function (poly, o) {   // ORGANIC FAIRWAY — poly is a closed ring of {x,z}; curb walls run along every edge and the green is rendered to this exact outline (island holes). No rectangle.
+      shape: function (poly, o) {   // ORGANIC FAIRWAY — poly is a closed ring of {x,z}; curb walls run along every edge and the green is rendered to this exact outline. No rectangle.
+        o = o || {}; o.curve = true;   // smooth rail, no per-segment posts
         for (var i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length]; this.wall(a.x, a.z, bp.x, bp.z, o); }
         this.shape = poly; var mx = 0; for (var j = 0; j < poly.length; j++) mx = Math.max(mx, Math.abs(poly[j].x)); this.hw = mx; return this;
       },
@@ -843,6 +844,17 @@
     var grassD = photoTex('grass_g.jpg#isl', true, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var _gc = new T.Color(0x4eaa3c); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // bright fairway green (gray grass texture × this tint reads as real grass)
     var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.1 })); green.receiveShadow = true; R3.group.add(green); R3.turf = green;
+    // CUP COLLAR — fill the ragged gap between the cup hole and the punched grid with continuing grass + a worn lip, so the rim is clean (same treatment as the rectangular holes)
+    var collarMat = green.material.clone();
+    var cInner = K.cupR, cOuter = openR + cell + 30, cgeo = new T.RingGeometry(cInner, cOuter, 80, 3), cp = cgeo.attributes.position, cuv = cgeo.attributes.uv, ccol = new Float32Array(cp.count * 3);
+    for (var ci = 0; ci < cp.count; ci++) {
+      var lx = cp.getX(ci), ly = cp.getY(ci), wx2 = cup.x + lx, wz2 = cup.z - ly, rr = hyp(lx, ly), lip = clamp(1 - (rr - cInner) / 9, 0, 1), csh = 1 - 0.3 * lip;
+      cuv.setXY(ci, ((wx2 - cmx) + gw / 2) / gw, ((cmz - wz2) + gd / 2) / gd);
+      cp.setXYZ(ci, wx2, hole.terrain(wx2, wz2) + 0.7, wz2);
+      ccol[ci * 3] = ccol[ci * 3 + 1] = ccol[ci * 3 + 2] = csh;
+    }
+    cgeo.computeVertexNormals(); cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3)); collarMat.vertexColors = true;
+    var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar);
     // short dirt SKIRT from the green edge down to the desert apron so the shaped green isn't a paper-thin sheet
     var skB = -40, verts = [], sidx = [];
     for (i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length], ay = hole.terrain(a.x, a.z), by = hole.terrain(bp.x, bp.z), base = verts.length / 3; verts.push(a.x, ay + 1, a.z, bp.x, by + 1, bp.z, bp.x, skB, bp.z, a.x, skB, a.z); sidx.push(base, base + 2, base + 1, base, base + 3, base + 2); }
@@ -1266,11 +1278,12 @@
       var repX = Math.max(1.4, L / 360), repY = Math.max(0.55, s.h / 150), tint = new T.Color(s.c).lerp(new T.Color(0xffffff), 0.5);
       var pm = plankMat(repX, repY, prnd2(1) * 0.7, tint, .5);   // per-wall vertical offset so neighbouring walls never show the same board row -> no obvious repeat
       var mats = [pm];
-      var body = new T.Mesh(new T.BoxGeometry(L + 14, s.h, 22), pm); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body);
+      var body = new T.Mesh(new T.BoxGeometry(L + (s.curve ? 24 : 14), s.h, s.curve ? 26 : 22), pm); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body);
       var aoM = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });   // grime/contact AO darkening along the base of the wall
       var ao = new T.Mesh(new T.PlaneGeometry(L + 14, s.h * 0.34), aoM); ao.position.set(0, s.h * 0.17, 11.2); g.add(ao);
-      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.BoxGeometry(L + 16, 9, 27), capM2); cap.position.y = s.h + 3; cap.castShadow = true; g.add(cap); mats.push(capM2);
-      [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);
+      var capW = s.curve ? L + 22 : L + 16;   // organic curb: overlap the cap rails so the curve reads as ONE continuous rail, not blocky segments
+      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.BoxGeometry(capW, 9, 27), capM2); cap.position.y = s.h + 3; cap.castShadow = true; g.add(cap); mats.push(capM2);
+      if (!s.curve) [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);   // posts only on straight box walls — an organic curb gets a clean rail instead of a post at every tiny segment
         var pcap = new T.Mesh(new T.SphereGeometry(10.5, 22, 14, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
