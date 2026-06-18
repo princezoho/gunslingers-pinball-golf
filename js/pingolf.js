@@ -55,13 +55,13 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 122 · WOOD CURBS';
+  var BUILD = 'BUILD 123 · CANNONS & BOUNCERS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
   function builder() {
     var b = {
-      walls: [], bumpers: [], boosters: [], flippers: [], windmills: [], lasers: [], loops: [], warps: [], portals: [], firerings: [], enemies: [], coins: [], powerups: [], spinners: [], multiball: null,
+      walls: [], bumpers: [], boosters: [], flippers: [], windmills: [], lasers: [], loops: [], warps: [], portals: [], firerings: [], enemies: [], coins: [], powerups: [], spinners: [], cannons: [], bouncers: [], multiball: null,
       terrainFeatures: [], noBox: false,
       wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32 }); return this; },   // editor can raise height up to 240
       box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
@@ -75,6 +75,8 @@
       booster: function (x, z, ang, r, spd) { this.boosters.push({ x: x, z: z, dx: Math.cos(ang), dz: Math.sin(ang), r: r || 110, spd: spd || K.boostSpeed, flash: 0 }); return this; },
       flip: function (side, x, z, len, rot, speed) { var rest = (side === 'L' ? -0.5 : PI + 0.5) + (rot || 0); this.flippers.push({ side: side, px: x, pz: z, len: len || 150, rot: rot || 0, speed: speed || 1, ang: rest, om: 0, held: false, holdT: 0, live: false }); return this; },
       windmill: function (x, z, r, blades, speed) { this.windmills.push({ x: x, z: z, r: r || 200, n: blades || 4, speed: speed || 1.6, ang: 0, om: 0 }); return this; },
+      cannon: function (x, z, ang, power) { this.cannons.push({ x: x, z: z, ang: ang == null ? 0 : ang, power: power || 4200, r: 60, flash: 0 }); return this; },   // roll in → BLAST the ball airborne in the cannon's direction
+      bouncer: function (x, z, r) { this.bouncers.push({ x: x, z: z, r: r || 64, flash: 0 }); return this; },   // a spring pad — boings the ball straight up
       loopde: function (x, z, r, ang) { this.loops.push({ x: x, z: z, r: r || 130, ang: ang == null ? 0 : ang }); return this; },   // ang 0 = the loop runs DOWN the lane (tee->cup) like a traditional loop-de-loop; PI/2 was sideways
       warp: function (x, z, ex, ez, r) { this.warps.push({ x: x, z: z, ex: ex == null ? x : ex, ez: ez == null ? z + 360 : ez, r: r || 50, flash: 0 }); return this; },
       tube: function (ax, az, bx, bz, r) { this.warps.push({ x: ax, z: az, ex: bx, ez: bz, r: r || 58, flash: 0, tube: true }); return this; },   // a PIPE the ball rolls into and shoots out the far end (uses the warp teleport physics, drawn as an arcing tube)
@@ -530,11 +532,11 @@
     poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
     return finish(b, name, par, tee, cup, minX - 40, maxX + 40, minZ - 40, maxZ + 40);
   }
-  function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.hill(-160, 1040, 320, 90).hill(60, 1660, 280, 80); b.bumper(-40, 1040, 40).coin(-160, 520, 1).coin(240, 1040, 1).coin(40, 1560, 2); }); }
+  function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.hill(-160, 1040, 320, 90).hill(60, 1660, 280, 80); b.bumper(-40, 1040, 40).bouncer(-160, 1560).coin(-160, 520, 1).coin(240, 1040, 1); }); }
   function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 140, 9999); b.tube(20, 560, 560, 1240, 64); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
   function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.hill(60, 900, 280, 90); b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
-  function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bumper(320, 1260, 36).coin(0, 1680, 2); }); }
-  function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.hill(0, 1000, 460, 150); b.bumper(-260, 1000, 44).bumper(260, 1000, 44).coin(0, 700, 1).coin(0, 1500, 2); }); }
+  function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bouncer(320, 1260).coin(0, 1680, 2); }); }
+  function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.hill(0, 1000, 460, 150); b.cannon(0, 470, 0, 2300); b.bumper(-260, 1000, 44).bumper(260, 1000, 44).coin(0, 1500, 2); }); }
   function ISL6() { return isl('CANYON SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.tube(-300, 560, -300, 1500, 66); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
   function ISL7() { return isl('CASTAWAY COVE', 4, [[0, 0], [40, 820], [-360, 1180], [-660, 1480], [-520, 1860]], 500, function (b) { b.hill(-360, 1180, 300, 90); b.bumper(40, 820, 40).bumper(-360, 1180, 40).coin(-660, 1480, 2); }); }
   function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.tier(1500, 120, 9999); b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
@@ -1357,6 +1359,25 @@
       var cap = new T.Mesh(new T.SphereGeometry(17, 24, 16), goldMat(2.2)); hub.add(cap);
       R3.group.add(hub); wmi.mesh = hub;
     });
+    // CANNONS — a black iron cannon barrel on a wood carriage, pointing where it fires
+    (hole.cannons || []).forEach(function (cn) {
+      var gy = hole.terrain(cn.x, cn.z), g = new T.Group(); g.position.set(cn.x, gy, cn.z); g.rotation.y = cn.ang;
+      var ironM = metalMat(0x2b2b30, 1, 1.4), woodM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#cn', true), color: 0x8a5a30, roughness: .8 });
+      var barrel = new T.Mesh(new T.CylinderGeometry(20, 26, 96, 22), ironM); barrel.rotation.x = -PI / 2.6; barrel.position.set(0, 44, 0); barrel.castShadow = true; g.add(barrel);
+      var mouth = new T.Mesh(new T.CylinderGeometry(20, 20, 8, 22), new T.MeshBasicMaterial({ color: 0x0a0608 })); mouth.rotation.x = -PI / 2.6; mouth.position.set(0, 44 + Math.sin(PI / 2.6) * 48, Math.cos(PI / 2.6) * 48); g.add(mouth);
+      var carriage = new T.Mesh(new T.BoxGeometry(58, 26, 70), woodM); carriage.position.y = 16; carriage.castShadow = true; g.add(carriage);
+      [-1, 1].forEach(function (s) { var wheel = new T.Mesh(new T.CylinderGeometry(24, 24, 10, 16), woodM); wheel.rotation.z = PI / 2; wheel.position.set(s * 32, 20, -14); g.add(wheel); });
+      var ring = new T.Mesh(new T.TorusGeometry(cn.r, 4, 8, 28), new T.MeshStandardMaterial({ color: 0xc23a2a, emissive: 0x7a1208, emissiveIntensity: .6, roughness: .5 })); ring.rotation.x = -PI / 2; ring.position.y = 3; ring.position.set(0, 3, 0); g.add(ring);
+      R3.group.add(g); cn.mesh = g;
+    });
+    // BOUNCERS — a springy red-and-white trampoline pad
+    (hole.bouncers || []).forEach(function (bc) {
+      var gy = hole.terrain(bc.x, bc.z), g = new T.Group(); g.position.set(bc.x, gy, bc.z);
+      var rim = new T.Mesh(new T.CylinderGeometry(bc.r, bc.r, 16, 28), new T.MeshStandardMaterial({ color: 0xc83a3a, roughness: .5 })); rim.position.y = 8; rim.castShadow = true; g.add(rim);
+      var pad = new T.Mesh(new T.CylinderGeometry(bc.r * 0.82, bc.r * 0.82, 6, 28), new T.MeshStandardMaterial({ color: 0xf2efe6, emissive: 0x554a32, emissiveIntensity: .25, roughness: .6 })); pad.position.y = 16; g.add(pad);
+      var coil = new T.Mesh(new T.TorusGeometry(bc.r * 0.5, 4, 8, 24), goldMat(1.6)); coil.rotation.x = -PI / 2; coil.position.y = 19; g.add(coil);
+      R3.group.add(g); bc.mesh = g;
+    });
     // lasers
     hole.lasers.forEach(function (la) {
       var dx = la.bx - la.ax, dz = la.bz - la.az, L = hyp(dx, dz), gy = hole.terrain((la.ax + la.bx) / 2, (la.az + la.bz) / 2);
@@ -1592,6 +1613,14 @@
     // boosters
     if (b.boostCd > 0) b.boostCd -= dt;
     for (i = 0; i < hole.boosters.length; i++) { var z = hole.boosters[i]; if (b.boostCd <= 0 && b.y < gy + 70 && hyp(b.x - z.x, b.z - z.z) < z.r) { b.vx = z.dx * z.spd; b.vz = z.dz * z.spd; b.boostCd = K.boostCd; z.flash = .3; St.shake = Math.min(11, St.shake + 7); pop3d(z.x, z.z, gy, 'TURBO!', COL.blue); spark(z.x, gy + 16, z.z, 16); spawnShock(z.x, gy, z.z, COL.blue); sfx('boost'); break; } }
+    // CANNON — roll in, get BLASTED airborne in the barrel's direction (a high arc)
+    if (b.cannonCd > 0) b.cannonCd -= dt;
+    var cns = hole.cannons || [];
+    for (i = 0; i < cns.length; i++) { var cn = cns[i]; if ((b.cannonCd || 0) <= 0 && !b.air && hyp(b.x - cn.x, b.z - cn.z) < cn.r) { var cgy = hole.terrain(cn.x, cn.z); b.x = cn.x; b.z = cn.z; b.y = cgy + K.R; b.vx = Math.sin(cn.ang) * cn.power; b.vz = Math.cos(cn.ang) * cn.power; b.vy = cn.power * 0.42; b.air = true; b.cannonCd = 0.7; cn.flash = .3; b.stillT = 0; b.settled = false; pop3d(cn.x, cn.z, cgy, 'KABOOM!', COL.red); spark(cn.x, cgy + 20, cn.z, 18); spawnShock(cn.x, cgy, cn.z, COL.red); St.shake = Math.min(12, St.shake + 8); sfx('boost'); break; } }
+    // BOUNCER — spring pad: roll over it and BOING straight up
+    var bcs = hole.bouncers || [];
+    for (i = 0; i < bcs.length; i++) { var bc = bcs[i]; if (!b.air && (b.bounceCd || 0) <= 0 && hyp(b.x - bc.x, b.z - bc.z) < bc.r) { var bgy = hole.terrain(bc.x, bc.z); b.y = bgy + K.R + 6; b.vy = 2300; b.air = true; b.bounceCd = 0.5; bc.flash = .3; b.stillT = 0; b.settled = false; pop3d(bc.x, bc.z, bgy, 'BOING!', COL.gold); spark(bc.x, bgy + 14, bc.z, 12); St.shake = Math.min(9, St.shake + 4); sfx('bump'); break; } }
+    if (b.bounceCd > 0) b.bounceCd -= dt;
     // loop-de-loop (enter from either side with enough speed; ball rides the vertical loop, exits boosted)
     var lps = hole.loops || [];
     for (i = 0; i < lps.length; i++) { var lo2 = lps[i]; if (b.loopCd <= 0 && hyp(b.x - lo2.x, b.z - lo2.z) < 72) { var fwd = b.vx * Math.sin(lo2.ang) + b.vz * Math.cos(lo2.ang), sp2 = hyp(b.vx, b.vz); if (Math.abs(fwd) > 800 && sp2 > 900) { var dir = fwd >= 0 ? lo2.ang : lo2.ang + PI; b.loop = { x: lo2.x, z: lo2.z, r: lo2.r, ang: dir, t: 0, sp: Math.min(Math.max(sp2, 1800), 4200), ride: Math.min(Math.max(sp2 * 0.7, 1500), 2400), gy: hole.terrain(lo2.x, lo2.z), shift: lo2.r ? 78 : 78, lx: Math.cos(lo2.ang), lz: -Math.sin(lo2.ang), fsgn: fwd >= 0 ? 1 : -1 }; pop3d(lo2.x, lo2.z, hole.terrain(lo2.x, lo2.z), 'LOOP!', COL.gold); spawnShock(lo2.x, hole.terrain(lo2.x, lo2.z), lo2.z, COL.gold); St.shake = Math.min(10, St.shake + 5); sfx('boost'); return; } } }
