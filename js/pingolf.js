@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 121 · CUPS FIXED';
+  var BUILD = 'BUILD 122 · WOOD CURBS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1246,12 +1246,17 @@
       var gg = new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(new Float32Array(pos), 3)); gg.setIndex(idx); gg.computeVertexNormals();
       var mm = new T.Mesh(gg, mat); R3.group.add(mm); return mm;
     }
-    function plankMat(repX, repY, offY, tint, env) {   // real horizontal-plank timber: clean boards, straight grain, staggered seams (Planks011). per-wall offset breaks any visible tiling
-      var d = new T.TextureLoader().load('assets/tex/plank_d.jpg'), n = new T.TextureLoader().load('assets/tex/plank_n.jpg');
-      d.wrapS = d.wrapT = n.wrapS = n.wrapT = T.RepeatWrapping; if (T.sRGBEncoding) d.encoding = T.sRGBEncoding;
-      d.repeat.set(repX, repY); n.repeat.set(repX, repY); d.offset.set(0, offY); n.offset.set(0, offY);
-      if (R3.r && R3.r.capabilities) { d.anisotropy = n.anisotropy = Math.min(8, R3.r.capabilities.getMaxAnisotropy()); }
-      var m = new T.MeshStandardMaterial({ map: d, normalMap: n, color: tint, roughness: .82, envMapIntensity: env == null ? .55 : env }); m.normalScale = new T.Vector2(1.4, 1.4); return m;
+    function plankMat(repX, repY, offY, tint, env) {   // real horizontal-plank timber. CACHE the textures by rounded repeat — a shaped hole has ~60 curb walls, and loading 2 fresh textures per wall (×hundreds) overwhelms the browser so most never load and the walls render BLACK. Buckets keep it to a handful of shared textures.
+      var bx = Math.max(0.5, Math.round(repX * 2) / 2), by = Math.max(0.5, Math.round(repY * 2) / 2), key = '_plank_' + bx + '_' + by;
+      if (!R3[key]) {
+        var d = new T.TextureLoader().load('assets/tex/plank_d.jpg'), n = new T.TextureLoader().load('assets/tex/plank_n.jpg');
+        d.wrapS = d.wrapT = n.wrapS = n.wrapT = T.RepeatWrapping; if (T.sRGBEncoding) d.encoding = T.sRGBEncoding;
+        d.repeat.set(bx, by); n.repeat.set(bx, by);
+        if (R3.r && R3.r.capabilities) { d.anisotropy = n.anisotropy = Math.min(8, R3.r.capabilities.getMaxAnisotropy()); }
+        R3[key] = { d: d, n: n };
+      }
+      var tx = R3[key];
+      var m = new T.MeshStandardMaterial({ map: tx.d, normalMap: tx.n, color: tint, roughness: .82, envMapIntensity: env == null ? .55 : env }); m.normalScale = new T.Vector2(1.4, 1.4); return m;
     }
     var postWoodM = plankMat(1, 2.2, 0, 0xb58a5c, .5);
     hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2);
