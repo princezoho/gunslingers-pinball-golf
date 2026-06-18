@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 119 · TUBES & TIERS';
+  var BUILD = 'BUILD 120 · SOLID CURBS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1473,6 +1473,15 @@
 
   /* ================================================================ PHYSICS */
   function collideWall(b, s, gy) { if (b.y > gy + s.h - 4) return; var c = nearestOnSeg(b.x, b.z, s.ax, s.az, s.bx, s.bz); var dx = b.x - c.x, dz = b.z - c.z, d = hyp(dx, dz), R = K.R + K.wallHalf; if (d >= R) return; var nx, nz; if (d > 1e-4) { nx = dx / d; nz = dz / d; } else { nx = 0; nz = -1; d = .01; } b.x = c.x + nx * R; b.z = c.z + nz * R; var vn = b.vx * nx + b.vz * nz; if (vn < 0) { b.vx -= (1 + s.e) * vn * nx; b.vz -= (1 + s.e) * vn * nz; if (vn < -700) { sfx('tick'); } } }
+  function containShape(b, poly) {   // hard backstop for the ORGANIC curb: per-segment walls let a fast ball tunnel through the joints, so if the ball ends up outside the polygon, find the nearest edge, shove it back inside and bounce it (so it never escapes the green by rolling)
+    if (inPoly(poly, b.x, b.z)) return;
+    var best = 1e18, bx = 0, bz = 0;
+    for (var i = 0; i < poly.length; i++) { var a = poly[i], c = poly[(i + 1) % poly.length], p = nearestOnSeg(b.x, b.z, a.x, a.z, c.x, c.z), d = hyp(b.x - p.x, b.z - p.z); if (d < best) { best = d; bx = p.x; bz = p.z; } }
+    if (best > 130) return;   // way outside (lofted clean over the rail) → leave it for the OOB rescue
+    var R = K.R + K.wallHalf, nx = b.x - bx, nz = b.z - bz, nd = hyp(nx, nz) || 1; nx /= nd; nz /= nd;
+    b.x = bx - nx * R; b.z = bz - nz * R;   // back inside the curb
+    var vout = b.vx * nx + b.vz * nz; if (vout > 0) { b.vx -= 1.55 * vout * nx; b.vz -= 1.55 * vout * nz; if (vout > 600) sfx('tick'); }
+  }
   function collideBumper(b, bm, gy) { if (b.y > gy + 110) return; var dx = b.x - bm.x, dz = b.z - bm.z, d = hyp(dx, dz) || .001, R = K.R + bm.r; if (d >= R) return; var nx = dx / d, nz = dz / d; b.x = bm.x + nx * R; b.z = bm.z + nz * R; var vn = b.vx * nx + b.vz * nz; if (vn < 0) { b.vx -= 2.0 * vn * nx; b.vz -= 2.0 * vn * nz; } var bk = bm.kick || K.bumpKick; b.vx += nx * bk; b.vz += nz * bk; bm.flash = .25; St.combo = (St.combo || 0) + 1; St.comboPulse = 0.6; St.shake = Math.min(12, St.shake + 6 + Math.min(St.combo, 6)); spark(bm.x, gy + 40, bm.z, 12 + Math.min(St.combo * 2, 14)); pop3d(bm.x, bm.z, gy, St.combo > 1 ? 'POP x' + St.combo + '!' : 'POP!', St.combo >= 4 ? COL.red : COL.gold); sfx('bump'); }
   function windmillBlades(wm) { var segs = []; for (var i = 0; i < wm.n; i++) { var a = wm.ang + i / wm.n * TAU; segs.push({ ax: wm.x, az: wm.z, bx: wm.x + Math.cos(a) * wm.r, bz: wm.z + Math.sin(a) * wm.r, a: a }); } return segs; }
   function collideWindmill(b, wm, gy) {
@@ -1560,6 +1569,7 @@
     }
     var i, gy = gh;
     for (i = 0; i < hole.walls.length; i++) collideWall(b, hole.walls[i], gy);
+    if (Array.isArray(hole.shape) && !b.air) containShape(b, hole.shape);   // organic-hole backstop so a fast ball can't tunnel through the curb
     for (i = 0; i < hole.bumpers.length; i++) collideBumper(b, hole.bumpers[i], gy);
     for (i = 0; i < hole.flippers.length; i++) collideFlipper(b, hole.flippers[i], gy);
     for (i = 0; i < hole.windmills.length; i++) collideWindmill(b, hole.windmills[i], gy);
