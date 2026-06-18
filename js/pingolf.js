@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 120 · SOLID CURBS';
+  var BUILD = 'BUILD 121 · CUPS FIXED';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -513,13 +513,20 @@
     }
     return L.concat(R.reverse());
   }
-  function isl(name, par, wp, width, fn) {   // CRAZY-SHAPED gunslinger hole — organic tiered green in the normal desert world. tee = first waypoint, cup = last.
+  function isl(name, par, wp, width, fn) {   // CRAZY-SHAPED gunslinger hole — organic tiered green in the normal desert world.
     var b = builder().shape(ribbon(wp, width), { h: 50, e: 0.6 });
-    var w0 = (typeof width === 'function' ? width(0) : width);
-    var tee = { x: wp[0][0], z: wp[0][1] + 40 }, cup = { x: wp[wp.length - 1][0], z: wp[wp.length - 1][1] - 30 };
-    var fw = Math.max(120, w0 / 2 - 80); b.flip('L', -fw, tee.z + 70, 150).flip('R', fw, tee.z + 70, 150);   // paddles near the tee like every other hole
+    var poly = b.shape, w0 = (typeof width === 'function' ? width(0) : width), N = wp.length;
+    // TEE — inset forward from the start cap, on the centerline (not jammed against the end edge)
+    var s0 = wp[0], s1 = wp[1], sl = hyp(s1[0] - s0[0], s1[1] - s0[1]) || 1, tee = { x: s0[0] + (s1[0] - s0[0]) / sl * 90, z: s0[1] + (s1[1] - s0[1]) / sl * 90 };
+    // CUP — inset back from the end along the path until the hole clears every edge by cupR + 26 (so it never punches half-off the green)
+    var eN = wp[N - 1], eP = wp[N - 2], el = hyp(eN[0] - eP[0], eN[1] - eP[1]) || 1, edx = (eN[0] - eP[0]) / el, edz = (eN[1] - eP[1]) / el, cup, ins = 70;
+    do { cup = { x: eN[0] - edx * ins, z: eN[1] - edz * ins }; ins += 28; } while (ins < 460 && (!inPoly(poly, cup.x, cup.z) || edgeDist(poly, cup.x, cup.z) < K.cupR + 26));
+    // PADDLES — shrink until BOTH pivots sit safely inside the green (no poking through the curb)
+    var fw = Math.min(w0 / 2 - 110, 230);
+    while (fw > 80 && (!inPoly(poly, tee.x - fw, tee.z + 50) || !inPoly(poly, tee.x + fw, tee.z + 50) || edgeDist(poly, tee.x - fw, tee.z + 50) < 60 || edgeDist(poly, tee.x + fw, tee.z + 50) < 60)) fw -= 16;
+    if (fw > 90) b.flip('L', tee.x - fw, tee.z + 50, 150).flip('R', tee.x + fw, tee.z + 50, 150);
     if (fn) fn(b, tee, cup);
-    var poly = b.shape, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+    var minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
     return finish(b, name, par, tee, cup, minX - 40, maxX + 40, minZ - 40, maxZ + 40);
   }
@@ -812,6 +819,9 @@
   }
   function inPoly(poly, x, z) {   // ray-cast point-in-polygon
     var c = false; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j]; if (((a.z > z) !== (b.z > z)) && (x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x)) c = !c; } return c;
+  }
+  function edgeDist(poly, x, z) {   // shortest distance from (x,z) to the polygon boundary
+    var best = 1e18; for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length], dx = b.x - a.x, dz = b.z - a.z, L = dx * dx + dz * dz, t = L ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L)) : 0, px = a.x + t * dx, pz = a.z + t * dz, d = hyp(x - px, z - pz); if (d < best) best = d; } return best;
   }
   function buildShapedGreen(hole, bn, midZ, spanX, spanZ) {   // CRAZY-SHAPED GREEN — renders hole.shape as a grassy, terrain-FOLLOWING (multi-tier) fairway that sits in the NORMAL gunslinger world (painted backdrop + desert apron + props + paddles). NOT an island: no water/cliffs. Just replaces the rectangular green with an organic, tiered one.
     if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false;
