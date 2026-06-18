@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 116 · ISLANDS';
+  var BUILD = 'BUILD 117 · GRASSY ISLES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -521,15 +521,15 @@
     poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
     return finish(b, name, par, tee, cup, minX - 40, maxX + 40, minZ - 40, maxZ + 40);
   }
-  function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.bumper(-40, 1040, 40).coin(-160, 520, 1).coin(240, 1040, 1).coin(40, 1560, 2); }); }
-  function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
-  function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
-  function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.bumper(320, 420, 36).bumper(-320, 840, 36).bumper(320, 1260, 36).coin(0, 1680, 2); }); }
-  function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.bumper(-220, 1000, 44).bumper(220, 1000, 44).coin(0, 700, 1).coin(0, 1500, 2); }); }
-  function ISL6() { return isl('SEA SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
-  function ISL7() { return isl('CASTAWAY COVE', 4, [[0, 0], [40, 820], [-360, 1180], [-660, 1480], [-520, 1860]], 500, function (b) { b.bumper(40, 820, 40).bumper(-360, 1180, 40).coin(-660, 1480, 2); }); }
-  function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
-  function ISL9() { return isl('LAGOON LEAP', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
+  function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.hill(-160, 1040, 320, 90).hill(60, 1660, 280, 80); b.bumper(-40, 1040, 40).coin(-160, 520, 1).coin(240, 1040, 1).coin(40, 1560, 2); }); }
+  function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 110, 9999); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
+  function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.hill(60, 900, 280, 90); b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
+  function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bumper(320, 1260, 36).coin(0, 1680, 2); }); }
+  function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.hill(0, 1000, 460, 150); b.bumper(-260, 1000, 44).bumper(260, 1000, 44).coin(0, 700, 1).coin(0, 1500, 2); }); }
+  function ISL6() { return isl('SEA SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
+  function ISL7() { return isl('CASTAWAY COVE', 4, [[0, 0], [40, 820], [-360, 1180], [-660, 1480], [-520, 1860]], 500, function (b) { b.hill(-360, 1180, 300, 90); b.bumper(40, 820, 40).bumper(-360, 1180, 40).coin(-660, 1480, 2); }); }
+  function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.tier(1500, 120, 9999); b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
+  function ISL9() { return isl('LAGOON LEAP', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.tier(1080, 120, 9999); b.hill(40, 760, 260, 80); b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
   var ISLANDS9 = [ISL1, ISL2, ISL3, ISL4, ISL5, ISL6, ISL7, ISL8, ISL9];
   var FRONT9 = [N1, N2, N3, N4, N5, N6, N7, N8, N9];
   var MIDDLE9 = [H1, H2, H3, H4, H5, H6, H7, H8, H9];
@@ -808,25 +808,44 @@
     x.fillStyle = g; x.fillRect(0, 0, 4, 256);
     var t = new T.CanvasTexture(c); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; t.wrapS = t.wrapT = T.ClampToEdgeWrapping; R3._islSky = t; return t;
   }
-  function buildIsland(hole, bn, midZ, spanX, spanZ) {   // ORGANIC FLOATING GREEN — renders hole.shape (a curvy polygon) as a green island on brown cliffs over the sea, with a gradient sky. Hides the rectangular turf/collar + skips the painted desert dome.
+  function inPoly(poly, x, z) {   // ray-cast point-in-polygon
+    var c = false; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j]; if (((a.z > z) !== (b.z > z)) && (x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x)) c = !c; } return c;
+  }
+  function buildIsland(hole, bn, midZ, spanX, spanZ) {   // ORGANIC FLOATING GREEN — renders hole.shape as a grassy island that FOLLOWS the terrain (so tiers/ramps/hills show as real height), on brown cliffs over the sea, under a cloudy sky. Hides the rectangular turf/collar + skips the painted desert dome.
     if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false;
-    var poly = hole.shape, pcx = (bn.minX + bn.maxX) / 2;
-    var shp = new T.Shape(); shp.moveTo(poly[0].x, poly[0].z); for (var i = 1; i < poly.length; i++) shp.lineTo(poly[i].x, poly[i].z); shp.closePath();
-    // the GREEN — flat low-poly fairway clipped to the organic outline
-    var gg = new T.ShapeGeometry(shp); gg.rotateX(PI / 2);
-    var _gc = new T.Color(0x1f6e1a); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // deep saturated grass green — darkened so the warm sun + bloom don't blow it to pale tan
-    var green = new T.Mesh(gg, new T.MeshStandardMaterial({ color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.08 })); green.position.y = 1; green.receiveShadow = true; R3.group.add(green); R3.turf = green;
-    // CLIFF SIDES — a brown skirt dropping from every edge of the outline down to the waterline
-    var cliffH = 420, verts = [], idx = [];
-    for (i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length], base = verts.length / 3; verts.push(a.x, 2, a.z, bp.x, 2, bp.z, bp.x, -cliffH, bp.z, a.x, -cliffH, a.z); idx.push(base, base + 2, base + 1, base, base + 3, base + 2); }
-    var cg = new T.BufferGeometry(); cg.setAttribute('position', new T.Float32BufferAttribute(verts, 3)); cg.setIndex(idx); cg.computeVertexNormals();
-    var cliff = new T.Mesh(cg, new T.MeshStandardMaterial({ color: 0x6e3c1d, roughness: 1, flatShading: true, envMapIntensity: 0.1 })); cliff.castShadow = true; R3.group.add(cliff);
+    var poly = hole.shape, pcx = (bn.minX + bn.maxX) / 2, i;
+    var minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9; poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
+    var gw = maxX - minX, gd = maxZ - minZ, cmx = (minX + maxX) / 2, cmz = (minZ + maxZ) / 2;
+    // THE GREEN — a grid clipped to the organic outline, each vertex lifted by hole.terrain() so tiers/ramps read as real multi-level height; real grass texture so it looks like a green, not a flat color
+    var sxn = Math.max(10, Math.round(gw / 38)), szn = Math.max(10, Math.round(gd / 38));
+    var geo = new T.PlaneGeometry(gw, gd, sxn, szn); geo.rotateX(-PI / 2); geo.translate(cmx, 0, cmz);
+    var pos = geo.attributes.position;
+    for (i = 0; i < pos.count; i++) pos.setY(i, hole.terrain(pos.getX(i), pos.getZ(i)) + 1);
+    var gidx = geo.index.array, keep = [];
+    for (i = 0; i < gidx.length; i += 3) { var i0 = gidx[i], i1 = gidx[i + 1], i2 = gidx[i + 2], ccx = (pos.getX(i0) + pos.getX(i1) + pos.getX(i2)) / 3, ccz = (pos.getZ(i0) + pos.getZ(i1) + pos.getZ(i2)) / 3; if (inPoly(poly, ccx, ccz)) keep.push(i0, i1, i2); }
+    geo.setIndex(keep); geo.computeVertexNormals();
+    var grassN = photoTex('grass_n.jpg#isl', false, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
+    var grassD = photoTex('grass_g.jpg#isl', true, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
+    var _gc = new T.Color(0x4eaa3c); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // bright fairway green (the gray grass texture × this tint reads as real grass)
+    var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.1 })); green.receiveShadow = true; R3.group.add(green); R3.turf = green;
+    // CLIFF SIDES — brown skirt; the top of each edge follows the terrain so it meets the raised green
+    var cliffH = 460, verts = [], cidx = [];
+    for (i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length], ay = hole.terrain(a.x, a.z), by = hole.terrain(bp.x, bp.z), base = verts.length / 3; verts.push(a.x, ay + 2, a.z, bp.x, by + 2, bp.z, bp.x, -cliffH, bp.z, a.x, -cliffH, a.z); cidx.push(base, base + 2, base + 1, base, base + 3, base + 2); }
+    var cg = new T.BufferGeometry(); cg.setAttribute('position', new T.Float32BufferAttribute(verts, 3)); cg.setIndex(cidx); cg.computeVertexNormals();
+    var cliff = new T.Mesh(cg, new T.MeshStandardMaterial({ color: 0x7a4427, roughness: 1, flatShading: true, envMapIntensity: 0.1 })); cliff.castShadow = true; R3.group.add(cliff);
+    var shp = new T.Shape(); shp.moveTo(poly[0].x, poly[0].z); for (i = 1; i < poly.length; i++) shp.lineTo(poly[i].x, poly[i].z); shp.closePath();
     var capG = new T.ShapeGeometry(shp); capG.rotateX(-PI / 2); var cap = new T.Mesh(capG, new T.MeshStandardMaterial({ color: 0x5e351c, roughness: 1 })); cap.position.y = -cliffH; R3.group.add(cap);
-    // THE SEA — big flat teal plane (fog:false so distance doesn't wash it pale) + a horizon sky dome
+    // THE SEA + SKY (fog:false so the sea stays teal at distance)
     var _wc = new T.Color(0x167079); if (_wc.convertSRGBToLinear) _wc.convertSRGBToLinear();
-    var water = new T.Mesh(new T.PlaneGeometry(60000, 60000), new T.MeshBasicMaterial({ color: _wc, fog: false })); if ('toneMapped' in water.material) water.material.toneMapped = false; water.rotation.x = -PI / 2; water.position.set(pcx, -cliffH * 0.5, midZ); water.renderOrder = -1; R3.group.add(water);
-    var sky = new T.Mesh(new T.SphereGeometry(Math.max(11000, spanZ * 5), 40, 24), new T.MeshBasicMaterial({ map: islandSky(), side: T.BackSide, fog: false })); if ('toneMapped' in sky.material) sky.material.toneMapped = false; sky.position.set(pcx, -cliffH * 0.5, midZ); sky.renderOrder = -2; R3.group.add(sky);
-    R3.scene.background = islandSky(); if (R3.scene.fog) { R3.scene.fog.color.setHex(0x3a929c); R3.scene.fog.near = 4000; R3.scene.fog.far = Math.max(16000, spanZ * 8); }
+    var water = new T.Mesh(new T.PlaneGeometry(80000, 80000), new T.MeshBasicMaterial({ color: _wc, fog: false })); if ('toneMapped' in water.material) water.material.toneMapped = false; water.rotation.x = -PI / 2; water.position.set(pcx, -cliffH * 0.5, midZ); water.renderOrder = -1; R3.group.add(water);
+    var sky = new T.Mesh(new T.SphereGeometry(Math.max(13000, spanZ * 6), 40, 24), new T.MeshBasicMaterial({ map: islandSky(), side: T.BackSide, fog: false })); if ('toneMapped' in sky.material) sky.material.toneMapped = false; sky.position.set(pcx, -cliffH * 0.5, midZ); sky.renderOrder = -2; R3.group.add(sky);
+    R3.scene.background = islandSky(); if (R3.scene.fog) { R3.scene.fog.color.setHex(0x4f9aa2); R3.scene.fog.near = 5000; R3.scene.fog.far = Math.max(20000, spanZ * 10); }
+    // BACKGROUND LIFE — drifting cloud puffs + distant islands so the sea isn't empty
+    var rnd = function (n) { var x = Math.sin(n * 51.3 + 7.1) * 43758.5; return x - Math.floor(x); };
+    var cloudM = new T.MeshBasicMaterial({ color: 0xf3eee2, fog: false }); if ('toneMapped' in cloudM) cloudM.toneMapped = false;
+    for (i = 0; i < 9; i++) { var cl = new T.Group(), np = 3 + Math.floor(rnd(i) * 3); for (var p = 0; p < np; p++) { var pf = new T.Mesh(new T.SphereGeometry(220 + rnd(i * 7 + p) * 260, 10, 8), cloudM); pf.position.set((p - np / 2) * 320 + rnd(i + p) * 120, rnd(i * 3 + p) * 120, 0); pf.scale.y = 0.55; cl.add(pf); } var ca = rnd(i * 5) * TAU, cdist = 6500 + rnd(i * 9) * 4000; cl.position.set(pcx + Math.cos(ca) * cdist, 1800 + rnd(i * 11) * 1400, midZ + Math.sin(ca) * cdist); cl.lookAt(pcx, cl.position.y, midZ); R3.group.add(cl); }
+    var diM = new T.MeshStandardMaterial({ color: 0x6e4327, roughness: 1, flatShading: true }), diG = new T.MeshStandardMaterial({ color: 0x3f8f38, roughness: 1, flatShading: true });
+    for (i = 0; i < 6; i++) { var da = (i / 6) * TAU + rnd(i) * 0.6, dd = 5200 + rnd(i * 3) * 3500, dx = pcx + Math.cos(da) * dd, dz = midZ + Math.sin(da) * dd, dr = 380 + rnd(i * 5) * 420; var dc = new T.Mesh(new T.CylinderGeometry(dr * 0.8, dr, 700, 7), diM); dc.position.set(dx, -240, dz); dc.castShadow = false; R3.group.add(dc); var dt = new T.Mesh(new T.CylinderGeometry(dr * 0.84, dr * 0.8, 60, 7), diG); dt.position.set(dx, 110, dz); R3.group.add(dt); }
   }
   function metalMat(color, metalness, env, normScale) {   // realistic worn metal: scratched roughness + normal break up the reflection so it reads as REAL metal, not mirror plastic
     var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 1.8 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
