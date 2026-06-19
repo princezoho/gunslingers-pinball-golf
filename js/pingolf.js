@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 149 · DAILY ARCHIVE';
+  var BUILD = 'BUILD 150 · ARCHIVE ACCESS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1768,6 +1768,7 @@
     elt('div', 'font:900 15px Wantedo,Georgia;color:#86d85f;white-space:nowrap;', 'PLAY ▶', daily);
     daily.onmouseenter = function () { daily.style.transform = 'translateY(-3px)'; }; daily.onmouseleave = function () { daily.style.transform = 'none'; };
     daily.onclick = function () { ov.remove(); enterDaily(null, null); };
+    if (NET()) { var arc = elt('button', 'margin-top:-8px;background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '📅 Missed a day? Play past holes', ov); arc.onclick = function () { ov.remove(); enterPastDaily(1); }; }
     var row = elt('div', 'display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:760px;', null, ov);
     SETS.forEach(function (set) {
       var card = elt('button', 'width:210px;min-height:150px;padding:20px 16px;border:none;border-radius:0;background:transparent;color:#f5efdc;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;', null, row);
