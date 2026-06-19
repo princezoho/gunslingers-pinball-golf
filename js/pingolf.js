@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 137 · FAIR PLAY';
+  var BUILD = 'BUILD 138 · CROWD UP FRONT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2931,12 +2931,18 @@
     } else { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); }
   }
   function afterDailyLoaded(urlGhost) {
-    if (urlGhost) return;   // a shared ghost takes precedence over a fetched one
     var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
-    net.fetchGhosts(St.dailyDay, 6).then(function (rows) {
-      if (!St.daily || !rows || !rows.length || St.ghost) return;
-      var pick = rows[0], g = decGhost(pick.ghost);
-      if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; St.ghostStrokes = pick.strokes; socialToast('👻 Racing ' + pick.name + "'s ghost — beat " + pick.strokes + '!'); }
+    Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 6)]).then(function (res) {
+      if (!St.daily) return;
+      var sum = res[0], rows = res[1];
+      if (!urlGhost && rows && rows.length && !St.ghost) {   // race the best real player ghost
+        var pick = rows[0], g = decGhost(pick.ghost);
+        if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; St.ghostStrokes = pick.strokes; }
+      }
+      var parts = [];                                        // one social-proof toast up front
+      if (sum && sum.players > 0) { parts.push('👥 ' + sum.players + ' played today'); if (sum.best != null) parts.push('🏆 best ' + sum.best); }
+      if (St.ghostName && St.ghostStrokes != null) parts.push('👻 racing ' + St.ghostName);
+      socialToast(parts.length ? parts.join('  ·  ') : '🤠 Be the first to post today’s score!');
     }).catch(function () { });
   }
   // ---- the share card shown on finishing the daily hole ----
