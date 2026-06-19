@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 159 · LEADING';
+  var BUILD = 'BUILD 160 · REMEMBER ME';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3147,6 +3147,7 @@
       var postRow = elt('div', 'display:flex;gap:6px;', null, lbWrap);
       var nameIn = elt('input', 'flex:1;padding:10px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
       nameIn.placeholder = 'Your name'; nameIn.maxLength = 24; nameIn.value = playerName();
+      nameIn.onchange = function () { var v = (nameIn.value || '').trim(); if (v) setPlayerName(v); };   // remember the name even if they don't hit POST — frictionless next visit
       if (firstTime) { nameIn.style.borderColor = '#f5c542'; nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.3)'; nameIn.onfocus = function () { nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.6)'; }; }
       var postBtn = elt('button', 'padding:10px 14px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '🏆 POST', postRow);
       if (St.dailyPractice) { postRow.style.display = 'none'; }   // no posting on practice runs
