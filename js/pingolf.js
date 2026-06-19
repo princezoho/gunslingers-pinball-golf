@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 153 · OWNER UNPUBLISH';
+  var BUILD = 'BUILD 154 · GIF UP FRONT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3180,30 +3180,9 @@
     dc.onclick = function () { copyText(shareStrings(rec).text, 'Result copied — paste in Discord!'); };
     var cb = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔗  COPY CHALLENGE LINK (+ GHOST)', box);
     cb.onclick = function () { copyText(S.ghostLink, 'Challenge link copied — friends race your ghost!'); };
-    var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);
-    var rep = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🔁 WATCH REPLAY', row);
-    rep.onclick = function () { ov.remove(); St.ghost = { path: rec.path.slice(), shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rec.path.length / 20 + 0.6) * 1000); };
-    var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
-    pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
-    // watch how the day's best player sank it
-    if (St.leaderGhost && St.leaderGhost.path && St.leaderGhost.path.length && St.leaderGhost.name !== playerName()) {
-      var lg = St.leaderGhost;
-      var wl = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '👑 WATCH ' + lg.name + '’S RUN (' + lg.strokes + ')', box);
-      wl.onclick = function () { ov.remove(); St.ghost = { path: lg.path.slice(), shots: [], par: rec.par, t: 0, playing: true }; setTimeout(function () { St.ghost = null; showDailyCard(rec); }, (lg.path.length / 20 + 0.6) * 1000); };
-    }
-    if (St.dailyPractice) {   // already played today → let them dismiss the result and hit balls for fun (won't post)
-      var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
-      prac.onclick = function () { ov.remove(); recStart(St.hi >= 0 ? St.hi : -1); if (St.ghost) { St.ghost.playing = false; St.ghost.t = 0; } };
-    }
-    // ---- archive: play an older day's hole (more to play; never counts) ----
-    if (NET() && (St.archiveDaysAgo || 0) < 14) {
-      var older = (St.archiveDaysAgo || 0) + 1;
-      var arcBtn = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', St.archive ? '📅 OLDER HOLE (DAILY #' + (St.dailyN - 1) + ')' : '📅 PLAY YESTERDAY’S HOLE', box);
-      arcBtn.onclick = function () { ov.remove(); enterPastDaily(older); };
-    }
-    // ---- highlight GIF ----
+    // ---- highlight GIF (a primary share asset — grouped with the share buttons) ----
     if (global_GIF()) {
-      var gifWrap = elt('div', 'margin-top:10px;', null, box);
+      var gifWrap = elt('div', 'margin-top:8px;', null, box);
       var gb = elt('button', prim.replace('margin-top:8px;', 'margin-top:0;') + 'background:linear-gradient(180deg,#d98a1e,#b5670d);', '🎞  MAKE HIGHLIGHT GIF', gifWrap);
       gb.onclick = function () {
         gb.disabled = true; gb.textContent = '🎞  Rendering…'; gb.style.opacity = '.7';
@@ -3224,6 +3203,27 @@
           socialToast('Highlight ready — save it & post it!');
         }, 60);
       };
+    }
+    var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);
+    var rep = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🔁 WATCH REPLAY', row);
+    rep.onclick = function () { ov.remove(); St.ghost = { path: rec.path.slice(), shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rec.path.length / 20 + 0.6) * 1000); };
+    var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
+    pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
+    // watch how the day's best player sank it
+    if (St.leaderGhost && St.leaderGhost.path && St.leaderGhost.path.length && St.leaderGhost.name !== playerName()) {
+      var lg = St.leaderGhost;
+      var wl = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '👑 WATCH ' + lg.name + '’S RUN (' + lg.strokes + ')', box);
+      wl.onclick = function () { ov.remove(); St.ghost = { path: lg.path.slice(), shots: [], par: rec.par, t: 0, playing: true }; setTimeout(function () { St.ghost = null; showDailyCard(rec); }, (lg.path.length / 20 + 0.6) * 1000); };
+    }
+    if (St.dailyPractice) {   // already played today → let them dismiss the result and hit balls for fun (won't post)
+      var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
+      prac.onclick = function () { ov.remove(); recStart(St.hi >= 0 ? St.hi : -1); if (St.ghost) { St.ghost.playing = false; St.ghost.t = 0; } };
+    }
+    // ---- archive: play an older day's hole (more to play; never counts) ----
+    if (NET() && (St.archiveDaysAgo || 0) < 14) {
+      var older = (St.archiveDaysAgo || 0) + 1;
+      var arcBtn = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', St.archive ? '📅 OLDER HOLE (DAILY #' + (St.dailyN - 1) + ')' : '📅 PLAY YESTERDAY’S HOLE', box);
+      arcBtn.onclick = function () { ov.remove(); enterPastDaily(older); };
     }
     // ---- lifetime career stats ----
     var cs = statsGet();
