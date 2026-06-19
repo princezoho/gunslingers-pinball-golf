@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 142 · SMART PROPOSALS';
+  var BUILD = 'BUILD 143 · REVISIT RESULT';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2900,8 +2900,21 @@
   }
   // ---- one-shot-per-day lock (Wordle-style; replays are practice and don't post) ----
   function dailyDone() { try { return JSON.parse(localStorage.getItem('pg_daily_done') || 'null'); } catch (e) { return null; } }
-  function markDailyDone(day, strokes) { if (!day) return; var d = dailyDone(); if (d && d.day === day && d.strokes <= strokes) return; try { localStorage.setItem('pg_daily_done', JSON.stringify({ day: day, strokes: strokes })); } catch (e) { } }
+  function markDailyDone(day, strokes, rec) {
+    if (!day) return; var d = dailyDone(); if (d && d.day === day && d.strokes <= strokes) return;   // keep your best of the day
+    var o = { day: day, strokes: strokes };
+    if (rec) { o.par = rec.par; o.hi = rec.hi; o.holeName = rec.name || (St.hole && St.hole.name) || ''; try { o.ghost = encGhost(rec); } catch (e) { } }
+    try { localStorage.setItem('pg_daily_done', JSON.stringify(o)); } catch (e) { }
+  }
   function alreadyPlayedToday(day) { var d = dailyDone(); return !!(d && day && d.day === day); }
+  // revisit: rebuild a rec from the stored result and show the card again — no replay needed (Wordle-style)
+  function reviewStoredDaily() {
+    var st = dailyDone(); if (!st || !st.ghost || st.day !== St.dailyDay) return false;
+    var g = decGhost(st.ghost); if (!g) return false;
+    St.strokes = st.strokes;
+    St.rec = { hi: (st.hi != null ? st.hi : St.hi), par: (st.par != null ? st.par : (St.hole ? St.hole.par : 3)), name: st.holeName || (St.hole && St.hole.name) || 'the hole', shots: g.shots, path: g.path, acc: 0 };
+    showDailyCard(St.rec); return true;
+  }
   var NET = function () { return (typeof PGNet !== 'undefined') ? PGNet : (window.PGNet || null); };
   // ---- enter the daily hole (built-in index path) ----
   function loadDaily(idx, ghost) {
@@ -2942,9 +2955,10 @@
     Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 6)]).then(function (res) {
       if (!St.daily) return;
       var sum = res[0], rows = res[1];
-      if (!urlGhost && rows && rows.length && !St.ghost) {   // race the best real player ghost
-        var pick = rows[0], g = decGhost(pick.ghost);
-        if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; St.ghostStrokes = pick.strokes; }
+      if (!urlGhost && rows && rows.length && !St.ghost) {   // race the best real player ghost that ISN'T you
+        var me = playerName(), pick = null;
+        for (var ri = 0; ri < rows.length; ri++) { if (rows[ri].name !== me) { pick = rows[ri]; break; } }
+        if (pick) { var g = decGhost(pick.ghost); if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; St.ghostStrokes = pick.strokes; } }
       }
       var parts = [];                                        // one social-proof toast up front
       if (St.dailyPractice) parts.push('🎯 Practice — you already played today');
@@ -2952,6 +2966,8 @@
       else if (St.ghostName && St.ghostStrokes != null) parts.push('👻 racing ' + St.ghostName);
       if (sum && sum.players > 0) { parts.push('👥 ' + sum.players + ' today'); if (sum.best != null) parts.push('🏆 best ' + sum.best); }
       socialToast(parts.length ? parts.join('  ·  ') : '🤠 Be the first to post today’s score!');
+      // revisit (already played today) → show the stored result card instead of making them replay
+      if (St.dailyPractice && !document.getElementById('pg-daily')) { var sd = dailyDone(); if (sd && sd.ghost && sd.day === St.dailyDay) setTimeout(reviewStoredDaily, 350); }
     }).catch(function () { });
   }
   // ---- the share card shown on finishing the daily hole ----
@@ -2983,7 +2999,7 @@
   function dailyFinish() {
     var rec = St.rec; if (!rec) return;
     var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
-    if (!St.dailyPractice) { St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10)); markDailyDone(St.dailyDay, St.strokes); } St.standing = null;
+    if (!St.dailyPractice) { St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10)); markDailyDone(St.dailyDay, St.strokes, rec); } St.standing = null;
     showDailyCard(rec);
   }
   function submitDailyRun(rec, nm) {
@@ -3111,6 +3127,10 @@
     rep.onclick = function () { ov.remove(); St.ghost = { path: rec.path.slice(), shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rec.path.length / 20 + 0.6) * 1000); };
     var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
     pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
+    if (St.dailyPractice) {   // already played today → let them dismiss the result and hit balls for fun (won't post)
+      var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
+      prac.onclick = function () { ov.remove(); recStart(St.hi >= 0 ? St.hi : -1); if (St.ghost) { St.ghost.playing = false; St.ghost.t = 0; } };
+    }
     // ---- highlight GIF ----
     if (global_GIF()) {
       var gifWrap = elt('div', 'margin-top:10px;', null, box);
