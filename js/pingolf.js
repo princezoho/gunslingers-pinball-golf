@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 125 · DAILY & SHARE';
+  var BUILD = 'BUILD 126 · HIGHLIGHT GIF';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2853,6 +2853,51 @@
     var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
     showDailyCard(rec);
   }
+  // pick the most shareable segment of the run: the final (sinking) shot, padded to enough frames
+  function highlightSubPath(rec) {
+    var path = rec.path || []; if (path.length < 4) return path.slice();
+    var startI = (rec.shots && rec.shots.length) ? rec.shots[rec.shots.length - 1].i : 0;
+    if (path.length - startI < 8) startI = Math.max(0, path.length - 26);
+    var sub = path.slice(startI), MAXF = 34;
+    if (sub.length > MAXF) { var step = sub.length / MAXF, ds = []; for (var i = 0; i < MAXF; i++) ds.push(sub[Math.floor(i * step)]); ds.push(sub[sub.length - 1]); sub = ds; }
+    return sub;
+  }
+  // render the highlight to an animated GIF Blob (synchronous: borrows R3.cam, must not yield to the main loop)
+  function makeHighlightGif(rec, label) {
+    var GQ = global_GIF(); if (!GQ) return null;
+    var W = 256, H = 160, sub = highlightSubPath(rec);
+    if (sub.length < 2) return null;
+    var tmp;
+    try { tmp = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); } catch (e) { return null; }
+    tmp.setPixelRatio(1); tmp.setSize(W, H, false);
+    if (T.sRGBEncoding) tmp.outputEncoding = T.sRGBEncoding;
+    if (R3.r.toneMapping) { tmp.toneMapping = R3.r.toneMapping; tmp.toneMappingExposure = R3.r.toneMappingExposure; }
+    var cap = document.createElement('canvas'); cap.width = W; cap.height = H; var cx = cap.getContext('2d');
+    var ball = R3.ballMeshes && R3.ballMeshes[0], prevA = R3.cam.aspect, prevF = R3.cam.fov, ghostWas = R3.ghostMesh ? R3.ghostMesh.visible : false;
+    if (R3.ghostMesh) R3.ghostMesh.visible = false;
+    R3.cam.aspect = W / H; R3.cam.fov = 56; R3.cam.updateProjectionMatrix();
+    var frames = [];
+    for (var i = 0; i < sub.length; i++) {
+      var c = sub[i], nx = sub[Math.min(i + 1, sub.length - 1)];
+      var dx = nx[0] - c[0], dz = nx[2] - c[2], dl = hyp(dx, dz) || 1; dx /= dl; dz /= dl;
+      if (ball) { ball.visible = true; ball.position.set(c[0], c[1], c[2]); }
+      R3.cam.position.set(c[0] - dx * 470, c[1] + 300, c[2] - dz * 470);
+      R3.cam.lookAt(c[0] + dx * 150, c[1] + 10, c[2] + dz * 150);
+      try { tmp.render(R3.scene, R3.cam); } catch (e) { break; }
+      cx.drawImage(tmp.domElement, 0, 0, W, H);
+      cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(0, H - 21, W, 21);
+      cx.font = '700 12px Georgia'; cx.textAlign = 'left'; cx.fillStyle = '#f5c542'; cx.fillText('GUNSLINGERS DAILY #' + St.dailyN, 7, H - 7);
+      cx.textAlign = 'right'; cx.fillStyle = '#fff'; cx.fillText(label || '', W - 7, H - 7);
+      frames.push(GQ.quantize(cx.getImageData(0, 0, W, H).data, W, H));
+    }
+    R3.cam.aspect = prevA; R3.cam.fov = prevF; R3.cam.updateProjectionMatrix();
+    if (R3.ghostMesh) R3.ghostMesh.visible = ghostWas;
+    try { tmp.forceContextLoss(); } catch (e) { } try { tmp.dispose(); } catch (e) { }
+    if (!frames.length) return null;
+    var hold = frames[frames.length - 1]; frames.push(hold); frames.push(hold); frames.push(hold);   // linger on the sink
+    try { return new Blob([GQ.encode(frames, W, H, 6)], { type: 'image/gif' }); } catch (e) { return null; }
+  }
+  function global_GIF() { return (typeof GIFQuick !== 'undefined') ? GIFQuick : (window.GIFQuick || null); }
   function showDailyCard(rec) {
     var old = document.getElementById('pg-daily'); if (old) old.remove();
     var S = shareStrings(rec);
@@ -2877,6 +2922,30 @@
     rep.onclick = function () { ov.remove(); St.ghost = { path: rec.path.slice(), shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rec.path.length / 20 + 0.6) * 1000); };
     var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
     pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
+    // ---- highlight GIF ----
+    if (global_GIF()) {
+      var gifWrap = elt('div', 'margin-top:10px;', null, box);
+      var gb = elt('button', prim.replace('margin-top:8px;', 'margin-top:0;') + 'background:linear-gradient(180deg,#d98a1e,#b5670d);', '🎞  MAKE HIGHLIGHT GIF', gifWrap);
+      gb.onclick = function () {
+        gb.disabled = true; gb.textContent = '🎞  Rendering…'; gb.style.opacity = '.7';
+        setTimeout(function () {
+          var blob = makeHighlightGif(rec, S.strokes + ' strokes · ' + (S.over === 0 ? 'PAR' : S.overStr));
+          if (!blob) { gb.textContent = '🎞  GIF unavailable'; return; }
+          var url = URL.createObjectURL(blob);
+          gb.remove();
+          var img = elt('img', 'width:100%;border-radius:10px;border:2px solid #5a3a1a;display:block;margin-bottom:8px;', null, gifWrap); img.src = url;
+          var grow = elt('div', 'display:flex;gap:8px;', null, gifWrap);
+          var dl = elt('a', 'flex:1;text-align:center;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a8a30;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;text-decoration:none;', '⬇ SAVE GIF', grow);
+          dl.href = url; dl.download = 'gunslingers-daily-' + St.dailyN + '.gif';
+          var file = null; try { file = new File([blob], dl.download, { type: 'image/gif' }); } catch (e) { }
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            var sh = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#1d9bf0;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;', '📤 SHARE GIF', grow);
+            sh.onclick = function () { navigator.share({ files: [file], text: S.text }).catch(function () { }); };
+          }
+          socialToast('Highlight ready — save it & post it!');
+        }, 60);
+      };
+    }
     elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:12px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
     return ov;
   }
@@ -2982,4 +3051,5 @@
   PG.__dailyState = function () { return { daily: !!St.daily, dailyN: St.dailyN, recShots: St.rec ? St.rec.shots.length : 0, recPath: St.rec ? St.rec.path.length : 0, ghost: !!St.ghost, ghostPlaying: St.ghost ? St.ghost.playing : false }; };
   PG.__encGhost = function () { return St.rec ? encGhost(St.rec) : null; }; PG.__decGhost = decGhost;
   PG.__shareStrings = function () { return St.rec ? shareStrings(St.rec) : null; }; PG.__dailyFinish = function () { dailyFinish(); };
+  PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
 })();
