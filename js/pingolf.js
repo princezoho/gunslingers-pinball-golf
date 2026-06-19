@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 134 · RANK & CROWD';
+  var BUILD = 'BUILD 135 · COUNTDOWN';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2854,6 +2854,8 @@
   function dailyNum() { return Math.max(1, Math.floor((Date.now() - DAILY_EPOCH) / 86400000) + 1); }
   function dailyIndex() { var n = dailyNum(); return (((n * 7 + 5) % 36) + 36) % 36; }   // spread across all 36 holes
   function shareBase() { return location.origin + (location.pathname || '/game.html'); }
+  function msToNextDaily() { var now = new Date(), next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0); return Math.max(0, next - now.getTime()); }
+  function fmtCountdown() { var ms = msToNextDaily(), h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000); var p = function (x) { return (x < 10 ? '0' : '') + x; }; return '⏳ Next daily in ' + h + 'h ' + p(m) + 'm ' + p(s) + 's'; }
   // ---- run recording (powers ghosts + highlight GIF) ----
   function recStart(hi) { St.rec = { hi: hi, par: (St.hole ? St.hole.par : 3), name: (St.hole ? St.hole.name : ''), shots: [], path: [], acc: 0 }; }
   function recShot() { if (!St.rec) return; var b = primeBall(); St.rec.shots.push({ i: St.rec.path.length, p: St.power, y: St.aimYaw, fx: b ? Math.round(b.x) : 0, fz: b ? Math.round(b.z) : 0 }); }
@@ -3111,7 +3113,9 @@
         }, 60);
       };
     }
-    elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:12px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
+    var cd = elt('div', 'font:800 13px Wantedo,Georgia;color:#f5c542;margin-top:12px;', fmtCountdown(), box);
+    var cdIv = setInterval(function () { if (!document.body.contains(cd)) { clearInterval(cdIv); return; } cd.textContent = fmtCountdown(); }, 1000);
+    elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:4px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
     return ov;
   }
   function boot() {
@@ -3226,4 +3230,5 @@
   PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
   PG.__testDraft = function (tries, max) { return ED.draft ? testDraftBeatable(ED.draft, tries, max) : null; };
   PG.__streak = function (day) { return streakUpdate(day); }; PG.__prevDay = function (d) { return prevDay(d); };
+  PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
 })();
