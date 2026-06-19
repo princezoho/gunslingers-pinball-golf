@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 157 · STREAK ON THE LINE';
+  var BUILD = 'BUILD 158 · BOARD CAP';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3159,16 +3159,20 @@
         }
         elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', St.archive ? ('DAILY #' + St.dailyN + ' LEADERBOARD') : 'TODAY’S LEADERBOARD', lbBox);
         var me = playerName();
+        var rowsBox = elt('div', 'max-height:200px;overflow-y:auto;', null, lbBox);   // capped + scrollable so it can't push the share buttons off-screen
         net.leaderboard(St.dailyDay, 12).then(function (rows) {
-          if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Be the first to post a score!', lbBox); return; }
+          if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Be the first to post a score!', rowsBox); return; }
+          var myRow = null;
           rows.forEach(function (r, i) {
             var mine = me && r.name === me;
-            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;border-radius:6px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, lbBox);
+            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;border-radius:6px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, rowsBox);
+            if (mine) myRow = row;
             elt('div', 'width:26px;color:#f5c542;font-weight:700;', (i + 1) + '.', row);
             elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
             var ov = r.par != null ? (r.strokes - r.par) : 0, oc = ov < 0 ? '#86d85f' : ov === 0 ? '#f5efdc' : '#df8a6a';
             elt('div', 'font-weight:800;color:' + oc + ';', r.strokes + (r.par != null && ov !== 0 ? (ov > 0 ? ' +' + ov : ' ' + ov) : ''), row);
           });
+          if (myRow && myRow.offsetTop > rowsBox.clientHeight) rowsBox.scrollTop = myRow.offsetTop - rowsBox.clientHeight / 2;   // keep your own row in view
         });
       }
       function doPost() {
