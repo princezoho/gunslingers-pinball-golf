@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 146 · WATCH THE LEADER';
+  var BUILD = 'BUILD 147 · SIGNED GIF';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3049,9 +3049,10 @@
       R3.cam.lookAt(c[0] + dx * 150, c[1] + 10, c[2] + dz * 150);
       try { tmp.render(R3.scene, R3.cam); } catch (e) { break; }
       cx.drawImage(tmp.domElement, 0, 0, W, H);
-      cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fillRect(0, H - 21, W, 21);
-      cx.font = '700 12px Georgia'; cx.textAlign = 'left'; cx.fillStyle = '#f5c542'; cx.fillText('GUNSLINGERS DAILY #' + St.dailyN, 7, H - 7);
-      cx.textAlign = 'right'; cx.fillStyle = '#fff'; cx.fillText(label || '', W - 7, H - 7);
+      cx.textAlign = 'left';
+      cx.fillStyle = 'rgba(0,0,0,.55)'; cx.fillRect(0, H - 33, W, 33);
+      cx.font = '700 10px Georgia'; cx.fillStyle = '#f5c542'; cx.fillText('GUNSLINGERS DAILY #' + St.dailyN, 7, H - 20);   // brand line
+      cx.font = '800 14px Georgia'; cx.fillStyle = '#fff'; cx.fillText(label || '', 7, H - 6);                            // player · score (the brag)
       frames.push(GQ.quantize(cx.getImageData(0, 0, W, H).data, W, H));
     }
     R3.cam.aspect = prevA; R3.cam.fov = prevF; R3.cam.updateProjectionMatrix();
@@ -3154,7 +3155,7 @@
       gb.onclick = function () {
         gb.disabled = true; gb.textContent = '🎞  Rendering…'; gb.style.opacity = '.7';
         setTimeout(function () {
-          var blob = makeHighlightGif(rec, S.strokes + ' strokes · ' + (S.over === 0 ? 'PAR' : S.overStr));
+          var blob = makeHighlightGif(rec, (playerName() ? playerName().slice(0, 16) + ' · ' : '') + S.strokes + ' strokes (' + S.overStr + ')');
           if (!blob) { gb.textContent = '🎞  GIF unavailable'; return; }
           var url = URL.createObjectURL(blob);
           gb.remove();
