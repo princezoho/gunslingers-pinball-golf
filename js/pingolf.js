@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 144 · ORGANIC SHARES';
+  var BUILD = 'BUILD 145 · CAREER STATS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2898,6 +2898,13 @@
     try { localStorage.setItem('pg_streak', JSON.stringify(s)); } catch (e) { }
     return s.count;
   }
+  // ---- lifetime career stats (progression / retention) ----
+  function statsGet() { try { var s = JSON.parse(localStorage.getItem('pg_stats') || 'null'); return (s && typeof s.played === 'number') ? s : { played: 0, over: 0, beat: 0, ace: 0, lastDay: '' }; } catch (e) { return { played: 0, over: 0, beat: 0, ace: 0, lastDay: '' }; } }
+  function statsUpdate(day, over, beatGhost, ace) {
+    var s = statsGet(); if (day && s.lastDay === day) return s;   // count each day once
+    s.played++; s.over += (over || 0); if (beatGhost) s.beat++; if (ace) s.ace++; s.lastDay = day || s.lastDay;
+    try { localStorage.setItem('pg_stats', JSON.stringify(s)); } catch (e) { } return s;
+  }
   // ---- one-shot-per-day lock (Wordle-style; replays are practice and don't post) ----
   function dailyDone() { try { return JSON.parse(localStorage.getItem('pg_daily_done') || 'null'); } catch (e) { return null; } }
   function markDailyDone(day, strokes, rec) {
@@ -3002,7 +3009,7 @@
   function dailyFinish() {
     var rec = St.rec; if (!rec) return;
     var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
-    if (!St.dailyPractice) { St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10)); markDailyDone(St.dailyDay, St.strokes, rec); } St.standing = null;
+    if (!St.dailyPractice) { St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10)); markDailyDone(St.dailyDay, St.strokes, rec); statsUpdate(St.dailyDay, St.strokes - rec.par, (St.ghostStrokes != null && St.strokes < St.ghostStrokes), St.strokes === 1); } St.standing = null;
     showDailyCard(rec);
   }
   function submitDailyRun(rec, nm) {
@@ -3158,7 +3165,14 @@
         }, 60);
       };
     }
-    var cd = elt('div', 'font:800 13px Wantedo,Georgia;color:#f5c542;margin-top:12px;', fmtCountdown(), box);
+    // ---- lifetime career stats ----
+    var cs = statsGet();
+    if (cs.played > 0) {
+      var avg = cs.over / cs.played, avgStr = (Math.abs(avg) < 0.05) ? 'even' : (avg > 0 ? '+' + avg.toFixed(1) : avg.toFixed(1));
+      var line = '🏅 ' + cs.played + ' dail' + (cs.played === 1 ? 'y' : 'ies') + ' · avg ' + avgStr + ' vs par · beat the ghost ' + cs.beat + '×' + (cs.ace ? ' · ' + cs.ace + ' ace' + (cs.ace > 1 ? 's' : '') : '');
+      elt('div', 'font:700 12px Georgia;color:#d8c4a2;margin-top:12px;padding:8px;background:rgba(245,197,66,.06);border-radius:8px;', line, box);
+    }
+    var cd = elt('div', 'font:800 13px Wantedo,Georgia;color:#f5c542;margin-top:10px;', fmtCountdown(), box);
     var cdIv = setInterval(function () { if (!document.body.contains(cd)) { clearInterval(cdIv); return; } cd.textContent = fmtCountdown(); }, 1000);
     elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:4px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
     return ov;
@@ -3279,4 +3293,5 @@
   PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
+  PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
 })();
