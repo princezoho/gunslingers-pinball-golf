@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 156 · SHARE THE STRUGGLE';
+  var BUILD = 'BUILD 157 · STREAK ON THE LINE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3240,8 +3240,10 @@
       var line = '🏅 ' + cs.played + ' dail' + (cs.played === 1 ? 'y' : 'ies') + ' · avg ' + avgStr + ' vs par · beat the ghost ' + cs.beat + '×' + (cs.ace ? ' · ' + cs.ace + ' ace' + (cs.ace > 1 ? 's' : '') : '');
       elt('div', 'font:700 12px Georgia;color:#d8c4a2;margin-top:12px;padding:8px;background:rgba(245,197,66,.06);border-radius:8px;', line, box);
     }
-    var cd = elt('div', 'font:800 13px Wantedo,Georgia;color:#f5c542;margin-top:10px;', fmtCountdown(), box);
-    var cdIv = setInterval(function () { if (!document.body.contains(cd)) { clearInterval(cdIv); return; } cd.textContent = fmtCountdown(); }, 1000);
+    var streakLive = (St.streak > 1 && !St.archive && !St.dailyPractice);   // remind them what's at stake right as they leave
+    var paintCd = function () { var t = fmtCountdown(); return streakLive ? ('🔥 Keep your ' + St.streak + '-day streak — ' + t.replace('⏳ Next daily in', 'next hole in')) : t; };
+    var cd = elt('div', 'font:800 13px Wantedo,Georgia;color:#f5c542;margin-top:10px;', paintCd(), box);
+    var cdIv = setInterval(function () { if (!document.body.contains(cd)) { clearInterval(cdIv); return; } cd.textContent = paintCd(); }, 1000);
     elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:4px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
     return ov;
   }
