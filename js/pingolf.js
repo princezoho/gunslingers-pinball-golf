@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 133 · STREAKS';
+  var BUILD = 'BUILD 134 · RANK & CROWD';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2957,13 +2957,14 @@
     var vs = '';
     if (St.ghostStrokes != null && St.ghostName) { vs = (strokes < St.ghostStrokes) ? '\n⚔️ Beat ' + St.ghostName + ' (' + strokes + ' vs ' + St.ghostStrokes + ')' : (strokes === St.ghostStrokes) ? '\n🤝 Tied ' + St.ghostName + ' (' + strokes + ')' : ''; }
     var streak = (St.streak > 1) ? '\n🔥 ' + St.streak + '-day streak' : '';
-    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
+    var rank = (St.standing && St.standing.total > 1) ? '\n🏆 #' + St.standing.rank + ' of ' + St.standing.total + ' today' : '';
+    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
     return { text: text, link: link, ghostLink: link + '#g=' + encGhost(rec), verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
   }
   function dailyFinish() {
     var rec = St.rec; if (!rec) return;
     var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
-    St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10));
+    St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10)); St.standing = null;
     showDailyCard(rec);
   }
   function submitDailyRun(rec, nm) {
@@ -3048,13 +3049,17 @@
       var postBtn = elt('button', 'padding:10px 14px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '🏆 POST', postRow);
       var lbBox = elt('div', 'margin-top:10px;', null, lbWrap);
       function renderLB() {
-        lbBox.textContent = ''; elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', 'TODAY’S LEADERBOARD', lbBox);
+        lbBox.textContent = '';
+        if (St.standing && St.standing.total) elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;margin-bottom:6px;', '🏆 You’re #' + St.standing.rank + ' of ' + St.standing.total + ' today', lbBox);
+        elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', 'TODAY’S LEADERBOARD', lbBox);
+        var me = playerName();
         net.leaderboard(St.dailyDay, 12).then(function (rows) {
           if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Be the first to post a score!', lbBox); return; }
           rows.forEach(function (r, i) {
-            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;background:rgba(245,197,66,.06);border-radius:6px;font:13px Georgia;color:#f5efdc;', null, lbBox);
+            var mine = me && r.name === me;
+            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;border-radius:6px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, lbBox);
             elt('div', 'width:26px;color:#f5c542;font-weight:700;', (i + 1) + '.', row);
-            elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', r.name, row);
+            elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
             var ov = r.par != null ? (r.strokes - r.par) : 0, oc = ov < 0 ? '#86d85f' : ov === 0 ? '#f5efdc' : '#df8a6a';
             elt('div', 'font-weight:800;color:' + oc + ';', r.strokes + (r.par != null && ov !== 0 ? (ov > 0 ? ' +' + ov : ' ' + ov) : ''), row);
           });
@@ -3062,16 +3067,19 @@
       }
       function doPost() {
         var nm = (nameIn.value || '').trim() || 'Anon'; postBtn.disabled = true; postBtn.textContent = 'Posting…';
-        submitDailyRun(rec, nm).then(function () { postBtn.textContent = 'Posted ✓'; postBtn.style.background = '#2e7a26'; renderLB(); });
+        submitDailyRun(rec, nm).then(function () {
+          postBtn.textContent = 'Posted ✓'; postBtn.style.background = '#2e7a26';
+          net.standing(St.dailyDay, nm).then(function (st) { if (st && st.total) St.standing = st; renderLB(); });
+        });
       }
       postBtn.onclick = doPost;
       if (playerName()) { doPost(); } else { renderLB(); }   // auto-post for returning players
     }
     var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
     var xb = elt('button', prim + 'background:linear-gradient(180deg,#1d9bf0,#0d6fb8);', '𝕏  SHARE ON X', box);
-    xb.onclick = function () { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(S.text), '_blank', 'noopener'); };
+    xb.onclick = function () { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareStrings(rec).text), '_blank', 'noopener'); };
     var dc = elt('button', prim + 'background:linear-gradient(180deg,#5865F2,#3b45c4);', '💬  COPY FOR DISCORD', box);
-    dc.onclick = function () { copyText(S.text, 'Result copied — paste in Discord!'); };
+    dc.onclick = function () { copyText(shareStrings(rec).text, 'Result copied — paste in Discord!'); };
     var cb = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔗  COPY CHALLENGE LINK (+ GHOST)', box);
     cb.onclick = function () { copyText(S.ghostLink, 'Challenge link copied — friends race your ghost!'); };
     var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);

@@ -46,7 +46,8 @@
     saveBank: function (pass, title, holeIndex, holeJson, forDay) { return rpc('save_bank', { p_pass: pass, p_title: title, p_hole_index: holeIndex == null ? null : holeIndex, p_hole_json: holeJson || null, p_for_day: forDay || null }); },
     deleteBank: function (pass, id) { return rpc('delete_bank', { p_pass: pass, p_id: id }); },
     fetchBank: function () { return rest('bank?select=id,title,hole_index,hole_json,for_day,status,created_at&order=created_at.desc').catch(function () { return []; }); },
-    fetchSchedule: function () { return rest('daily?select=day,title,hole_index&order=day.desc&limit=40').catch(function () { return []; }); }
+    fetchSchedule: function () { return rest('daily?select=day,title,hole_index&order=day.desc&limit=40').catch(function () { return []; }); },
+    standing: function (day, name) { return rpc('daily_standing', { p_day: day || todayKey(), p_name: name }).then(function (r) { return r && r[0] ? r[0] : null; }).catch(function () { return null; }); }
   };
   global.PGNet = PGNet;
 })(typeof window !== 'undefined' ? window : this);
