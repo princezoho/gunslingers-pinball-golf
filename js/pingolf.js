@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 154 · GIF UP FRONT';
+  var BUILD = 'BUILD 155 · SET THE PACE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3148,7 +3148,10 @@
       var lbBox = elt('div', 'margin-top:10px;', null, lbWrap);
       function renderLB() {
         lbBox.textContent = '';
-        if (St.standing && St.standing.total) elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;margin-bottom:6px;', '🏆 You’re #' + St.standing.rank + ' of ' + St.standing.total + ' today', lbBox);
+        if (St.standing && St.standing.total) {
+          var firstToday = !St.archive && St.standing.total === 1 && St.standing.rank === 1;
+          elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;margin-bottom:6px;', firstToday ? '🥇 First to finish today — you set the pace!' : ('🏆 You’re #' + St.standing.rank + ' of ' + St.standing.total + (St.archive ? '' : ' today')), lbBox);
+        }
         elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', St.archive ? ('DAILY #' + St.dailyN + ' LEADERBOARD') : 'TODAY’S LEADERBOARD', lbBox);
         var me = playerName();
         net.leaderboard(St.dailyDay, 12).then(function (rows) {
