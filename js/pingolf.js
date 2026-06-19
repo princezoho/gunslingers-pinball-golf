@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 155 · SET THE PACE';
+  var BUILD = 'BUILD 156 · SHARE THE STRUGGLE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3044,7 +3044,12 @@
     if (St.ghostStrokes != null && St.ghostName) { vs = (strokes < St.ghostStrokes) ? '\n⚔️ Beat ' + St.ghostName + ' (' + strokes + ' vs ' + St.ghostStrokes + ')' : (strokes === St.ghostStrokes) ? '\n🤝 Tied ' + St.ghostName + ' (' + strokes + ')' : ''; }
     var streak = (St.streak > 1) ? '\n🔥 ' + St.streak + '-day streak' : '';
     var rank = (St.standing && St.standing.total > 1) ? '\n🏆 #' + St.standing.rank + ' of ' + St.standing.total + ' today' : '';
-    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + '\n' + dailyCTA() + ' 👉 ' + link + '\n#GunslingersGolf';
+    var diff = '';   // shared-difficulty hook on notable days (≥3 players); only the extremes are share-worthy
+    if (St.daySummary && St.daySummary.players >= 3 && St.daySummary.avg_over != null) {
+      var da = Number(St.daySummary.avg_over);
+      if (da >= 1.5) diff = '\n💀 Brutal one — field avg +' + da; else if (da < -0.4) diff = '\n😎 Everyone’s acing it — field avg ' + da;
+    }
+    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + diff + '\n' + dailyCTA() + ' 👉 ' + link + '\n#GunslingersGolf';
     var who = (playerName() || '').slice(0, 24);   // personalize the challenge so the recipient sees who dared them
     var ghostLink = link + '#g=' + encGhost(rec) + (who ? '&n=' + encodeURIComponent(who) : '') + '&s=' + strokes;
     return { text: text, link: link, ghostLink: ghostLink, verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
