@@ -93,6 +93,7 @@
     var HOLES = [{"i":0,"name":"DEAD MAN'S DRIFT","par":4,"theme":"grass"},{"i":1,"name":"TWO-STEP MESA","par":4,"theme":"grass"},{"i":2,"name":"RATTLESNAKE GULCH","par":4,"theme":"grass"},{"i":3,"name":"STAMPEDE ALLEY","par":4,"theme":"grass"},{"i":4,"name":"CANYON SPLIT","par":4,"theme":"grass"},{"i":5,"name":"HIGH NOON HOP","par":4,"theme":"grass"},{"i":6,"name":"VARMINT VALLEY II","par":4,"theme":"grass"},{"i":7,"name":"WINDMILL ROW","par":4,"theme":"grass"},{"i":8,"name":"THE RECKONING","par":4,"theme":"grass"},{"i":9,"name":"GREENHORN GULCH","par":3,"theme":"grass"},{"i":10,"name":"BUMPER BARN","par":4,"theme":"grass"},{"i":11,"name":"SLOPE SALOON","par":4,"theme":"grass"},{"i":12,"name":"THE BIG JUMP","par":3,"theme":"grass"},{"i":13,"name":"WINDMILL RUN","par":4,"theme":"grass"},{"i":14,"name":"SPIRAL FUNNEL","par":4,"theme":"grass"},{"i":15,"name":"LASER GAUNTLET","par":4,"theme":"grass"},{"i":16,"name":"HIGHRISE","par":4,"theme":"grass"},{"i":17,"name":"THE GAUNTLET","par":4,"theme":"grass"},{"i":18,"name":"FROZEN POND","par":4,"theme":"ice"},{"i":19,"name":"MOON CRATERS","par":4,"theme":"moon"},{"i":20,"name":"GHOST TOWN PORTALS","par":4,"theme":"grass"},{"i":21,"name":"LOOP-DE-LOOP CITY","par":4,"theme":"grass"},{"i":22,"name":"DUTCH WINDMILL ROW","par":4,"theme":"grass"},{"i":23,"name":"VARMINT VALLEY","par":4,"theme":"grass"},{"i":24,"name":"COIN RUSH","par":4,"theme":"speed"},{"i":25,"name":"FIRE LEAP CANYON","par":4,"theme":"grass"},{"i":26,"name":"DOUBLE DECKER","par":4,"theme":"grass"},{"i":27,"name":"TIDAL TWIST","par":3,"theme":"grass"},{"i":28,"name":"THE ELBOW","par":3,"theme":"grass"},{"i":29,"name":"FISH HOOK","par":4,"theme":"grass"},{"i":30,"name":"SIDEWINDER","par":4,"theme":"grass"},{"i":31,"name":"THE BULGE","par":3,"theme":"grass"},{"i":32,"name":"CANYON SWEEP","par":3,"theme":"grass"},{"i":33,"name":"CASTAWAY COVE","par":4,"theme":"grass"},{"i":34,"name":"CORAL BEND","par":4,"theme":"grass"},{"i":35,"name":"SNAKE CANYON","par":3,"theme":"grass"}];
     var WILD = [27,28,29,30,31,32,33,34,35];
     var pass = '';
+    var recentIdx = {};   // hole indices used in recently-published dailies — avoid re-proposing them
     function $(id){ return document.getElementById(id); }
     function toast(m){ var t=$('toast'); t.textContent=m; t.style.opacity='1'; setTimeout(function(){ t.style.opacity='0'; }, 2200); }
     function ymd(d){ return d.toISOString().slice(0,10); }
@@ -111,7 +112,13 @@
     function enter(){
       try{ sessionStorage.setItem('pg_owner_pass', pass); }catch(e){}
       $('gate').style.display='none'; $('app').style.display='block';
-      var t=new Date(); $('day').value=ymd(t); refreshDayStatus(); propose(); loadBank(); loadSched();
+      var t=new Date(); $('day').value=ymd(t); refreshDayStatus(); loadRecent(); loadBank(); loadSched();
+    }
+    function loadRecent(){
+      PGNet.fetchSchedule().then(function(rows){
+        recentIdx={}; (rows||[]).forEach(function(r){ if(r.hole_index!=null) recentIdx[r.hole_index]=true; });
+        propose();   // propose only once we know what to avoid
+      }, function(){ propose(); });
     }
     function setTomorrow(){ var d=new Date(); d.setUTCDate(d.getUTCDate()+1); $('day').value=ymd(d); refreshDayStatus(); }
     $('day') && ($('day').onchange=refreshDayStatus);
@@ -123,13 +130,17 @@
       });
     }
     function pick3(){
-      var pool=[]; for(var i=0;i<36;i++) pool.push(i);
-      // bias: at least one WILD shaped hole for novelty
-      var chosen=[]; var w=WILD[Math.floor(Math.random()*WILD.length)]; chosen.push(w);
+      // one hole from each section for variety: Front 9 (0-8), Mid+Back (9-26), WILD shaped (27-35)
+      var buckets=[[0,8],[9,26],[27,35]], chosen=[];
+      buckets.forEach(function(bk){
+        var avail=[], i;
+        for(i=bk[0];i<=bk[1];i++){ if(!recentIdx[i] && chosen.indexOf(i)<0) avail.push(i); }   // prefer not-recently-used
+        if(!avail.length){ for(i=bk[0];i<=bk[1];i++){ if(chosen.indexOf(i)<0) avail.push(i); } }  // relax if the whole section was recent
+        if(avail.length) chosen.push(avail[Math.floor(Math.random()*avail.length)]);
+      });
       while(chosen.length<3){ var r=Math.floor(Math.random()*36); if(chosen.indexOf(r)<0) chosen.push(r); }
-      // shuffle
-      for(var k=chosen.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var tmp=chosen[k];chosen[k]=chosen[j];chosen[j]=tmp; }
-      return chosen;
+      for(var k=chosen.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var t=chosen[k];chosen[k]=chosen[j];chosen[j]=t; }
+      return chosen.slice(0,3);
     }
     function propose(){
       var ids=pick3(), c=$('props'); c.innerHTML='';
@@ -156,6 +167,7 @@
     function doPublish(idx, title){
       var day=$('day').value; if(!day){ toast('Pick a date first'); return; }
       PGNet.publishDaily(pass, day, title, idx, null).then(function(){
+        if(idx!=null) recentIdx[idx]=true;
         toast('✓ Published “'+title+'” for '+day); refreshDayStatus(); loadSched();
       }).catch(function(e){ toast('Publish failed: '+e.message); });
     }
