@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 162 · AUTO-HOLE PEEK';
+  var BUILD = 'BUILD 163 · GIF SAVE FIX';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3212,11 +3212,11 @@
           var img = elt('img', 'width:100%;border-radius:10px;border:2px solid #5a3a1a;display:block;margin-bottom:8px;', null, gifWrap); img.src = url;
           var grow = elt('div', 'display:flex;gap:8px;', null, gifWrap);
           var dl = elt('a', 'flex:1;text-align:center;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a8a30;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;text-decoration:none;', '⬇ SAVE GIF', grow);
-          dl.href = url; dl.download = 'gunslingers-daily-' + St.dailyN + '.gif';
+          dl.href = url; dl.download = 'gunslingers-daily-' + St.dailyN + '.gif'; dl.target = '_blank'; dl.rel = 'noopener';   // iOS ignores download -> open in a new tab so the game isn't lost
           var file = null; try { file = new File([blob], dl.download, { type: 'image/gif' }); } catch (e) { }
           if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
             var sh = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#1d9bf0;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;', '📤 SHARE GIF', grow);
-            sh.onclick = function () { navigator.share({ files: [file], text: S.text }).catch(function () { }); };
+            sh.onclick = function () { navigator.share({ files: [file], text: shareStrings(rec).text }).catch(function () { }); };   // fresh text (incl. rank/streak)
           }
           socialToast('Highlight ready — save it & post it!');
         }, 60);
