@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 147 · SIGNED GIF';
+  var BUILD = 'BUILD 148 · SHARED DIFFICULTY';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1816,7 +1816,7 @@
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
-    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; if (R3.ghostMesh) R3.ghostMesh.visible = false;
+    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.daySummary = null; if (R3.ghostMesh) R3.ghostMesh.visible = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -2967,6 +2967,7 @@
         for (var ri = 0; ri < rows.length; ri++) { if (rows[ri].name !== me) { pick = rows[ri]; break; } }
         if (pick) { var g = decGhost(pick.ghost); if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; St.ghostStrokes = pick.strokes; St.leaderGhost = { path: g.path, name: pick.name, strokes: pick.strokes }; } }
       }
+      St.daySummary = sum || null;                           // for the difficulty line on the card
       var parts = [];                                        // one social-proof toast up front
       if (St.dailyPractice) parts.push('🎯 Practice — you already played today');
       else if (St.challenged && St.ghostName && St.ghostStrokes != null) parts.push('🤠 ' + St.ghostName + ' challenged you — beat ' + St.ghostStrokes);
@@ -2991,6 +2992,13 @@
   // varied CTA so the shared feed looks organic, not templated — stable per player+day, different across players
   var SHARE_CTAS = ['Can you beat me?', 'Your move, partner.', 'Think you can do better?', 'Beat my score, gunslinger.', 'Reckon you can top that?', 'Step up and take your shot.', 'Bet you can’t beat it.', 'Your turn — draw!'];
   function dailyCTA() { return SHARE_CTAS[(nameHash(playerName() || 'anon') + (St.dailyN || 0)) % SHARE_CTAS.length]; }
+  // shared "everyone's struggling with this one" difficulty read — needs enough of a sample to be meaningful
+  function difficultyLine(sum) {
+    if (!sum || sum.players < 3 || sum.avg_over == null) return null;
+    var a = Number(sum.avg_over);
+    var label = a >= 1.5 ? '🔥 Brutal hole today' : a >= 0.6 ? '😅 Playing tough today' : a > -0.4 ? '⛳ A fair test today' : '😎 Easy par day';
+    return label + ' — field avg ' + (a === 0 ? 'even' : (a > 0 ? '+' + a : String(a)));
+  }
   function shareStrings(rec) {
     var n = St.dailyN, name = rec.name || (St.hole && St.hole.name) || 'the hole', strokes = St.strokes, par = rec.par, over = strokes - par;
     var verdict = strokes === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
@@ -3085,6 +3093,9 @@
       elt('div', 'font:900 15px Wantedo,Georgia;color:' + hcol + ';', hmsg, hwrap);
       elt('div', 'font:700 12px Georgia;color:#d8c4a2;margin-top:2px;', 'You ' + S.strokes + '  ·  ' + St.ghostName + ' ' + St.ghostStrokes + (won ? '  — rub it in below 👇' : tied ? '' : '  — rematch & win it back'), hwrap);
     }
+    // ---- shared difficulty read ----
+    var diff = difficultyLine(St.daySummary);
+    if (diff) elt('div', 'font:800 13px Georgia;color:#f5c542;margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);border-radius:8px;max-width:340px;', diff, box);
     // ---- post score + live leaderboard ----
     var net = NET();
     if (net && net.enabled && St.dailyDay) {
