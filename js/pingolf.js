@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 132 · BEAT THE GHOST';
+  var BUILD = 'BUILD 133 · STREAKS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2883,6 +2883,17 @@
   // ---- player handle (for the leaderboard) ----
   function playerName() { try { return localStorage.getItem('pg_name') || ''; } catch (e) { return ''; } }
   function setPlayerName(n) { try { localStorage.setItem('pg_name', (n || '').slice(0, 24)); } catch (e) { } }
+  // ---- daily play streak (retention) ----
+  function prevDay(ymd) { try { var d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); } catch (e) { return ''; } }
+  function streakUpdate(day) {
+    var s; try { s = JSON.parse(localStorage.getItem('pg_streak') || 'null'); } catch (e) { s = null; }
+    if (!s || typeof s.count !== 'number') s = { count: 0, last: '' };
+    if (s.last === day) return s.count;                 // already counted today
+    s.count = (s.last === prevDay(day)) ? s.count + 1 : 1;   // continue or restart
+    s.last = day;
+    try { localStorage.setItem('pg_streak', JSON.stringify(s)); } catch (e) { }
+    return s.count;
+  }
   var NET = function () { return (typeof PGNet !== 'undefined') ? PGNet : (window.PGNet || null); };
   // ---- enter the daily hole (built-in index path) ----
   function loadDaily(idx, ghost) {
@@ -2945,12 +2956,14 @@
     var link = shareBase() + '?daily=' + rec.hi;
     var vs = '';
     if (St.ghostStrokes != null && St.ghostName) { vs = (strokes < St.ghostStrokes) ? '\n⚔️ Beat ' + St.ghostName + ' (' + strokes + ' vs ' + St.ghostStrokes + ')' : (strokes === St.ghostStrokes) ? '\n🤝 Tied ' + St.ghostName + ' (' + strokes + ')' : ''; }
-    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
+    var streak = (St.streak > 1) ? '\n🔥 ' + St.streak + '-day streak' : '';
+    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
     return { text: text, link: link, ghostLink: link + '#g=' + encGhost(rec), verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
   }
   function dailyFinish() {
     var rec = St.rec; if (!rec) return;
     var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
+    St.streak = streakUpdate(St.dailyDay || new Date().toISOString().slice(0, 10));
     showDailyCard(rec);
   }
   function submitDailyRun(rec, nm) {
@@ -3010,6 +3023,7 @@
     var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '⭐ GUNSLINGERS DAILY #' + S.n, box);
     elt('div', 'font:900 26px Wantedo,Georgia;color:#f5c542;margin:2px 0 4px;', S.name, box);
+    if (St.streak > 1) elt('div', 'display:inline-block;font:800 13px Georgia;color:#ff9a3a;background:rgba(255,138,42,.14);border:1px solid rgba(255,138,42,.5);border-radius:20px;padding:3px 12px;margin-bottom:6px;', '🔥 ' + St.streak + '-day streak', box);
     var sc = S.over < 0 ? '#86d85f' : S.over === 0 ? '#f5efdc' : '#df8a6a';
     elt('div', 'font:900 46px Wantedo,Georgia;color:' + sc + ';line-height:1.05;', S.strokes + ' strokes', box);
     elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:8px;', S.verdict + '  (' + S.overStr + ')', box);
@@ -3203,4 +3217,5 @@
   PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
   PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
   PG.__testDraft = function (tries, max) { return ED.draft ? testDraftBeatable(ED.draft, tries, max) : null; };
+  PG.__streak = function (day) { return streakUpdate(day); }; PG.__prevDay = function (d) { return prevDay(d); };
 })();
