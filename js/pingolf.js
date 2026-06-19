@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 124 · CLEAN CURBS & CUPS';
+  var BUILD = 'BUILD 125 · DAILY & SHARE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1731,6 +1731,7 @@
     var curved = St.power * St.power, power = lerp(K.shotMin, K.shotMax, curved), f = aimDir();
     b.vx = f.x * power; b.vz = f.z * power; b.vy = 0; b.stillT = 0; b.air = false; b.settled = false; b.shotFrom = { x: b.x, z: b.z };
     St.strokes++; St.state = 'roll'; St.shake = 2; St.combo = 0; sfx('hit');
+    recShot(); if (St.ghost && !St.ghost.playing) { St.ghost.playing = true; St.ghost.t = 0; }
   }
   function aimDir() { return { x: Math.sin(St.aimYaw), z: Math.cos(St.aimYaw) }; }
   function bestStore() { try { return JSON.parse(localStorage.getItem('pg_best') || '{}'); } catch (e) { return {}; } }
@@ -1750,7 +1751,7 @@
       var cols = ['#f5c542', '#df3b32', '#3aa0ff', '#86d85f', '#c45cff', '#ff8a2a', '#ffffff'];
       for (var k = 0; k < 70; k++) { var a = Math.random() * TAU, sp = 120 + Math.random() * 360; St.fx.push({ x: cx, y: gy + 16, z: cz, vx: Math.cos(a) * sp, vy: 280 + Math.random() * 420, vz: Math.sin(a) * sp, life: 1.1 + Math.random() * 0.7, max: 1.8, col: cols[(Math.random() * cols.length) | 0], r: 3 + Math.random() * 3 }); }
     }
-    setTimeout(nextHole, 3000);
+    if (St.daily) { setTimeout(dailyFinish, 1500); } else { setTimeout(nextHole, 3000); }
   }
   function nextHole() { var base = St.setBase || 0; if (St.hi >= base + 8) { finishGame(); return; } loadHole(St.hi + 1); }
   function finishGame() { var base = St.setBase || 0, t = 0; for (var i = base; i < base + 9; i++) t += (St.scores[i] || 0); St.total = t; St.state = 'done'; St.banner = (SETS[base / 9] ? SETS[base / 9].name : 'NINE') + ' COMPLETE'; St.bannerT = 2.5; showScorecard(); }
@@ -1760,6 +1761,13 @@
     var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-chooser';
     elt('div', 'font:900 clamp(30px,7vw,54px) Wantedo,Georgia;color:#f5c542;text-align:center;', 'CHOOSE YOUR NINE', ov);
     elt('div', 'font:600 15px Georgia;color:#d8c4a2;margin-top:-12px;', 'No hole over par 4 — pick a run and play through.', ov);
+    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:2px solid #f5c542;border-radius:14px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);', null, ov);
+    var dl = elt('div', 'text-align:left;', null, daily);
+    elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '⭐ DAILY HOLE #' + dailyNum(), dl);
+    elt('div', 'font:600 12px Georgia;color:#d8c4a2;', 'One shot at today’s hole. Beat the par, share your score, challenge your friends.', dl);
+    elt('div', 'font:900 15px Wantedo,Georgia;color:#86d85f;white-space:nowrap;', 'PLAY ▶', daily);
+    daily.onmouseenter = function () { daily.style.transform = 'translateY(-3px)'; }; daily.onmouseleave = function () { daily.style.transform = 'none'; };
+    daily.onclick = function () { ov.remove(); loadDaily(dailyIndex(), null); };
     var row = elt('div', 'display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:760px;', null, ov);
     SETS.forEach(function (set) {
       var card = elt('button', 'width:210px;min-height:150px;padding:20px 16px;border:none;border-radius:0;background:transparent;color:#f5efdc;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;', null, row);
@@ -1808,6 +1816,7 @@
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
+    St.daily = false; St.rec = null; St.ghost = null; if (R3.ghostMesh) R3.ghostMesh.visible = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -1936,6 +1945,7 @@
     xrayWalls(hole);
     for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); if (R3.cupDimple && !b.air) { var cdp = R3.cupDimple, dd2 = hyp(b.x - cdp.x, b.z - cdp.z); if (dd2 < cdp.R) m.position.y = b.y - cdp.d * (1 - (dd2 / cdp.R) * (dd2 / cdp.R)); } var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
     for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; if (R3.shieldMeshes && R3.shieldMeshes[i]) R3.shieldMeshes[i].visible = false; } }
+    syncGhost();
     var bigFl = 0, bigBm = null;
     for (i = 0; i < hole.bumpers.length; i++) {
       var bm = hole.bumpers[i]; if (!bm.mesh) continue;
@@ -2747,6 +2757,7 @@
     if (St.shake > 0) St.shake = Math.max(0, St.shake - dt * 36);
     if (St.hole) { for (i = 0; i < St.hole.bumpers.length; i++) if (St.hole.bumpers[i].flash > 0) St.hole.bumpers[i].flash -= dt; for (i = 0; i < St.hole.boosters.length; i++) if (St.hole.boosters[i].flash > 0) St.hole.boosters[i].flash -= dt; }
     if (St.bannerT > 0 && St.bannerT < 900) St.bannerT -= dt; St.t += dt;
+    recSample(dt); ghostStep(dt);
   }
   function tick(dt) { if (St.slowT > 0) { St.slowT = Math.max(0, St.slowT - dt); dt *= 0.45; } St.acc += dt; var fx = 1 / K.hz, guard = 0; while (St.acc >= fx && guard++ < 90) { physStep(fx); St.acc -= fx; } stepVisuals(dt); }
   function frame(ts) { var dt = Math.min(0.05, (ts - St.last) / 1000 || 0); St.last = ts; var _g1 = document.getElementById('glassTL'), _g2 = document.getElementById('glassTR'), _g3 = document.getElementById('glassPM'); if (_g1) { var _gd = (ED.on || St.state === 'load') ? 'none' : 'block'; _g1.style.display = _gd; if (_g2) _g2.style.display = _gd; if (_g3) _g3.style.display = (!ED.on && St.state === 'aim') ? 'block' : 'none'; } if (ED.on) { if (ED.view3d) { if (ED.dirty3d) { ED.dirty3d = false; buildScene(ED.draft); } St.t += dt; var hh = St.hole; for (var wi = 0; wi < (hh.windmills || []).length; wi++) hh.windmills[wi].ang += hh.windmills[wi].speed * dt; for (var ei = 0; ei < (hh.enemies || []).length; ei++) { var en = hh.enemies[ei]; en.ph += en.speed * dt; var eu = Math.abs((en.ph % 2) - 1); en.cx = en.x + (en.ex - en.x) * eu; en.cz = en.z + (en.ez - en.z) * eu; } syncMeshes(); orbitCam(); renderGL(); if (St.hctx) draw3DHud(St.hctx); } else if (St.hctx) drawEditor(St.hctx); requestAnimationFrame(frame); return; } if (St.state !== 'load') tick(dt); drawHUD(); requestAnimationFrame(frame); }
@@ -2776,6 +2787,99 @@
     nx.addEventListener('click', function (e) { e.stopPropagation(); if (!AU.ctx) audioInit(); if (!AU.started) musicStart(); else musicNext(); });
     if (mb) { mb.textContent = AU.on ? '🔊' : '🔇'; mb.title = 'Audio & volume'; mb.addEventListener('click', function (e) { e.stopPropagation(); panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; }); }
   }
+  /* ================================================================ DAILY · GHOSTS · SHARING
+     The viral loop: one daily hole, record your run, race other players' ghosts, share your score. */
+  var DAILY_EPOCH = Date.UTC(2026, 0, 1);
+  function dailyNum() { return Math.max(1, Math.floor((Date.now() - DAILY_EPOCH) / 86400000) + 1); }
+  function dailyIndex() { var n = dailyNum(); return (((n * 7 + 5) % 36) + 36) % 36; }   // spread across all 36 holes
+  function shareBase() { return location.origin + (location.pathname || '/game.html'); }
+  // ---- run recording (powers ghosts + highlight GIF) ----
+  function recStart(hi) { St.rec = { hi: hi, par: (St.hole ? St.hole.par : 3), name: (St.hole ? St.hole.name : ''), shots: [], path: [], acc: 0 }; }
+  function recShot() { if (!St.rec) return; var b = primeBall(); St.rec.shots.push({ i: St.rec.path.length, p: St.power, y: St.aimYaw, fx: b ? Math.round(b.x) : 0, fz: b ? Math.round(b.z) : 0 }); }
+  function recSample(dt) { if (!St.rec || St.state !== 'roll') return; St.rec.acc += dt; if (St.rec.acc < 0.05) return; St.rec.acc = 0; var b = primeBall(); if (!b) return; St.rec.path.push([Math.round(b.x), Math.round(b.y), Math.round(b.z)]); if (St.rec.path.length > 1600) St.rec.path.shift(); }
+  // ---- ghost encode/decode for shareable links ----
+  function encGhost(rec) {
+    try { var o = { h: rec.hi, par: rec.par, s: rec.shots.map(function (sh) { return [sh.i, +(+sh.p).toFixed(3), +(+sh.y).toFixed(3)]; }), p: [] };
+      for (var i = 0; i < rec.path.length; i++) { o.p.push(rec.path[i][0], rec.path[i][1], rec.path[i][2]); }
+      return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); } catch (e) { return ''; }
+  }
+  function decGhost(str) {
+    try { var o = JSON.parse(decodeURIComponent(escape(atob(str)))); var path = [];
+      for (var i = 0; i + 2 < o.p.length; i += 3) path.push([o.p[i], o.p[i + 1], o.p[i + 2]]);
+      return { hi: o.h, par: o.par, path: path, shots: (o.s || []).map(function (a) { return { i: a[0], p: a[1], y: a[2] }; }), t: 0, playing: false }; } catch (e) { return null; }
+  }
+  // ---- ghost playback (translucent rival ball) ----
+  function ghostStep(dt) { var g = St.ghost; if (g && g.playing && g.path && g.path.length) g.t += dt; }
+  function syncGhost() {
+    var g = St.ghost;
+    if (!g || !g.path || !g.path.length || !g.playing) { if (R3.ghostMesh) R3.ghostMesh.visible = false; return; }
+    if (!R3.ghostMesh) { var gm = new T.Mesh(new T.SphereGeometry(K.R * 1.04, 24, 16), new T.MeshBasicMaterial({ color: 0xbfe6ff, transparent: true, opacity: .42, depthWrite: false })); if (R3.group) R3.group.add(gm); R3.ghostMesh = gm; }
+    var fps = 20, f = g.t * fps, i = Math.floor(f), fr = f - i, last = g.path.length - 1;
+    if (i >= last) { i = last; fr = 0; }
+    var a = g.path[i], b = g.path[Math.min(i + 1, last)];
+    R3.ghostMesh.visible = true; R3.ghostMesh.position.set(a[0] + (b[0] - a[0]) * fr, a[1] + (b[1] - a[1]) * fr + 1, a[2] + (b[2] - a[2]) * fr);
+  }
+  // ---- enter the daily hole ----
+  function loadDaily(idx, ghost) {
+    if (!(idx >= 0 && idx < 36)) idx = dailyIndex();
+    St.setBase = Math.floor(idx / 9) * 9; St.scores = St.scores || []; St.parDone = 0;
+    loadHole(idx);
+    St.daily = true; St.dailyN = dailyNum(); recStart(idx);
+    if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; }
+    St.banner = '⭐ DAILY #' + St.dailyN + ' · ' + St.hole.name; St.bannerT = 2.6;
+  }
+  // ---- the share card shown on finishing the daily hole ----
+  function copyText(str, okMsg) {
+    function done() { socialToast(okMsg || 'Copied ✓'); }
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(str).then(done, function () { legacyCopy(str); done(); }); return; } } catch (e) { }
+    legacyCopy(str); done();
+  }
+  function legacyCopy(str) { try { var ta = document.createElement('textarea'); ta.value = str; ta.style.cssText = 'position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch (e) { } }
+  function socialToast(msg) {
+    var t = elt('div', 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:9999;padding:11px 20px;border:2px solid #160d06;border-radius:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;box-shadow:0 6px 24px rgba(0,0,0,.55);pointer-events:none;opacity:0;transition:opacity .2s;', msg, document.body);
+    requestAnimationFrame(function () { t.style.opacity = '1'; }); setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 300); }, 1800);
+  }
+  function shareStrings(rec) {
+    var n = St.dailyN, name = rec.name || (St.hole && St.hole.name) || 'the hole', strokes = St.strokes, par = rec.par, over = strokes - par;
+    var verdict = strokes === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
+    var overStr = over === 0 ? 'E' : (over > 0 ? '+' + over : String(over));
+    var bar = ''; for (var k = 0; k < Math.min(strokes - 1, 11); k++) bar += '🔵'; bar += '⛳';
+    var link = shareBase() + '?daily=' + rec.hi;
+    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
+    return { text: text, link: link, ghostLink: link + '#g=' + encGhost(rec), verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
+  }
+  function dailyFinish() {
+    var rec = St.rec; if (!rec) return;
+    var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
+    showDailyCard(rec);
+  }
+  function showDailyCard(rec) {
+    var old = document.getElementById('pg-daily'); if (old) old.remove();
+    var S = shareStrings(rec);
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-daily';
+    var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '⭐ GUNSLINGERS DAILY #' + S.n, box);
+    elt('div', 'font:900 26px Wantedo,Georgia;color:#f5c542;margin:2px 0 4px;', S.name, box);
+    var sc = S.over < 0 ? '#86d85f' : S.over === 0 ? '#f5efdc' : '#df8a6a';
+    elt('div', 'font:900 46px Wantedo,Georgia;color:' + sc + ';line-height:1.05;', S.strokes + ' strokes', box);
+    elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:8px;', S.verdict + '  (' + S.overStr + ')', box);
+    var bar = ''; for (var k = 0; k < Math.min(S.strokes - 1, 11); k++) bar += '🔵'; bar += '⛳';
+    elt('div', 'font:20px Georgia;margin:4px 0 12px;', bar, box);
+    var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
+    var xb = elt('button', prim + 'background:linear-gradient(180deg,#1d9bf0,#0d6fb8);', '𝕏  SHARE ON X', box);
+    xb.onclick = function () { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(S.text), '_blank', 'noopener'); };
+    var dc = elt('button', prim + 'background:linear-gradient(180deg,#5865F2,#3b45c4);', '💬  COPY FOR DISCORD', box);
+    dc.onclick = function () { copyText(S.text, 'Result copied — paste in Discord!'); };
+    var cb = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔗  COPY CHALLENGE LINK (+ GHOST)', box);
+    cb.onclick = function () { copyText(S.ghostLink, 'Challenge link copied — friends race your ghost!'); };
+    var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);
+    var rep = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🔁 WATCH REPLAY', row);
+    rep.onclick = function () { ov.remove(); St.ghost = { path: rec.path.slice(), shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rec.path.length / 20 + 0.6) * 1000); };
+    var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
+    pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
+    elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:12px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
+    return ov;
+  }
   function boot() {
     audioLoadPrefs();
     St.scene = document.getElementById('scene'); St.hud = document.getElementById('hud'); St.hctx = St.hud.getContext('2d');
@@ -2796,7 +2900,15 @@
     var lb = elt('button', BTNCSS + 'bottom:74px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
     var sk = elt('button', BTNCSS + 'bottom:44px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
     ED.dom.gameBtns = [eb, lb, sk];
-    St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0); chooseSet();
+    St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
+    var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
+    try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
+    if (_qs && (_qs.has('daily') || (_hs && _hs.has('g')))) {
+      var _dv = _qs.get('daily'), _di = (_dv != null && _dv !== '') ? parseInt(_dv, 10) : dailyIndex();
+      var _gh = (_hs && _hs.has('g')) ? decGhost(_hs.get('g')) : null;
+      if (_gh && (_gh.hi >= 0 && _gh.hi < 36)) _di = _gh.hi;
+      loadDaily(_di, _gh);
+    } else { chooseSet(); }
     var ld = document.getElementById('load'); if (ld) { ld.classList.add('gone'); setTimeout(function () { ld.style.display = 'none'; }, 450); }
     requestAnimationFrame(function (t) { St.last = t; frame(t); });
     versionWatch();
@@ -2865,4 +2977,9 @@
   // film-look hooks: toggle the post pass / live-tune aberration, grain, vignette
   PG.__fx = function (on) { if (R3.post) R3.post.on = on !== false; return R3.post ? R3.post.on : null; };
   PG.__fxSet = function (ca, grain, vig, dof) { if (!R3.post) return null; var u = R3.post.mat.uniforms; if (ca != null) R3.post.ca = ca; if (grain != null) u.uGrain.value = grain; if (vig != null) u.uVig.value = vig; if (dof != null) u.uDof.value = dof; return { ca: R3.post.ca, grain: u.uGrain.value, vig: u.uVig.value, dof: u.uDof.value, on: R3.post.on }; };
+  // daily / social hooks (testing + owner tooling)
+  PG.__dailyNum = dailyNum; PG.__dailyIndex = dailyIndex; PG.__loadDaily = function (idx, ghost) { loadDaily(idx == null ? dailyIndex() : idx, ghost || null); return { hi: St.hi, name: St.hole.name, daily: St.daily, dailyN: St.dailyN }; };
+  PG.__dailyState = function () { return { daily: !!St.daily, dailyN: St.dailyN, recShots: St.rec ? St.rec.shots.length : 0, recPath: St.rec ? St.rec.path.length : 0, ghost: !!St.ghost, ghostPlaying: St.ghost ? St.ghost.playing : false }; };
+  PG.__encGhost = function () { return St.rec ? encGhost(St.rec) : null; }; PG.__decGhost = decGhost;
+  PG.__shareStrings = function () { return St.rec ? shareStrings(St.rec) : null; }; PG.__dailyFinish = function () { dailyFinish(); };
 })();
