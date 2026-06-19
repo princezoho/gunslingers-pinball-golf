@@ -4,9 +4,9 @@
 
 # 🤠 Gunslingers Pinball Golf
 
-**A 3D Wild-West _pinball + mini-golf_ hybrid — six-shooter chaos and high-desert putting, right in your browser.**
+**A _daily_ Wild-West golf game — one shared hole every day, race everyone's ghosts, and share your score. Plus 36 holes of six-shooter _pinball + mini-golf_ chaos, right in your browser.**
 
-### [▶ &nbsp;Play the live demo](https://princezoho.github.io/gunslingers-pinball-golf/)
+### [⭐ &nbsp;Play today's daily](https://princezoho.github.io/gunslingers-pinball-golf/game.html?daily) &nbsp;·&nbsp; [▶ &nbsp;All 36 holes](https://princezoho.github.io/gunslingers-pinball-golf/)
 
 No installs, no sign-up. Runs on Three.js + a single JS file.
 
@@ -14,7 +14,20 @@ No installs, no sign-up. Runs on Three.js + a single JS file.
 
 ---
 
-Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops and teleport portals — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **27 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
+Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops and teleport portals — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **36 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
+
+## ⭐ The Daily — a new hole every day
+
+The heart of the game is the **daily hole**: one shared hole that everyone plays, Wordle-style.
+
+- **One shot a day.** Sink today's hole, then come back tomorrow for a fresh one. Re-opening the daily shows your result instantly (replays are just practice).
+- **Race the ghosts.** From your first swing you race a translucent rival — the best real player's run that day — and the result card tells you if you **beat them**.
+- **Live leaderboard.** Post your score to today's board, see your **rank of N players** and the **field difficulty** ("🔥 Brutal hole today — field avg +2").
+- **Share it everywhere.** One tap to **share on X**, **copy for Discord**, or copy a **challenge link** that drops a friend into the same hole racing _your_ ghost. Plus a one-tap **highlight GIF** of your sinking shot, signed with your name.
+- **Keep your streak.** Daily play streaks, lifetime career stats, and a **past-days archive** to play holes you missed.
+- **Owner sets the hole.** A passcode-gated **Daily Studio** (`owner.html`) lets the owner propose, edit, and publish each day's hole (or bank holes for future dates).
+
+> The daily, ghosts, leaderboard and sharing run on a free [Supabase](https://supabase.com) backend; the game itself is still a static site and falls back to a date-seeded hole if offline.
 
 ## 📸 Screenshots
 
@@ -64,7 +77,9 @@ Buttons (top-left in game): **Level Editor**, **Levels** (pick/skip any hole), *
 
 ## 🧱 Tech
 
-Single-file engine in [`js/pingolf.js`](js/pingolf.js): a fixed-timestep 3D heightfield golf/pinball simulation, a `builder()` DSL for holes, a self-contained DOM/canvas editor, and a small Web-Audio mixer (master/music/SFX gains) driving a looping soundtrack. Rendering via [Three.js](https://threejs.org/) (`vendor/three.min.js`, MIT). `index.html` is the landing page, `game.html` hosts the engine.
+Single-file engine in [`js/pingolf.js`](js/pingolf.js): a fixed-timestep 3D heightfield golf/pinball simulation, a `builder()` DSL for holes, a self-contained DOM/canvas editor, and a small Web-Audio mixer (master/music/SFX gains) driving a looping soundtrack. Rendering via [Three.js](https://threejs.org/) (`vendor/three.min.js`, MIT). `index.html` is the landing page, `game.html` hosts the engine, `owner.html` is the Daily Studio.
+
+The daily/social layer: runs are recorded as compact ghost paths, replayed as translucent rival balls, and shared via URL-safe base64 in challenge links. The highlight GIF is encoded by a dependency-free GIF89a writer ([`vendor/gifquick.js`](vendor/gifquick.js)). The backend ([`js/net.js`](js/net.js)) is a tiny raw-`fetch` Supabase client — anti-cheat run submission, leaderboard/standing/difficulty RPCs, and passcode-gated owner publishing, all guarded by row-level security; the public anon key is safe to ship.
 
 ## 🎨 Art & audio
 
