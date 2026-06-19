@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 151 · README REFRESH';
+  var BUILD = 'BUILD 152 · HOW TO PLAY';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1732,6 +1732,7 @@
     b.vx = f.x * power; b.vz = f.z * power; b.vy = 0; b.stillT = 0; b.air = false; b.settled = false; b.shotFrom = { x: b.x, z: b.z };
     St.strokes++; St.state = 'roll'; St.shake = 2; St.combo = 0; sfx('hit');
     recShot(); if (St.ghost && !St.ghost.playing) { St.ghost.playing = true; St.ghost.t = 0; }
+    if (document.getElementById('pg-howto')) dismissHowTo();   // they figured it out
   }
   function aimDir() { return { x: Math.sin(St.aimYaw), z: Math.cos(St.aimYaw) }; }
   function bestStore() { try { return JSON.parse(localStorage.getItem('pg_best') || '{}'); } catch (e) { return {}; } }
@@ -2979,7 +2980,19 @@
       }, function () { loadDaily(dailyIndexFor(n), null); fin(); });
     } else { loadDaily(dailyIndexFor(n), null); fin(); }
   }
+  // one-time how-to-play coachmark for brand-new players (incoming shared-link traffic)
+  function showHowTo() {
+    try { if (localStorage.getItem('pg_seen_howto')) return; } catch (e) { }
+    if (document.getElementById('pg-howto') || St.dailyPractice || St.archive) return;
+    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:#241a0e;border:2px solid #f5c542;border-radius:14px;padding:18px;box-shadow:0 12px 48px rgba(0,0,0,.7);text-align:center;', null, document.body); ov.id = 'pg-howto';
+    elt('div', 'font:900 18px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '🤠 HOW TO PLAY', ov);
+    elt('div', 'font:600 14px Georgia;color:#f3eedd;line-height:1.55;margin-bottom:12px;', 'Pull BACK from the ball and let go — like a slingshot. Aim any direction; pull farther for more power. Sink today’s hole in as few shots as you can!', ov);
+    var b = elt('button', 'padding:11px 26px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY', ov);
+    b.onclick = function () { dismissHowTo(); };
+  }
+  function dismissHowTo() { try { localStorage.setItem('pg_seen_howto', '1'); } catch (e) { } var h = document.getElementById('pg-howto'); if (h) h.remove(); }
   function afterDailyLoaded(urlGhost) {
+    showHowTo();
     var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
     Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 6)]).then(function (res) {
       if (!St.daily) return;
@@ -3342,4 +3355,5 @@
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
   PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
   PG.__enterPastDaily = function (daysAgo) { enterPastDaily(daysAgo || 1); }; PG.__dailyIndexFor = dailyIndexFor; PG.__dailyNumFor = dailyNumFor;
+  PG.__clearHowTo = function () { try { localStorage.removeItem('pg_seen_howto'); } catch (e) { } }; PG.__showHowTo = function () { showHowTo(); };
 })();
