@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 128 · GLOBAL GHOSTS';
+  var BUILD = 'BUILD 129 · DAILY STUDIO';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3043,7 +3043,10 @@
     St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
-    if (_qs && (_qs.has('daily') || (_hs && _hs.has('g')))) {
+    var _ed = _qs && _qs.get('edit');
+    if (_ed != null && _ed !== '' && !isNaN(parseInt(_ed, 10))) {
+      var _ei = parseInt(_ed, 10); loadHole(_ei >= 0 && _ei < 36 ? _ei : 0); editBuiltin(St.hi);   // owner: tweak a candidate's layout
+    } else if (_qs && (_qs.has('daily') || (_hs && _hs.has('g')))) {
       var _dv = _qs.get('daily'), _gh = (_hs && _hs.has('g')) ? decGhost(_hs.get('g')) : null;
       var _explicit = (_dv != null && _dv !== '') ? parseInt(_dv, 10) : null;          // ?daily=N → that exact hole
       if (_explicit == null && _gh && _gh.hi >= 0 && _gh.hi < 36) _explicit = _gh.hi;   // a shared ghost pins its hole
