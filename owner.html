@@ -88,7 +88,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/net.js?v=6"></script>
+  <script src="js/net.js?v=7"></script>
   <script>
     var HOLES = [{"i":0,"name":"DEAD MAN'S DRIFT","par":4,"theme":"grass"},{"i":1,"name":"TWO-STEP MESA","par":4,"theme":"grass"},{"i":2,"name":"RATTLESNAKE GULCH","par":4,"theme":"grass"},{"i":3,"name":"STAMPEDE ALLEY","par":4,"theme":"grass"},{"i":4,"name":"CANYON SPLIT","par":4,"theme":"grass"},{"i":5,"name":"HIGH NOON HOP","par":4,"theme":"grass"},{"i":6,"name":"VARMINT VALLEY II","par":4,"theme":"grass"},{"i":7,"name":"WINDMILL ROW","par":4,"theme":"grass"},{"i":8,"name":"THE RECKONING","par":4,"theme":"grass"},{"i":9,"name":"GREENHORN GULCH","par":3,"theme":"grass"},{"i":10,"name":"BUMPER BARN","par":4,"theme":"grass"},{"i":11,"name":"SLOPE SALOON","par":4,"theme":"grass"},{"i":12,"name":"THE BIG JUMP","par":3,"theme":"grass"},{"i":13,"name":"WINDMILL RUN","par":4,"theme":"grass"},{"i":14,"name":"SPIRAL FUNNEL","par":4,"theme":"grass"},{"i":15,"name":"LASER GAUNTLET","par":4,"theme":"grass"},{"i":16,"name":"HIGHRISE","par":4,"theme":"grass"},{"i":17,"name":"THE GAUNTLET","par":4,"theme":"grass"},{"i":18,"name":"FROZEN POND","par":4,"theme":"ice"},{"i":19,"name":"MOON CRATERS","par":4,"theme":"moon"},{"i":20,"name":"GHOST TOWN PORTALS","par":4,"theme":"grass"},{"i":21,"name":"LOOP-DE-LOOP CITY","par":4,"theme":"grass"},{"i":22,"name":"DUTCH WINDMILL ROW","par":4,"theme":"grass"},{"i":23,"name":"VARMINT VALLEY","par":4,"theme":"grass"},{"i":24,"name":"COIN RUSH","par":4,"theme":"speed"},{"i":25,"name":"FIRE LEAP CANYON","par":4,"theme":"grass"},{"i":26,"name":"DOUBLE DECKER","par":4,"theme":"grass"},{"i":27,"name":"TIDAL TWIST","par":3,"theme":"grass"},{"i":28,"name":"THE ELBOW","par":3,"theme":"grass"},{"i":29,"name":"FISH HOOK","par":4,"theme":"grass"},{"i":30,"name":"SIDEWINDER","par":4,"theme":"grass"},{"i":31,"name":"THE BULGE","par":3,"theme":"grass"},{"i":32,"name":"CANYON SWEEP","par":3,"theme":"grass"},{"i":33,"name":"CASTAWAY COVE","par":4,"theme":"grass"},{"i":34,"name":"CORAL BEND","par":4,"theme":"grass"},{"i":35,"name":"SNAKE CANYON","par":3,"theme":"grass"}];
     var WILD = [27,28,29,30,31,32,33,34,35];
@@ -125,8 +125,14 @@
 
     function refreshDayStatus(){
       var day=$('day').value; if(!day) return;
+      var el=$('dayStatus'); el.textContent='…';
       PGNet.fetchDaily(day).then(function(d){
-        $('dayStatus').textContent = d ? ('✓ Published: '+(d.title||('hole '+d.hole_index))) : '— nothing published for this date yet —';
+        el.textContent='';
+        if(!d){ el.textContent='— nothing published for this date yet —'; return; }
+        var span=document.createElement('span'); span.textContent='✓ Published: '+(d.title||('hole '+d.hole_index))+'   '; el.appendChild(span);
+        var ub=document.createElement('button'); ub.className='btn btn-red'; ub.style.cssText='padding:4px 11px;font-size:11px;'; ub.textContent='🗑 Unpublish';
+        ub.onclick=function(){ PGNet.unpublishDaily(pass, day).then(function(){ toast('Unpublished '+day+' — reverts to the auto-rotating hole'); refreshDayStatus(); loadSched(); }).catch(function(e){ toast('Unpublish failed: '+e.message); }); };
+        el.appendChild(ub);
       });
     }
     function pick3(){

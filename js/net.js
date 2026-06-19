@@ -43,6 +43,7 @@
     },
     // ---- owner (passcode-gated) ----
     publishDaily: function (pass, day, title, holeIndex, holeJson) { return rpc('publish_daily', { p_pass: pass, p_day: day, p_title: title, p_hole_index: holeIndex == null ? null : holeIndex, p_hole_json: holeJson || null }); },
+    unpublishDaily: function (pass, day) { return rpc('unpublish_daily', { p_pass: pass, p_day: day }); },
     saveBank: function (pass, title, holeIndex, holeJson, forDay) { return rpc('save_bank', { p_pass: pass, p_title: title, p_hole_index: holeIndex == null ? null : holeIndex, p_hole_json: holeJson || null, p_for_day: forDay || null }); },
     deleteBank: function (pass, id) { return rpc('delete_bank', { p_pass: pass, p_id: id }); },
     fetchBank: function () { return rest('bank?select=id,title,hole_index,hole_json,for_day,status,created_at&order=created_at.desc').catch(function () { return []; }); },
