@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 165 · REPLAY CAP';
+  var BUILD = 'BUILD 166 · LEAN GHOST';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2868,7 +2868,8 @@
   // ---- ghost encode/decode for shareable links ----
   function encGhost(rec) {
     try { var o = { h: rec.hi, par: rec.par, s: rec.shots.map(function (sh) { return [sh.i, +(+sh.p).toFixed(3), +(+sh.y).toFixed(3)]; }), p: [] };
-      for (var i = 0; i < rec.path.length; i++) { o.p.push(rec.path[i][0], rec.path[i][1], rec.path[i][2]); }
+      var cp = capReplay(rec.path);   // bound the encoded path so a long run doesn't make a ~16KB challenge link / DB row / fetch
+      for (var i = 0; i < cp.length; i++) { o.p.push(cp[i][0], cp[i][1], cp[i][2]); }
       // URL-SAFE base64 (+ -> -, / -> _, strip =) so the ghost survives a URL hash parsed by URLSearchParams (where + would become a space)
       return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); } catch (e) { return ''; }
   }
