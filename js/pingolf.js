@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 168 · CLEAN NAMES';
+  var BUILD = 'BUILD 169 · LEANER ENTRY';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2995,7 +2995,7 @@
   function afterDailyLoaded(urlGhost) {
     showHowTo();
     var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
-    Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 6)]).then(function (res) {
+    Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 3)]).then(function (res) {
       if (!St.daily) return;
       var sum = res[0], rows = res[1];
       if (!urlGhost && rows && rows.length && !St.ghost) {   // race the best real player ghost that ISN'T you
