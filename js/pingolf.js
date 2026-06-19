@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 164 · PAR CLAMP';
+  var BUILD = 'BUILD 165 · REPLAY CAP';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3066,6 +3066,11 @@
     St.dailySubmitted = true; setPlayerName(nm);
     return net.submitRun(St.dailyDay, nm, St.strokes, rec.par, encGhost(rec)).then(function (ok) { if (ok === false) St.dailySubmitted = false; return ok; });   // reset so a retry can resubmit
   }
+  // downsample a path so a long/struggly run doesn't play a 30-80s replay (cap ~14s at 20fps)
+  function capReplay(path) {
+    var max = 280; if (!path || path.length <= max) return (path || []).slice();
+    var step = path.length / max, out = []; for (var i = 0; i < max; i++) out.push(path[Math.floor(i * step)]); out.push(path[path.length - 1]); return out;
+  }
   // pick the most shareable segment of the run: the final (sinking) shot, padded to enough frames
   function highlightSubPath(rec) {
     var path = rec.path || []; if (path.length < 4) return path.slice();
@@ -3224,14 +3229,14 @@
     }
     var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);
     var rep = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🔁 WATCH REPLAY', row);
-    rep.onclick = function () { ov.remove(); St.ghost = { path: rec.path.slice(), shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rec.path.length / 20 + 0.6) * 1000); };
+    rep.onclick = function () { ov.remove(); var rp = capReplay(rec.path); St.ghost = { path: rp, shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rp.length / 20 + 0.6) * 1000); };
     var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
     pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
     // watch how the day's best player sank it
     if (St.leaderGhost && St.leaderGhost.path && St.leaderGhost.path.length && St.leaderGhost.name !== playerName()) {
       var lg = St.leaderGhost;
       var wl = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '👑 WATCH ' + lg.name + '’S RUN (' + lg.strokes + ')', box);
-      wl.onclick = function () { ov.remove(); St.ghost = { path: lg.path.slice(), shots: [], par: rec.par, t: 0, playing: true }; setTimeout(function () { St.ghost = null; showDailyCard(rec); }, (lg.path.length / 20 + 0.6) * 1000); };
+      wl.onclick = function () { ov.remove(); var lp = capReplay(lg.path); St.ghost = { path: lp, shots: [], par: rec.par, t: 0, playing: true }; setTimeout(function () { St.ghost = null; showDailyCard(rec); }, (lp.length / 20 + 0.6) * 1000); };
     }
     if (St.dailyPractice) {   // already played today → let them dismiss the result and hit balls for fun (won't post)
       var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
@@ -3373,6 +3378,7 @@
   PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
+  PG.__capReplay = function (path) { return capReplay(path); };
   PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
   PG.__enterPastDaily = function (daysAgo) { enterPastDaily(daysAgo || 1); }; PG.__dailyIndexFor = dailyIndexFor; PG.__dailyNumFor = dailyNumFor;
   PG.__clearHowTo = function () { try { localStorage.removeItem('pg_seen_howto'); } catch (e) { } }; PG.__showHowTo = function () { showHowTo(); };
