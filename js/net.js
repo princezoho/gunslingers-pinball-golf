@@ -26,9 +26,9 @@
       return rest('daily?day=eq.' + (day || todayKey()) + '&select=day,title,hole_index,hole_json&limit=1')
         .then(function (rows) { return rows && rows[0] ? rows[0] : null; }).catch(function () { return null; });
     },
-    // submit a finished run (global ghost + leaderboard entry)
+    // submit a finished run via the anti-cheat RPC (validates the ghost decodes + its shot-count == strokes)
     submitRun: function (day, name, strokes, par, ghost) {
-      return rest('runs', { method: 'POST', body: JSON.stringify({ day: day, name: (name || 'Anon').slice(0, 24), strokes: strokes, par: par, ghost: ghost || null }) }).catch(function (e) { return null; });
+      return rpc('submit_run', { p_day: day, p_name: (name || 'Anon').slice(0, 24), p_strokes: strokes, p_par: par, p_ghost: ghost || null }).catch(function (e) { return null; });
     },
     // recent runs with a ghost for a day (to race), best strokes first
     fetchGhosts: function (day, limit) {
