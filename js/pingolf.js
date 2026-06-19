@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 129 · DAILY STUDIO';
+  var BUILD = 'BUILD 130 · PUBLISH EDITS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2709,6 +2709,25 @@
       var nin = elt('input', 'width:100%;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, box); nin.value = ED.draft.name || 'MY LEVEL';
       var sb = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '💾 Save to my levels', box);
       sb.onclick = function () { var nm = (nin.value || '').trim(); if (!nm) { edToast('Enter a name', false); return; } ED.draft.name = nm; var s = edStore(); s[nm] = edSerialize(); try { localStorage.setItem('pg_levels', JSON.stringify(s)); close(); edToast('Saved "' + nm + '" ✓'); edPanel(); } catch (e) { edToast('Save failed: storage full', false); } };
+      // ---- OWNER: publish this edited layout as the live daily (custom hole_json) ----
+      if (St.ownerMode && NET()) {
+        elt('div', 'border-top:1px solid #5a3a1a;margin:13px 0 9px;', null, box);
+        elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;', '🤠 OWNER · set the daily for everyone', box);
+        var dRow = elt('div', 'display:flex;gap:6px;margin-bottom:7px;', null, box);
+        var dayIn = elt('input', 'flex:1;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;', null, dRow); dayIn.type = 'date'; dayIn.value = NET().todayKey();
+        var passIn = elt('input', 'width:100%;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:7px;', null, box); passIn.type = 'password'; passIn.placeholder = 'Owner passcode';
+        try { passIn.value = sessionStorage.getItem('pg_owner_pass') || ''; } catch (e) { }
+        var pubB = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#1d9bf0,#0d6fb8);color:#fff;font:800 13px Georgia;cursor:pointer;', '📤 Publish this edited hole as the daily', box);
+        var bankB = elt('button', 'width:100%;margin-top:6px;padding:9px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#b8862a,#6a4a10);color:#fff;font:700 12px Georgia;cursor:pointer;', '🏦 Bank this hole for later', box);
+        var ownerDo = function (fn, okMsg) {
+          var pass = (passIn.value || '').trim(); if (!pass) { edToast('Enter the owner passcode', false); return; }
+          try { sessionStorage.setItem('pg_owner_pass', pass); } catch (e) { }
+          var nm = (nin.value || '').trim() || 'Daily Hole'; ED.draft.name = nm; var ser = edSerialize();
+          fn(pass, nm, ser).then(function () { close(); edToast(okMsg); }, function (e) { edToast(/unauth/i.test(e.message || '') ? 'Wrong passcode' : ('Failed: ' + e.message), false); });
+        };
+        pubB.onclick = function () { var day = dayIn.value || NET().todayKey(); ownerDo(function (p, nm, ser) { return NET().publishDaily(p, day, nm, null, ser); }, '📤 Published for ' + (dayIn.value || NET().todayKey()) + ' ✓ — live now'); };
+        bankB.onclick = function () { ownerDo(function (p, nm, ser) { return NET().saveBank(p, nm, null, ser, null); }, '🏦 Banked ✓'); };
+      }
       if (ED.draft._ov != null) {
         var oi = ED.draft._ov, bn = (HOLES[oi] && HOLES[oi]().name) || ('#' + (oi + 1));
         elt('div', 'border-top:1px solid #5a3a1a;margin:13px 0 9px;', null, box);
@@ -3043,6 +3062,8 @@
     St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
+    try { if (sessionStorage.getItem('pg_ownerMode') === '1') St.ownerMode = true; } catch (e) { }
+    if (_qs && (_qs.get('owner') === '1' || _qs.has('edit'))) { St.ownerMode = true; try { sessionStorage.setItem('pg_ownerMode', '1'); } catch (e) { } }
     var _ed = _qs && _qs.get('edit');
     if (_ed != null && _ed !== '' && !isNaN(parseInt(_ed, 10))) {
       var _ei = parseInt(_ed, 10); loadHole(_ei >= 0 && _ei < 36 ? _ei : 0); editBuiltin(St.hi);   // owner: tweak a candidate's layout
@@ -3127,4 +3148,5 @@
   PG.__shareStrings = function () { return St.rec ? shareStrings(St.rec) : null; }; PG.__dailyFinish = function () { dailyFinish(); };
   PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
   PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
+  PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
 })();
