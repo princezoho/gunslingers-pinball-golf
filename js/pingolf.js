@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 130 · PUBLISH EDITS';
+  var BUILD = 'BUILD 131 · SAFE PUBLISH';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2703,6 +2703,38 @@
   function edSerialize() { var d = ED.draft; return { name: d.name, par: d.par, bounds: d.bounds, tee: d.tee, cup: d.cup, walls: d.walls.filter(function (w) { return !w._bnd; }).map(function (w) { return { ax: w.ax, az: w.az, bx: w.bx, bz: w.bz, e: w.e, h: w.h }; }), bumpers: d.bumpers.map(function (b) { return { x: b.x, z: b.z, r: b.r, kick: b.kick }; }), boosters: d.boosters.map(function (b) { return { x: b.x, z: b.z, ang: Math.atan2(b.dz, b.dx), r: b.r, spd: b.spd }; }), flippers: d.flippers.map(function (f) { return { side: f.side, px: f.px, pz: f.pz, len: f.len, rot: f.rot, speed: f.speed, power: f.power }; }), windmills: d.windmills.map(function (w) { return { x: w.x, z: w.z, r: w.r, n: w.n, speed: w.speed }; }), lasers: d.lasers.map(function (l) { return { ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase }; }), loops: d.loops.map(function (l) { return { x: l.x, z: l.z, r: l.r, ang: l.ang }; }), warps: d.warps.map(function (w) { return { x: w.x, z: w.z, ex: w.ex, ez: w.ez, r: w.r }; }), portals: d.portals.map(function (w) { return { x: w.x, z: w.z, exits: (w.exits || [{ x: w.ex, z: w.ez }]).map(function (e) { return { x: e.x, z: e.z }; }), r: w.r }; }), firerings: d.firerings.map(function (f) { return { x: f.x, z: f.z, r: f.r, h: f.h, points: f.points }; }), enemies: d.enemies.map(function (e) { return { x: e.x, z: e.z, ex: e.ex, ez: e.ez, r: e.r, speed: e.speed, type: e.type, behavior: e.behavior, effect: e.effect }; }), coins: d.coins.map(function (c) { return { x: c.x, z: c.z, value: c.value }; }), powerups: (d.powerups || []).map(function (p) { return { x: p.x, z: p.z, kind: p.kind }; }), terrain: d.terrainFeatures, noBox: d.noBox, wallH: d.wallH || 52, theme: d.theme || 'grass', phys: d.phys || themePhys(d.theme || 'grass'), turf: d.turf, multiball: d.multiball ? { x: d.multiball.x, z: d.multiball.z, r: d.multiball.r } : null }; }
   function edDeserialize(o) { var d = builder(); d.name = o.name || 'LEVEL'; d.par = o.par || 3; d.bounds = o.bounds; d.tee = o.tee; d.cup = o.cup; d.noBox = !!o.noBox; d.wallH = o.wallH || 52; d.theme = o.theme || 'grass'; d.phys = o.phys || themePhys(d.theme); d.turf = o.turf != null ? o.turf : (THEMES[d.theme] || THEMES.grass).turf; rebuildBox(d); (o.loops || []).forEach(function (l) { d.loopde(l.x, l.z, l.r, l.ang); }); (o.warps || []).forEach(function (w) { d.warp(w.x, w.z, w.ex, w.ez, w.r); }); (o.portals || []).forEach(function (w) { d.portal(w.x, w.z, w.exits || (w.ex != null ? [{ x: w.ex, z: w.ez }] : null), w.r); }); (o.firerings || []).forEach(function (f) { d.firering(f.x, f.z, f.r, f.h, f.points); }); (o.enemies || []).forEach(function (e) { d.enemy(e.x, e.z, e.ex, e.ez, e.r, e.speed, e.type, e.behavior, e.effect); }); (o.coins || []).forEach(function (c) { d.coin(c.x, c.z, c.value); }); (o.powerups || []).forEach(function (p) { d.powerup(p.x, p.z, p.kind); }); (o.walls || []).forEach(function (w) { d.wall(w.ax, w.az, w.bx, w.bz, { e: w.e, h: w.h }); }); (o.bumpers || []).forEach(function (b) { d.bumper(b.x, b.z, b.r); if (b.kick != null) last(d.bumpers).kick = b.kick; }); (o.boosters || []).forEach(function (b) { d.booster(b.x, b.z, b.ang, b.r, b.spd); }); (o.flippers || []).forEach(function (f) { d.flip(f.side, f.px, f.pz, f.len, f.rot, f.speed); if (f.power != null) last(d.flippers).power = f.power; }); (o.windmills || []).forEach(function (w) { d.windmill(w.x, w.z, w.r, w.n, w.speed); }); (o.lasers || []).forEach(function (l) { d.lasers.push({ ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase, on: false }); }); (o.terrain || []).forEach(function (t) { d.terrainFeatures.push(t); }); if (o.multiball) d.mball(o.multiball.x, o.multiball.z, o.multiball.r); return d; }
   function edStore() { try { return JSON.parse(localStorage.getItem('pg_levels') || '{}'); } catch (e) { return {}; } }
+  // headless: can the auto-bot sink this draft? (used to gate owner publishing) — restores all state, silences audio
+  function testDraftBeatable(d, tries, maxStrokes) {
+    tries = tries || 12; maxStrokes = maxStrokes || 12;
+    var S = { hole: St.hole, hi: St.hi, balls: St.balls, state: St.state, strokes: St.strokes, testing: St.testing, daily: St.daily, rec: St.rec, ghost: St.ghost, aimYaw: St.aimYaw, camYaw: St.camYaw, power: St.power, auOn: (typeof AU !== 'undefined' ? AU.on : null) };
+    var beatable = false, best = 99;
+    try {
+      if (typeof AU !== 'undefined') AU.on = false;
+      applyPhys(d.phys); d.terrain = terrainFn(d.terrainFeatures, d.cup); rebuildBox(d);
+      St.hole = d; St.hi = 0; St.hole.par = d.par; St.daily = false; St.rec = null; St.ghost = null; St.testing = true;
+      var cup = d.cup;
+      for (var t = 0; t < tries && !beatable; t++) {
+        var tt = d.tee; St.balls = [newBall(tt.x, tt.z, true)]; St.balls[0].y = d.terrain(tt.x, tt.z) + K.R; St.state = 'aim'; St.strokes = 0;
+        var scale = 0.78 + (t % 5) * 0.11, strokes = 0;
+        while (strokes < maxStrokes) {
+          if (St.state !== 'aim') break;
+          var b = primeBall(); if (!b) break;
+          var dx = cup.x - b.x, dz = cup.z - b.z, dist = hyp(dx, dz);
+          St.aimYaw = Math.atan2(dx, dz) + (Math.random() * 2 - 1) * (0.03 + (t / tries) * 0.55); St.camYaw = St.aimYaw;
+          St.power = clamp(Math.sqrt(dist / 2600) * scale + (Math.random() * 2 - 1) * 0.12, 0.1, 1);
+          shoot(); strokes++;
+          var settled = false;
+          for (var s = 0; s < 1100; s++) { tick(1 / 60); var pb = primeBall(); if (St.state === 'sunk' || (pb && pb.sunk)) { beatable = true; break; } if (St.state === 'aim') { settled = true; break; } }
+          if (beatable) { best = Math.min(best, strokes); break; }
+          if (!settled) break;
+        }
+      }
+    } catch (e) { }
+    St.hole = S.hole; St.hi = S.hi; St.balls = S.balls; St.state = S.state; St.strokes = S.strokes; St.testing = S.testing; St.daily = S.daily; St.rec = S.rec; St.ghost = S.ghost; St.aimYaw = S.aimYaw; St.camYaw = S.camYaw; St.power = S.power;
+    if (typeof AU !== 'undefined' && S.auOn != null) AU.on = S.auOn;
+    if (S.hole) applyPhys(S.hole.phys || themePhys(S.hole.theme || 'grass'));
+    return { beatable: beatable, strokes: beatable ? best : null };
+  }
   function edSave() {
     edModal('💾 SAVE LEVEL', function (box, close) {
       elt('div', 'font-size:11px;opacity:.8;margin-bottom:4px;', 'Level name', box);
@@ -2725,7 +2757,17 @@
           var nm = (nin.value || '').trim() || 'Daily Hole'; ED.draft.name = nm; var ser = edSerialize();
           fn(pass, nm, ser).then(function () { close(); edToast(okMsg); }, function (e) { edToast(/unauth/i.test(e.message || '') ? 'Wrong passcode' : ('Failed: ' + e.message), false); });
         };
-        pubB.onclick = function () { var day = dayIn.value || NET().todayKey(); ownerDo(function (p, nm, ser) { return NET().publishDaily(p, day, nm, null, ser); }, '📤 Published for ' + (dayIn.value || NET().todayKey()) + ' ✓ — live now'); };
+        pubB.onclick = function () {
+          var day = dayIn.value || NET().todayKey();
+          var doPub = function () { ownerDo(function (p, nm, ser) { return NET().publishDaily(p, day, nm, null, ser); }, '📤 Published for ' + day + ' ✓ — live now'); };
+          pubB.disabled = true; pubB.textContent = '⏳ Testing it\'s beatable…';
+          setTimeout(function () {
+            var res = testDraftBeatable(ED.draft, 12, 12);
+            pubB.disabled = false; pubB.textContent = '📤 Publish this edited hole as the daily';
+            if (res.beatable) { edToast('✓ Auto-tester sank it in ' + res.strokes + ' — publishing'); doPub(); }
+            else edConfirm('⚠ The auto-tester could NOT sink this hole in 12 tries — players may find it unbeatable. Publish as the daily anyway?', doPub);
+          }, 40);
+        };
         bankB.onclick = function () { ownerDo(function (p, nm, ser) { return NET().saveBank(p, nm, null, ser, null); }, '🏦 Banked ✓'); };
       }
       if (ED.draft._ov != null) {
@@ -3149,4 +3191,5 @@
   PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
   PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
   PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
+  PG.__testDraft = function (tries, max) { return ED.draft ? testDraftBeatable(ED.draft, tries, max) : null; };
 })();
