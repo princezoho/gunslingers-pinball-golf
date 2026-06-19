@@ -97,6 +97,11 @@
     function $(id){ return document.getElementById(id); }
     function toast(m){ var t=$('toast'); t.textContent=m; t.style.opacity='1'; setTimeout(function(){ t.style.opacity='0'; }, 2200); }
     function ymd(d){ return d.toISOString().slice(0,10); }
+    // mirror the game's date-seeded fallback so the owner can see what players get if nothing is published
+    var DAILY_EPOCH = Date.UTC(2026,0,1);
+    function dailyNumFor(s){ try{ var t=Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)); return Math.max(1, Math.floor((t-DAILY_EPOCH)/86400000)+1); }catch(e){ return 1; } }
+    function dailyIndexFor(n){ return (((n*7+5)%36)+36)%36; }
+    function autoHoleFor(day){ var idx=dailyIndexFor(dailyNumFor(day)); return { idx:idx, name:(HOLES[idx]?HOLES[idx].name:('hole '+idx)) }; }
 
     function unlock(){
       pass = ($('pass').value||'').trim();
@@ -128,7 +133,7 @@
       var el=$('dayStatus'); el.textContent='…';
       PGNet.fetchDaily(day).then(function(d){
         el.textContent='';
-        if(!d){ el.textContent='— nothing published for this date yet —'; return; }
+        if(!d){ var ah=autoHoleFor(day); el.innerHTML='— nothing published — players get the <b style="color:#f5c542">auto hole: '+ah.name+'</b> (#'+ah.idx+'). Publish a candidate below to override.'; return; }
         var span=document.createElement('span'); span.textContent='✓ Published: '+(d.title||('hole '+d.hole_index))+'   '; el.appendChild(span);
         var ub=document.createElement('button'); ub.className='btn btn-red'; ub.style.cssText='padding:4px 11px;font-size:11px;'; ub.textContent='🗑 Unpublish';
         ub.onclick=function(){ PGNet.unpublishDaily(pass, day).then(function(){ toast('Unpublished '+day+' — reverts to the auto-rotating hole'); refreshDayStatus(); loadSched(); }).catch(function(e){ toast('Unpublish failed: '+e.message); }); };
