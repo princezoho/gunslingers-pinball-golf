@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 148 · SHARED DIFFICULTY';
+  var BUILD = 'BUILD 149 · DAILY ARCHIVE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1816,7 +1816,7 @@
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
-    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.daySummary = null; if (R3.ghostMesh) R3.ghostMesh.visible = false;
+    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.archive = false; St.daySummary = null; if (R3.ghostMesh) R3.ghostMesh.visible = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -2852,7 +2852,10 @@
      The viral loop: one daily hole, record your run, race other players' ghosts, share your score. */
   var DAILY_EPOCH = Date.UTC(2026, 0, 1);
   function dailyNum() { return Math.max(1, Math.floor((Date.now() - DAILY_EPOCH) / 86400000) + 1); }
-  function dailyIndex() { var n = dailyNum(); return (((n * 7 + 5) % 36) + 36) % 36; }   // spread across all 36 holes
+  function dailyIndexFor(n) { return (((n * 7 + 5) % 36) + 36) % 36; }   // deterministic hole for a given daily number
+  function dailyIndex() { return dailyIndexFor(dailyNum()); }            // spread across all 36 holes
+  function dailyNumFor(ymd) { try { var t = Date.UTC(+ymd.slice(0, 4), +ymd.slice(5, 7) - 1, +ymd.slice(8, 10)); return Math.max(1, Math.floor((t - DAILY_EPOCH) / 86400000) + 1); } catch (e) { return dailyNum(); } }
+  function pastDayKey(daysAgo) { var net = NET(); var base = net ? net.todayKey() : new Date().toISOString().slice(0, 10); try { var d = new Date(base + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - daysAgo); return d.toISOString().slice(0, 10); } catch (e) { return base; } }
   function shareBase() { return location.origin + (location.pathname || '/game.html'); }
   function msToNextDaily() { var now = new Date(), next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0); return Math.max(0, next - now.getTime()); }
   function fmtCountdown() { var ms = msToNextDaily(), h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000); var p = function (x) { return (x < 10 ? '0' : '') + x; }; return '⏳ Next daily in ' + h + 'h ' + p(m) + 'm ' + p(s) + 's'; }
@@ -2945,6 +2948,7 @@
   // ---- the async daily orchestrator: published hole + real rival ghost ----
   function enterDaily(explicitIdx, ghost) {
     var net = NET(); St.dailyDay = net ? net.todayKey() : null; St.dailyTitle = null; St.dailySubmitted = false; St.ghostName = null;
+    St.archive = false; St.archiveDaysAgo = 0;
     St.dailyPractice = alreadyPlayedToday(St.dailyDay);   // replaying today = practice (won't post)
     var ch = document.getElementById('pg-chooser'); if (ch) ch.remove();
     if (explicitIdx != null) { loadDaily(explicitIdx, ghost); afterDailyLoaded(ghost); return; }   // shared ?daily=N → that exact hole
@@ -2956,6 +2960,23 @@
         afterDailyLoaded(ghost);
       }, function () { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); });
     } else { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); }
+  }
+  // ---- archive: play a PAST day's hole (casual; never posts / counts) ----
+  function enterPastDaily(daysAgo) {
+    var net = NET(); if (!net) return;
+    var day = pastDayKey(daysAgo), n = dailyNumFor(day);
+    St.dailyDay = day; St.archive = true; St.archiveDaysAgo = daysAgo; St.dailyTitle = null; St.dailySubmitted = false; St.ghostName = null; St.dailyPractice = true;
+    var sc = document.getElementById('pg-daily'); if (sc) sc.remove();
+    var ch = document.getElementById('pg-chooser'); if (ch) ch.remove();
+    var fin = function () { St.archive = true; St.archiveDaysAgo = daysAgo; St.dailyPractice = true; St.dailyN = n; St.banner = '📅 ARCHIVE · DAILY #' + n + ' · ' + (St.dailyTitle || St.hole.name); St.bannerT = 2.6; afterDailyLoaded(null); };
+    if (net.enabled) {
+      net.fetchDaily(day).then(function (d) {
+        if (d && d.hole_json) loadDailyDraft(d.hole_json, d.title, null);
+        else if (d && d.hole_index != null) { St.dailyTitle = d.title; loadDaily(d.hole_index, null); }
+        else loadDaily(dailyIndexFor(n), null);
+        fin();
+      }, function () { loadDaily(dailyIndexFor(n), null); fin(); });
+    } else { loadDaily(dailyIndexFor(n), null); fin(); }
   }
   function afterDailyLoaded(urlGhost) {
     var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
@@ -3021,7 +3042,7 @@
     showDailyCard(rec);
   }
   function submitDailyRun(rec, nm) {
-    var net = NET(); if (!net || !net.enabled || !St.dailyDay || St.dailySubmitted || St.dailyPractice) return Promise.resolve(null);
+    var net = NET(); if (!net || !net.enabled || !St.dailyDay || St.dailySubmitted || St.dailyPractice || St.archive) return Promise.resolve(null);
     St.dailySubmitted = true; setPlayerName(nm);
     return net.submitRun(St.dailyDay, nm, St.strokes, rec.par, encGhost(rec));
   }
@@ -3101,7 +3122,8 @@
     if (net && net.enabled && St.dailyDay) {
       var lbWrap = elt('div', 'margin:2px 0 12px;', null, box);
       var firstTime = !playerName() && !St.dailyPractice;
-      if (St.dailyPractice) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;line-height:1.4;', '🎯 Practice round — you already played today’s daily. Scores count once a day; come back tomorrow for a fresh hole!', lbWrap);
+      if (St.archive) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;line-height:1.4;', '📅 Archive · Daily #' + St.dailyN + ' — a past hole, just for fun (doesn’t count).', lbWrap);
+      else if (St.dailyPractice) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;line-height:1.4;', '🎯 Practice round — you already played today’s daily. Scores count once a day; come back tomorrow for a fresh hole!', lbWrap);
       else if (firstTime) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;', '🤠 Pick a name to claim your spot on today’s leaderboard 👇', lbWrap);
       var postRow = elt('div', 'display:flex;gap:6px;', null, lbWrap);
       var nameIn = elt('input', 'flex:1;padding:10px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
@@ -3113,7 +3135,7 @@
       function renderLB() {
         lbBox.textContent = '';
         if (St.standing && St.standing.total) elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;margin-bottom:6px;', '🏆 You’re #' + St.standing.rank + ' of ' + St.standing.total + ' today', lbBox);
-        elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', 'TODAY’S LEADERBOARD', lbBox);
+        elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', St.archive ? ('DAILY #' + St.dailyN + ' LEADERBOARD') : 'TODAY’S LEADERBOARD', lbBox);
         var me = playerName();
         net.leaderboard(St.dailyDay, 12).then(function (rows) {
           if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Be the first to post a score!', lbBox); return; }
@@ -3158,6 +3180,12 @@
     if (St.dailyPractice) {   // already played today → let them dismiss the result and hit balls for fun (won't post)
       var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
       prac.onclick = function () { ov.remove(); recStart(St.hi >= 0 ? St.hi : -1); if (St.ghost) { St.ghost.playing = false; St.ghost.t = 0; } };
+    }
+    // ---- archive: play an older day's hole (more to play; never counts) ----
+    if (NET() && (St.archiveDaysAgo || 0) < 14) {
+      var older = (St.archiveDaysAgo || 0) + 1;
+      var arcBtn = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', St.archive ? '📅 OLDER HOLE (DAILY #' + (St.dailyN - 1) + ')' : '📅 PLAY YESTERDAY’S HOLE', box);
+      arcBtn.onclick = function () { ov.remove(); enterPastDaily(older); };
     }
     // ---- highlight GIF ----
     if (global_GIF()) {
@@ -3312,4 +3340,5 @@
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
   PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
+  PG.__enterPastDaily = function (daysAgo) { enterPastDaily(daysAgo || 1); }; PG.__dailyIndexFor = dailyIndexFor; PG.__dailyNumFor = dailyNumFor;
 })();
