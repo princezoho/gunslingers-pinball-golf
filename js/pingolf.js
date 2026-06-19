@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 160 · REMEMBER ME';
+  var BUILD = 'BUILD 161 · HONEST POST';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3061,9 +3061,10 @@
     showDailyCard(rec);
   }
   function submitDailyRun(rec, nm) {
-    var net = NET(); if (!net || !net.enabled || !St.dailyDay || St.dailySubmitted || St.dailyPractice || St.archive) return Promise.resolve(null);
+    var net = NET(); if (!net || !net.enabled || !St.dailyDay || St.dailyPractice || St.archive) return Promise.resolve(null);
+    if (St.dailySubmitted) return Promise.resolve(true);
     St.dailySubmitted = true; setPlayerName(nm);
-    return net.submitRun(St.dailyDay, nm, St.strokes, rec.par, encGhost(rec));
+    return net.submitRun(St.dailyDay, nm, St.strokes, rec.par, encGhost(rec)).then(function (ok) { if (ok === false) St.dailySubmitted = false; return ok; });   // reset so a retry can resubmit
   }
   // pick the most shareable segment of the run: the final (sinking) shot, padded to enough frames
   function highlightSubPath(rec) {
@@ -3180,8 +3181,9 @@
         });
       }
       function doPost() {
-        var nm = (nameIn.value || '').trim() || 'Anon'; postBtn.disabled = true; postBtn.textContent = 'Posting…';
-        submitDailyRun(rec, nm).then(function () {
+        var nm = (nameIn.value || '').trim() || 'Anon'; postBtn.disabled = true; postBtn.textContent = 'Posting…'; postBtn.style.opacity = '1';
+        submitDailyRun(rec, nm).then(function (ok) {
+          if (ok === false) { postBtn.disabled = false; postBtn.textContent = '⚠ Retry post'; postBtn.style.background = 'linear-gradient(180deg,#c0392b,#8e2a20)'; return; }   // submit failed (offline?) — let them try again
           postBtn.textContent = 'Posted ✓'; postBtn.style.background = '#2e7a26';
           net.standing(St.dailyDay, nm).then(function (st) { if (st && st.total) St.standing = st; renderLB(); });
         });
