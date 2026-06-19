@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 126 · HIGHLIGHT GIF';
+  var BUILD = 'BUILD 128 · GLOBAL GHOSTS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1767,7 +1767,7 @@
     elt('div', 'font:600 12px Georgia;color:#d8c4a2;', 'One shot at today’s hole. Beat the par, share your score, challenge your friends.', dl);
     elt('div', 'font:900 15px Wantedo,Georgia;color:#86d85f;white-space:nowrap;', 'PLAY ▶', daily);
     daily.onmouseenter = function () { daily.style.transform = 'translateY(-3px)'; }; daily.onmouseleave = function () { daily.style.transform = 'none'; };
-    daily.onclick = function () { ov.remove(); loadDaily(dailyIndex(), null); };
+    daily.onclick = function () { ov.remove(); enterDaily(null, null); };
     var row = elt('div', 'display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:760px;', null, ov);
     SETS.forEach(function (set) {
       var card = elt('button', 'width:210px;min-height:150px;padding:20px 16px;border:none;border-radius:0;background:transparent;color:#f5efdc;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;', null, row);
@@ -2819,14 +2819,51 @@
     var a = g.path[i], b = g.path[Math.min(i + 1, last)];
     R3.ghostMesh.visible = true; R3.ghostMesh.position.set(a[0] + (b[0] - a[0]) * fr, a[1] + (b[1] - a[1]) * fr + 1, a[2] + (b[2] - a[2]) * fr);
   }
-  // ---- enter the daily hole ----
+  // ---- player handle (for the leaderboard) ----
+  function playerName() { try { return localStorage.getItem('pg_name') || ''; } catch (e) { return ''; } }
+  function setPlayerName(n) { try { localStorage.setItem('pg_name', (n || '').slice(0, 24)); } catch (e) { } }
+  var NET = function () { return (typeof PGNet !== 'undefined') ? PGNet : (window.PGNet || null); };
+  // ---- enter the daily hole (built-in index path) ----
   function loadDaily(idx, ghost) {
     if (!(idx >= 0 && idx < 36)) idx = dailyIndex();
     St.setBase = Math.floor(idx / 9) * 9; St.scores = St.scores || []; St.parDone = 0;
     loadHole(idx);
     St.daily = true; St.dailyN = dailyNum(); recStart(idx);
     if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; }
-    St.banner = '⭐ DAILY #' + St.dailyN + ' · ' + St.hole.name; St.bannerT = 2.6;
+    St.banner = '⭐ DAILY #' + St.dailyN + ' · ' + (St.dailyTitle || St.hole.name); St.bannerT = 2.6;
+  }
+  // ---- enter the daily hole (owner-published custom hole_json) ----
+  function loadDailyDraft(holeJson, title, ghost) {
+    try {
+      var d = edDeserialize(holeJson); St.setBase = 0; St.dailyTitle = title || d.name;
+      playDraftInGame(d, null, title || d.name); St.hi = -1;
+      St.daily = true; St.dailyN = dailyNum(); recStart(-1);
+      if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; }
+      St.banner = '⭐ DAILY #' + St.dailyN + ' · ' + St.dailyTitle; St.bannerT = 2.6;
+    } catch (e) { loadDaily(dailyIndex(), ghost); }
+  }
+  // ---- the async daily orchestrator: published hole + real rival ghost ----
+  function enterDaily(explicitIdx, ghost) {
+    var net = NET(); St.dailyDay = net ? net.todayKey() : null; St.dailyTitle = null; St.dailySubmitted = false; St.ghostName = null;
+    var ch = document.getElementById('pg-chooser'); if (ch) ch.remove();
+    if (explicitIdx != null) { loadDaily(explicitIdx, ghost); afterDailyLoaded(ghost); return; }   // shared ?daily=N → that exact hole
+    if (net && net.enabled) {
+      net.fetchDaily(St.dailyDay).then(function (d) {
+        if (d && d.hole_json) loadDailyDraft(d.hole_json, d.title, ghost);
+        else if (d && d.hole_index != null) { St.dailyTitle = d.title; loadDaily(d.hole_index, ghost); }
+        else loadDaily(dailyIndex(), ghost);
+        afterDailyLoaded(ghost);
+      }, function () { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); });
+    } else { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); }
+  }
+  function afterDailyLoaded(urlGhost) {
+    if (urlGhost) return;   // a shared ghost takes precedence over a fetched one
+    var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
+    net.fetchGhosts(St.dailyDay, 6).then(function (rows) {
+      if (!St.daily || !rows || !rows.length || St.ghost) return;
+      var pick = rows[0], g = decGhost(pick.ghost);
+      if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; socialToast('👻 Racing ' + pick.name + "'s ghost — beat " + pick.strokes + '!'); }
+    }).catch(function () { });
   }
   // ---- the share card shown on finishing the daily hole ----
   function copyText(str, okMsg) {
@@ -2852,6 +2889,11 @@
     var rec = St.rec; if (!rec) return;
     var cu = St.hole.cup; rec.path.push([Math.round(cu.x), Math.round(St.hole.terrain(cu.x, cu.z) + K.R), Math.round(cu.z)]);
     showDailyCard(rec);
+  }
+  function submitDailyRun(rec, nm) {
+    var net = NET(); if (!net || !net.enabled || !St.dailyDay || St.dailySubmitted) return Promise.resolve(null);
+    St.dailySubmitted = true; setPlayerName(nm);
+    return net.submitRun(St.dailyDay, nm, St.strokes, rec.par, encGhost(rec));
   }
   // pick the most shareable segment of the run: the final (sinking) shot, padded to enough frames
   function highlightSubPath(rec) {
@@ -2909,7 +2951,36 @@
     elt('div', 'font:900 46px Wantedo,Georgia;color:' + sc + ';line-height:1.05;', S.strokes + ' strokes', box);
     elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:8px;', S.verdict + '  (' + S.overStr + ')', box);
     var bar = ''; for (var k = 0; k < Math.min(S.strokes - 1, 11); k++) bar += '🔵'; bar += '⛳';
-    elt('div', 'font:20px Georgia;margin:4px 0 12px;', bar, box);
+    elt('div', 'font:20px Georgia;margin:4px 0 10px;', bar, box);
+    // ---- post score + live leaderboard ----
+    var net = NET();
+    if (net && net.enabled && St.dailyDay) {
+      var lbWrap = elt('div', 'margin:2px 0 12px;', null, box);
+      var postRow = elt('div', 'display:flex;gap:6px;', null, lbWrap);
+      var nameIn = elt('input', 'flex:1;padding:10px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
+      nameIn.placeholder = 'Your name'; nameIn.maxLength = 24; nameIn.value = playerName();
+      var postBtn = elt('button', 'padding:10px 14px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '🏆 POST', postRow);
+      var lbBox = elt('div', 'margin-top:10px;', null, lbWrap);
+      function renderLB() {
+        lbBox.textContent = ''; elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;', 'TODAY’S LEADERBOARD', lbBox);
+        net.leaderboard(St.dailyDay, 12).then(function (rows) {
+          if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Be the first to post a score!', lbBox); return; }
+          rows.forEach(function (r, i) {
+            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;background:rgba(245,197,66,.06);border-radius:6px;font:13px Georgia;color:#f5efdc;', null, lbBox);
+            elt('div', 'width:26px;color:#f5c542;font-weight:700;', (i + 1) + '.', row);
+            elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', r.name, row);
+            var ov = r.par != null ? (r.strokes - r.par) : 0, oc = ov < 0 ? '#86d85f' : ov === 0 ? '#f5efdc' : '#df8a6a';
+            elt('div', 'font-weight:800;color:' + oc + ';', r.strokes + (r.par != null && ov !== 0 ? (ov > 0 ? ' +' + ov : ' ' + ov) : ''), row);
+          });
+        });
+      }
+      function doPost() {
+        var nm = (nameIn.value || '').trim() || 'Anon'; postBtn.disabled = true; postBtn.textContent = 'Posting…';
+        submitDailyRun(rec, nm).then(function () { postBtn.textContent = 'Posted ✓'; postBtn.style.background = '#2e7a26'; renderLB(); });
+      }
+      postBtn.onclick = doPost;
+      if (playerName()) { doPost(); } else { renderLB(); }   // auto-post for returning players
+    }
     var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
     var xb = elt('button', prim + 'background:linear-gradient(180deg,#1d9bf0,#0d6fb8);', '𝕏  SHARE ON X', box);
     xb.onclick = function () { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(S.text), '_blank', 'noopener'); };
@@ -2973,10 +3044,10 @@
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
     if (_qs && (_qs.has('daily') || (_hs && _hs.has('g')))) {
-      var _dv = _qs.get('daily'), _di = (_dv != null && _dv !== '') ? parseInt(_dv, 10) : dailyIndex();
-      var _gh = (_hs && _hs.has('g')) ? decGhost(_hs.get('g')) : null;
-      if (_gh && (_gh.hi >= 0 && _gh.hi < 36)) _di = _gh.hi;
-      loadDaily(_di, _gh);
+      var _dv = _qs.get('daily'), _gh = (_hs && _hs.has('g')) ? decGhost(_hs.get('g')) : null;
+      var _explicit = (_dv != null && _dv !== '') ? parseInt(_dv, 10) : null;          // ?daily=N → that exact hole
+      if (_explicit == null && _gh && _gh.hi >= 0 && _gh.hi < 36) _explicit = _gh.hi;   // a shared ghost pins its hole
+      enterDaily(_explicit, _gh);
     } else { chooseSet(); }
     var ld = document.getElementById('load'); if (ld) { ld.classList.add('gone'); setTimeout(function () { ld.style.display = 'none'; }, 450); }
     requestAnimationFrame(function (t) { St.last = t; frame(t); });
@@ -3052,4 +3123,5 @@
   PG.__encGhost = function () { return St.rec ? encGhost(St.rec) : null; }; PG.__decGhost = decGhost;
   PG.__shareStrings = function () { return St.rec ? shareStrings(St.rec) : null; }; PG.__dailyFinish = function () { dailyFinish(); };
   PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
+  PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
 })();
