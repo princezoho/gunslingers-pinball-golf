@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 143 · REVISIT RESULT';
+  var BUILD = 'BUILD 144 · ORGANIC SHARES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2981,6 +2981,9 @@
     var t = elt('div', 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:9999;padding:11px 20px;border:2px solid #160d06;border-radius:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;box-shadow:0 6px 24px rgba(0,0,0,.55);pointer-events:none;opacity:0;transition:opacity .2s;', msg, document.body);
     requestAnimationFrame(function () { t.style.opacity = '1'; }); setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 300); }, 1800);
   }
+  // varied CTA so the shared feed looks organic, not templated — stable per player+day, different across players
+  var SHARE_CTAS = ['Can you beat me?', 'Your move, partner.', 'Think you can do better?', 'Beat my score, gunslinger.', 'Reckon you can top that?', 'Step up and take your shot.', 'Bet you can’t beat it.', 'Your turn — draw!'];
+  function dailyCTA() { return SHARE_CTAS[(nameHash(playerName() || 'anon') + (St.dailyN || 0)) % SHARE_CTAS.length]; }
   function shareStrings(rec) {
     var n = St.dailyN, name = rec.name || (St.hole && St.hole.name) || 'the hole', strokes = St.strokes, par = rec.par, over = strokes - par;
     var verdict = strokes === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
@@ -2991,7 +2994,7 @@
     if (St.ghostStrokes != null && St.ghostName) { vs = (strokes < St.ghostStrokes) ? '\n⚔️ Beat ' + St.ghostName + ' (' + strokes + ' vs ' + St.ghostStrokes + ')' : (strokes === St.ghostStrokes) ? '\n🤝 Tied ' + St.ghostName + ' (' + strokes + ')' : ''; }
     var streak = (St.streak > 1) ? '\n🔥 ' + St.streak + '-day streak' : '';
     var rank = (St.standing && St.standing.total > 1) ? '\n🏆 #' + St.standing.rank + ' of ' + St.standing.total + ' today' : '';
-    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
+    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + '\n' + dailyCTA() + ' 👉 ' + link + '\n#GunslingersGolf';
     var who = (playerName() || '').slice(0, 24);   // personalize the challenge so the recipient sees who dared them
     var ghostLink = link + '#g=' + encGhost(rec) + (who ? '&n=' + encodeURIComponent(who) : '') + '&s=' + strokes;
     return { text: text, link: link, ghostLink: ghostLink, verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
@@ -3275,4 +3278,5 @@
   PG.__streak = function (day) { return streakUpdate(day); }; PG.__prevDay = function (d) { return prevDay(d); };
   PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
+  PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
 })();
