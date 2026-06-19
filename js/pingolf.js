@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 138 · CROWD UP FRONT';
+  var BUILD = 'BUILD 139 · CHALLENGE LINK';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1816,7 +1816,7 @@
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
-    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; if (R3.ghostMesh) R3.ghostMesh.visible = false;
+    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.challenged = false; if (R3.ghostMesh) R3.ghostMesh.visible = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -2864,10 +2864,12 @@
   function encGhost(rec) {
     try { var o = { h: rec.hi, par: rec.par, s: rec.shots.map(function (sh) { return [sh.i, +(+sh.p).toFixed(3), +(+sh.y).toFixed(3)]; }), p: [] };
       for (var i = 0; i < rec.path.length; i++) { o.p.push(rec.path[i][0], rec.path[i][1], rec.path[i][2]); }
-      return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); } catch (e) { return ''; }
+      // URL-SAFE base64 (+ -> -, / -> _, strip =) so the ghost survives a URL hash parsed by URLSearchParams (where + would become a space)
+      return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); } catch (e) { return ''; }
   }
   function decGhost(str) {
-    try { var o = JSON.parse(decodeURIComponent(escape(atob(str)))); var path = [];
+    try { var b = String(str).replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '=';   // accept URL-safe AND legacy base64
+      var o = JSON.parse(decodeURIComponent(escape(atob(b)))); var path = [];
       for (var i = 0; i + 2 < o.p.length; i += 3) path.push([o.p[i], o.p[i + 1], o.p[i + 2]]);
       return { hi: o.h, par: o.par, path: path, shots: (o.s || []).map(function (a) { return { i: a[0], p: a[1], y: a[2] }; }), t: 0, playing: false }; } catch (e) { return null; }
   }
@@ -2903,7 +2905,7 @@
     St.setBase = Math.floor(idx / 9) * 9; St.scores = St.scores || []; St.parDone = 0;
     loadHole(idx);
     St.daily = true; St.dailyN = dailyNum(); recStart(idx);
-    if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; St.ghostStrokes = (ghost.shots && ghost.shots.length) || null; if (!St.ghostName) St.ghostName = 'your challenger'; }
+    if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; St.ghostStrokes = (ghost.cs != null ? ghost.cs : (ghost.shots && ghost.shots.length)) || null; St.ghostName = ghost.name || St.ghostName || 'your challenger'; St.challenged = !!ghost.name; }
     St.banner = '⭐ DAILY #' + St.dailyN + ' · ' + (St.dailyTitle || St.hole.name); St.bannerT = 2.6;
   }
   // ---- enter the daily hole (owner-published custom hole_json) ----
@@ -2912,7 +2914,7 @@
       var d = edDeserialize(holeJson); St.setBase = 0; St.dailyTitle = title || d.name;
       playDraftInGame(d, null, title || d.name); St.hi = -1;
       St.daily = true; St.dailyN = dailyNum(); recStart(-1);
-      if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; St.ghostStrokes = (ghost.shots && ghost.shots.length) || null; if (!St.ghostName) St.ghostName = 'your challenger'; }
+      if (ghost && ghost.path && ghost.path.length) { St.ghost = ghost; St.ghost.playing = false; St.ghost.t = 0; St.ghostStrokes = (ghost.cs != null ? ghost.cs : (ghost.shots && ghost.shots.length)) || null; St.ghostName = ghost.name || St.ghostName || 'your challenger'; St.challenged = !!ghost.name; }
       St.banner = '⭐ DAILY #' + St.dailyN + ' · ' + St.dailyTitle; St.bannerT = 2.6;
     } catch (e) { loadDaily(dailyIndex(), ghost); }
   }
@@ -2940,8 +2942,9 @@
         if (g) { g.playing = false; g.t = 0; St.ghost = g; St.ghostName = pick.name; St.ghostStrokes = pick.strokes; }
       }
       var parts = [];                                        // one social-proof toast up front
-      if (sum && sum.players > 0) { parts.push('👥 ' + sum.players + ' played today'); if (sum.best != null) parts.push('🏆 best ' + sum.best); }
-      if (St.ghostName && St.ghostStrokes != null) parts.push('👻 racing ' + St.ghostName);
+      if (St.challenged && St.ghostName && St.ghostStrokes != null) parts.push('🤠 ' + St.ghostName + ' challenged you — beat ' + St.ghostStrokes);
+      else if (St.ghostName && St.ghostStrokes != null) parts.push('👻 racing ' + St.ghostName);
+      if (sum && sum.players > 0) { parts.push('👥 ' + sum.players + ' today'); if (sum.best != null) parts.push('🏆 best ' + sum.best); }
       socialToast(parts.length ? parts.join('  ·  ') : '🤠 Be the first to post today’s score!');
     }).catch(function () { });
   }
@@ -2967,7 +2970,9 @@
     var streak = (St.streak > 1) ? '\n🔥 ' + St.streak + '-day streak' : '';
     var rank = (St.standing && St.standing.total > 1) ? '\n🏆 #' + St.standing.rank + ' of ' + St.standing.total + ' today' : '';
     var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + '\nCan you beat me? 👉 ' + link + '\n#GunslingersGolf';
-    return { text: text, link: link, ghostLink: link + '#g=' + encGhost(rec), verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
+    var who = (playerName() || '').slice(0, 24);   // personalize the challenge so the recipient sees who dared them
+    var ghostLink = link + '#g=' + encGhost(rec) + (who ? '&n=' + encodeURIComponent(who) : '') + '&s=' + strokes;
+    return { text: text, link: link, ghostLink: ghostLink, verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
   }
   function dailyFinish() {
     var rec = St.rec; if (!rec) return;
@@ -3157,6 +3162,7 @@
       var _ei = parseInt(_ed, 10); loadHole(_ei >= 0 && _ei < 36 ? _ei : 0); editBuiltin(St.hi);   // owner: tweak a candidate's layout
     } else if (_qs && (_qs.has('daily') || (_hs && _hs.has('g')))) {
       var _dv = _qs.get('daily'), _gh = (_hs && _hs.has('g')) ? decGhost(_hs.get('g')) : null;
+      if (_gh && _hs) { var _gn = _hs.get('n'), _gs = _hs.get('s'); if (_gn) { try { _gh.name = decodeURIComponent(_gn); } catch (e) { _gh.name = _gn; } } if (_gs != null && !isNaN(parseInt(_gs, 10))) _gh.cs = parseInt(_gs, 10); }
       var _explicit = (_dv != null && _dv !== '') ? parseInt(_dv, 10) : null;          // ?daily=N → that exact hole
       if (_explicit == null && _gh && _gh.hi >= 0 && _gh.hi < 36) _explicit = _gh.hi;   // a shared ghost pins its hole
       enterDaily(_explicit, _gh);
