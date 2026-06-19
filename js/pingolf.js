@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 166 · LEAN GHOST';
+  var BUILD = 'BUILD 167 · GIF CLEANUP';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3081,6 +3081,7 @@
     if (sub.length > MAXF) { var step = sub.length / MAXF, ds = []; for (var i = 0; i < MAXF; i++) ds.push(sub[Math.floor(i * step)]); ds.push(sub[sub.length - 1]); sub = ds; }
     return sub;
   }
+  var lastGifUrl = null;   // bound the blob-URL leak: hold at most one generated GIF object URL at a time
   // render the highlight to an animated GIF Blob (synchronous: borrows R3.cam, must not yield to the main loop)
   function makeHighlightGif(rec, label) {
     var GQ = global_GIF(); if (!GQ) return null;
@@ -3213,7 +3214,8 @@
         setTimeout(function () {
           var blob = makeHighlightGif(rec, (playerName() ? playerName().slice(0, 16) + ' · ' : '') + S.strokes + ' strokes (' + S.overStr + ')');
           if (!blob) { gb.textContent = '🎞  GIF unavailable'; return; }
-          var url = URL.createObjectURL(blob);
+          if (lastGifUrl) { try { URL.revokeObjectURL(lastGifUrl); } catch (e) { } }   // free the previous GIF's blob (its card is gone)
+          var url = URL.createObjectURL(blob); lastGifUrl = url;
           gb.remove();
           var img = elt('img', 'width:100%;border-radius:10px;border:2px solid #5a3a1a;display:block;margin-bottom:8px;', null, gifWrap); img.src = url;
           var grow = elt('div', 'display:flex;gap:8px;', null, gifWrap);
