@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 180 · SHARE THE POSSE';
+  var BUILD = 'BUILD 181 · CHAMPIONS LADDER';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1795,7 +1795,11 @@
     elt('div', 'font:900 15px Wantedo,Georgia;color:#86d85f;white-space:nowrap;', 'PLAY ▶', daily);
     daily.onmouseenter = function () { daily.style.transform = 'translateY(-3px)'; }; daily.onmouseleave = function () { daily.style.transform = 'none'; };
     daily.onclick = function () { ov.remove(); enterDaily(null, null); };
-    if (NET()) { var arc = elt('button', 'margin-top:-8px;background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '📅 Missed a day? Play past holes', ov); arc.onclick = function () { ov.remove(); enterPastDaily(1); }; }
+    if (NET()) {
+      var lnks = elt('div', 'display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:-8px;', null, ov);
+      var arc = elt('button', 'background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '📅 Missed a day? Play past holes', lnks); arc.onclick = function () { ov.remove(); enterPastDaily(1); };
+      var champ = elt('button', 'background:transparent;border:none;color:#f5c542;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '🏆 All-time champions', lnks); champ.onclick = function () { showChampions(); };
+    }
     var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;border:2px solid #5a3a1a;border-radius:14px;background:linear-gradient(180deg,#2a1e10,#1a1109);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
     var tbl = elt('div', 'text-align:left;', null, tb);
     elt('div', 'font:900 17px Wantedo,Georgia;color:#f5c542;', '👥 PASS & PLAY', tbl);
@@ -3532,6 +3536,34 @@
     var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     cancel.onclick = function () { ov.remove(); chooseSet(); };
   }
+  // ALL-TIME CHAMPIONS — the persistent competitive ladder (daily wins, then scoring average)
+  function showChampions() {
+    var net = NET(); if (!net) return;
+    var old = document.getElementById('pg-champs'); if (old) old.remove();
+    var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.88);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-champs';
+    ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+    var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '🏆 ALL-TIME CHAMPIONS', box);
+    elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:4px 0 12px;line-height:1.4;', 'Ranked by daily wins, then scoring average. Play every day to climb the ladder.', box);
+    var listBox = elt('div', 'min-height:60px;', null, box);
+    elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Loading…', listBox);
+    var me = playerName();
+    net.champions(25).then(function (rows) {
+      listBox.textContent = '';
+      if (!rows || !rows.length) { elt('div', 'font:600 13px Georgia;color:#9c8a6a;', 'No champions yet — win a daily to claim the top spot!', listBox); return; }
+      rows.forEach(function (r, i) {
+        var mine = me && r.name === me;
+        var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:3px 0;border-radius:8px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, listBox);
+        elt('div', 'width:28px;color:#f5c542;font-weight:700;text-align:center;', i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.', row);
+        elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
+        var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av);
+        elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', r.wins + '🏆', row);
+        elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row);
+      });
+    });
+    var close = elt('button', 'width:100%;padding:12px;margin-top:12px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
+    close.onclick = function () { ov.remove(); };
+  }
   function boot() {
     audioLoadPrefs();
     St.scene = document.getElementById('scene'); St.hud = document.getElementById('hud'); St.hctx = St.hud.getContext('2d');
@@ -3650,6 +3682,7 @@
   PG.__getTeam = function () { return getTeam(); }; PG.__setTeam = function (t) { setTeam(t); }; PG.__clearTeam = function () { setTeam(null); };
   PG.__enterTeamBall = function (players, hi) { enterTeamBall(players, hi); }; PG.__teamBallFinish = function () { teamBallFinish(); }; PG.__showTeamBallSetup = function () { showTeamBallSetup(); };
   PG.__enterBestBall = function (players, hi) { enterBestBall(players, hi); };
+  PG.__showChampions = function () { showChampions(); };
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
   PG.__capReplay = function (path) { return capReplay(path); };
   PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
