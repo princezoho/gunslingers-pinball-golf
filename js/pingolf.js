@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 199 · SLIDING GATES';
+  var BUILD = 'BUILD 200 · CASTAWAY ISLES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -550,7 +550,17 @@
   function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bouncer(320, 1260).coin(0, 1680, 2); }); }
   function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.hill(0, 1000, 460, 150); b.cannon(0, 470, 0, 2300); b.bumper(-260, 1000, 44).bumper(260, 1000, 44).coin(0, 1500, 2); }); }
   function ISL6() { return isl('CANYON SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.tube(-300, 560, -300, 1500, 66); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
-  function ISL7() { return isl('CASTAWAY COVE', 4, [[0, 0], [40, 820], [-360, 1180], [-660, 1480], [-520, 1860]], 500, function (b) { b.hill(-360, 1180, 300, 90); b.bumper(40, 820, 40).bumper(-360, 1180, 40).coin(-660, 1480, 2); }); }
+  function ISL7() {   // CASTAWAY COVE — TRUE floating islands: tee on the high isle, DROP through a hole onto a separate lower isle, then a portal TELEPORTS you to the cup island
+    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    var b = builder();
+    b.island(circ(0, 360, 340), 180, { h: 90 });      // A — tee island (high)
+    b.island(circ(0, 1280, 360), 40, { h: 90 });       // B — middle island
+    b.island(circ(0, 2200, 380), -120, { h: 90 });     // C — cup island (low)
+    b.warp(0, 560, 0, 1280, 74);                        // DROP HOLE: roll off island A's far edge, fall onto island B
+    b.portal(0, 1480, [{ x: 0, z: 2000 }], 56);        // PORTAL: island B → island C (the cup island)
+    b.bumper(150, 1280, 40).coin(0, 560, 1).coin(0, 2000, 2);
+    return finish(b, 'CASTAWAY COVE', 4, { x: 0, z: 240 }, { x: 0, z: 2300 }, -520, 520, -160, 2680);
+  }
   function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.tier(1500, 120, 9999); b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
   function ISL9() { return isl('SNAKE CANYON', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.tier(1080, 150, 9999); b.tube(-240, 560, 220, 1500, 64); b.hill(40, 760, 260, 80); b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
   var ISLANDS9 = [ISL1, ISL2, ISL3, ISL4, ISL5, ISL6, ISL7, ISL8, ISL9];
@@ -1088,7 +1098,8 @@
       var gr = Math.max(spanX, spanZ) * 0.85 + 700;
       var patchTile = photoTex(gtex + '#patch', true, [Math.max(8, Math.round(gr / 180)), Math.max(8, Math.round(gr / 180))]);
       var patchM = new T.MeshStandardMaterial({ map: patchTile, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
-      var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
+      var patchY = (Array.isArray(hole.islands) && hole.islands.length) ? (Math.min.apply(null, hole.islands.map(function (il) { return il.y || 0; })) - 520) : -34;   // ISLAND holes: sink the desert floor WAY below the lowest island so they float over a deep canyon (not covered by the flat patch)
+      var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, patchY, midZ); patch.receiveShadow = true; R3.group.add(patch);
     }
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
     if (Array.isArray(hole.islands) && hole.islands.length) { hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); }); }   // SEPARATE FLOATING ISLANDS: render each at its own height with a deep cliff skirt
