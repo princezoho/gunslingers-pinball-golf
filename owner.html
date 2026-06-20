@@ -105,7 +105,7 @@
     // mirror the game's date-seeded fallback so the owner can see what players get if nothing is published
     var DAILY_EPOCH = Date.UTC(2026,0,1);
     function dailyNumFor(s){ try{ var t=Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)); return Math.max(1, Math.floor((t-DAILY_EPOCH)/86400000)+1); }catch(e){ return 1; } }
-    function dailyIndexFor(n){ return (((n*7+5)%36)+36)%36; }
+    function dailyIndexFor(n){ return 27 + ((((n*7+5)%9)+9)%9); }   // WILD holes only (27-35) — keep in sync with pingolf.js
     function autoHoleFor(day){ var idx=dailyIndexFor(dailyNumFor(day)); return { idx:idx, name:(HOLES[idx]?HOLES[idx].name:('hole '+idx)) }; }
 
     function unlock(){
@@ -161,17 +161,12 @@
       });
     }
     function pick3(){
-      // one hole from each section for variety: Front 9 (0-8), Mid+Back (9-26), WILD shaped (27-35)
-      var buckets=[[0,8],[9,26],[27,35]], chosen=[];
-      buckets.forEach(function(bk){
-        var avail=[], i;
-        for(i=bk[0];i<=bk[1];i++){ if(!recentIdx[i] && chosen.indexOf(i)<0) avail.push(i); }   // prefer not-recently-used
-        if(!avail.length){ for(i=bk[0];i<=bk[1];i++){ if(chosen.indexOf(i)<0) avail.push(i); } }  // relax if the whole section was recent
-        if(avail.length) chosen.push(avail[Math.floor(Math.random()*avail.length)]);
-      });
-      while(chosen.length<3){ var r=Math.floor(Math.random()*36); if(chosen.indexOf(r)<0) chosen.push(r); }
-      for(var k=chosen.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var t=chosen[k];chosen[k]=chosen[j];chosen[j]=t; }
-      return chosen.slice(0,3);
+      // propose the WILD, weird-shaped holes (27-35) — organic snakes, branching forks, floating islands, the contraption gauntlet — NOT the plain box fairways. Prefer not-recently-used.
+      var avail=[], i;
+      for(i=27;i<=35;i++){ if(!recentIdx[i]) avail.push(i); }
+      if(avail.length<3){ for(i=27;i<=35;i++){ if(avail.indexOf(i)<0) avail.push(i); } }   // relax if most were recent
+      for(var k=avail.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var t=avail[k];avail[k]=avail[j];avail[j]=t; }   // shuffle
+      return avail.slice(0,3);
     }
     function propose(){
       var ids=pick3(), c=$('props'); c.innerHTML='';

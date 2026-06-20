@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 212 · THREE FORKS';
+  var BUILD = 'BUILD 213 · WILD DAILY';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3076,7 +3076,7 @@
      The viral loop: one daily hole, record your run, race other players' ghosts, share your score. */
   var DAILY_EPOCH = Date.UTC(2026, 0, 1);
   function dailyNum() { return Math.max(1, Math.floor((Date.now() - DAILY_EPOCH) / 86400000) + 1); }
-  function dailyIndexFor(n) { return (((n * 7 + 5) % 36) + 36) % 36; }   // deterministic hole for a given daily number
+  function dailyIndexFor(n) { return 27 + ((((n * 7 + 5) % 9) + 9) % 9); }   // deterministic WILD hole (27-35: organic snakes, forks, islands, gauntlet) — the auto daily is always a weird-shaped hole, never a plain box fairway
   function dailyIndex() { return dailyIndexFor(dailyNum()); }            // spread across all 36 holes
   function dailyNumFor(ymd) { try { var t = Date.UTC(+ymd.slice(0, 4), +ymd.slice(5, 7) - 1, +ymd.slice(8, 10)); return Math.max(1, Math.floor((t - DAILY_EPOCH) / 86400000) + 1); } catch (e) { return dailyNum(); } }
   function pastDayKey(daysAgo) { var net = NET(); var base = net ? net.todayKey() : new Date().toISOString().slice(0, 10); try { var d = new Date(base + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - daysAgo); return d.toISOString().slice(0, 10); } catch (e) { return base; } }
@@ -3371,6 +3371,9 @@
     var S = shareStrings(rec);
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-daily';
     var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    // ✕ dismiss — close the card and just play/look around (it auto-pops on revisit; let people get out of it)
+    var closeX = elt('div', 'position:fixed;top:12px;right:16px;z-index:59;width:40px;height:40px;line-height:38px;text-align:center;font:900 24px Georgia;color:#f5efdc;cursor:pointer;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid rgba(245,197,66,.6);', '✕', ov);
+    closeX.title = 'Close — practice this hole'; closeX.onclick = function () { ov.remove(); if ((St.state === 'sunk' || St.state === 'done') && St.hi >= 0) { try { loadHole(St.hi); } catch (e) { } } };
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '⭐ GUNSLINGERS DAILY #' + S.n, box);
     elt('div', 'font:900 26px Wantedo,Georgia;color:#f5c542;margin:2px 0 4px;', S.name, box);
     if (St.streak > 1) elt('div', 'display:inline-block;font:800 13px Georgia;color:#ff9a3a;background:rgba(255,138,42,.14);border:1px solid rgba(255,138,42,.5);border-radius:20px;padding:3px 12px;margin-bottom:6px;', '🔥 ' + St.streak + '-day streak', box);
