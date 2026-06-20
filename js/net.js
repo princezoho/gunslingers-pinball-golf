@@ -62,7 +62,9 @@
     // champions ladder: [{name,dailies,avg_over,wins}]. days=null all-time, days=7 this week
     champions: function (limit, days) { return rpc('champions', { p_limit: limit || 25, p_days: days == null ? null : days }).catch(function () { return []; }); },
     // TEAM champions: [{name,days,best,wins}], same optional period
-    teamChampions: function (limit, days) { return rpc('team_champions', { p_limit: limit || 25, p_days: days == null ? null : days }).catch(function () { return []; }); }
+    teamChampions: function (limit, days) { return rpc('team_champions', { p_limit: limit || 25, p_days: days == null ? null : days }).catch(function () { return []; }); },
+    // owner engagement snapshot: {players_today,plays_today,players_7d,plays_7d,teams_total}
+    engagement: function () { return rpc('engagement', {}).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); }
   };
   global.PGNet = PGNet;
 })(typeof window !== 'undefined' ? window : this);

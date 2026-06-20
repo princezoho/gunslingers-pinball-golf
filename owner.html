@@ -64,6 +64,11 @@
     </div>
 
     <div class="panel">
+      <h2>📊 Engagement <button class="btn btn-wood" style="float:right;padding:3px 10px;font-size:12px" onclick="loadEngagement()">↻</button></h2>
+      <div id="engage"><p class="hint">Loading…</p></div>
+    </div>
+
+    <div class="panel">
       <h2>② Today’s three candidates</h2>
       <div class="row" style="margin-bottom:6px">
         <button class="btn btn-gold" onclick="propose()">🎲 Propose 3 holes</button>
@@ -88,7 +93,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/net.js?v=8"></script>
+  <script src="js/net.js?v=15"></script>
   <script>
     var HOLES = [{"i":0,"name":"DEAD MAN'S DRIFT","par":4,"theme":"grass"},{"i":1,"name":"TWO-STEP MESA","par":4,"theme":"grass"},{"i":2,"name":"RATTLESNAKE GULCH","par":4,"theme":"grass"},{"i":3,"name":"STAMPEDE ALLEY","par":4,"theme":"grass"},{"i":4,"name":"CANYON SPLIT","par":4,"theme":"grass"},{"i":5,"name":"HIGH NOON HOP","par":4,"theme":"grass"},{"i":6,"name":"VARMINT VALLEY II","par":4,"theme":"grass"},{"i":7,"name":"WINDMILL ROW","par":4,"theme":"grass"},{"i":8,"name":"THE RECKONING","par":4,"theme":"grass"},{"i":9,"name":"GREENHORN GULCH","par":3,"theme":"grass"},{"i":10,"name":"BUMPER BARN","par":4,"theme":"grass"},{"i":11,"name":"SLOPE SALOON","par":4,"theme":"grass"},{"i":12,"name":"THE BIG JUMP","par":3,"theme":"grass"},{"i":13,"name":"WINDMILL RUN","par":4,"theme":"grass"},{"i":14,"name":"SPIRAL FUNNEL","par":4,"theme":"grass"},{"i":15,"name":"LASER GAUNTLET","par":4,"theme":"grass"},{"i":16,"name":"HIGHRISE","par":4,"theme":"grass"},{"i":17,"name":"THE GAUNTLET","par":4,"theme":"grass"},{"i":18,"name":"FROZEN POND","par":4,"theme":"ice"},{"i":19,"name":"MOON CRATERS","par":4,"theme":"moon"},{"i":20,"name":"GHOST TOWN PORTALS","par":4,"theme":"grass"},{"i":21,"name":"LOOP-DE-LOOP CITY","par":4,"theme":"grass"},{"i":22,"name":"DUTCH WINDMILL ROW","par":4,"theme":"grass"},{"i":23,"name":"VARMINT VALLEY","par":4,"theme":"grass"},{"i":24,"name":"COIN RUSH","par":4,"theme":"speed"},{"i":25,"name":"FIRE LEAP CANYON","par":4,"theme":"grass"},{"i":26,"name":"DOUBLE DECKER","par":4,"theme":"grass"},{"i":27,"name":"TIDAL TWIST","par":3,"theme":"grass"},{"i":28,"name":"THE ELBOW","par":3,"theme":"grass"},{"i":29,"name":"FISH HOOK","par":4,"theme":"grass"},{"i":30,"name":"SIDEWINDER","par":4,"theme":"grass"},{"i":31,"name":"THE BULGE","par":3,"theme":"grass"},{"i":32,"name":"CANYON SWEEP","par":3,"theme":"grass"},{"i":33,"name":"CASTAWAY COVE","par":4,"theme":"grass"},{"i":34,"name":"CORAL BEND","par":4,"theme":"grass"},{"i":35,"name":"SNAKE CANYON","par":3,"theme":"grass"}];
     var WILD = [27,28,29,30,31,32,33,34,35];
@@ -117,7 +122,22 @@
     function enter(){
       try{ sessionStorage.setItem('pg_owner_pass', pass); }catch(e){}
       $('gate').style.display='none'; $('app').style.display='block';
-      var t=new Date(); $('day').value=ymd(t); refreshDayStatus(); loadRecent(); loadBank(); loadSched();
+      var t=new Date(); $('day').value=ymd(t); refreshDayStatus(); loadEngagement(); loadRecent(); loadBank(); loadSched();
+    }
+    function engStat(label, val){ return '<div style="text-align:center;min-width:84px"><div style="font:900 26px Georgia;color:#f5c542;line-height:1.1">'+(val==null?'—':val)+'</div><div class="hint" style="margin:2px 0 0">'+label+'</div></div>'; }
+    function loadEngagement(){
+      var el=$('engage'); if(!el) return; el.innerHTML='<p class="hint">Loading…</p>';
+      PGNet.engagement().then(function(e){
+        if(!e){ el.innerHTML='<p class="hint">Couldn’t load engagement.</p>'; return; }
+        el.innerHTML = '<div class="row" style="gap:14px;flex-wrap:wrap;justify-content:space-around;align-items:flex-end">'
+          + engStat('Players today', e.players_today) + engStat('Plays today', e.plays_today)
+          + engStat('Players / 7d', e.players_7d) + engStat('Plays / 7d', e.plays_7d)
+          + engStat('Teams', e.teams_total) + '</div>'
+          + '<p class="hint" style="margin-top:8px">' + ((e.players_today>0) ? '🔥 The daily is live — '+e.players_today+' playing today.' : '😴 No plays yet today. Publish a hole + share game.html?daily.') + '</p>';
+        PGNet.teamChampions(3, 7).then(function(rows){
+          if(rows && rows.length){ el.insertAdjacentHTML('beforeend', '<p class="hint" style="margin-top:2px">🏴 Top teams this week: ' + rows.map(function(r,i){ return (i+1)+'. '+r.name+' ('+r.wins+'🏆)'; }).join('  ·  ') + '</p>'); }
+        });
+      });
     }
     function loadRecent(){
       PGNet.fetchSchedule().then(function(rows){
