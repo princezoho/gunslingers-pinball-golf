@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 193 · BEST SHOT GIF';
+  var BUILD = 'BUILD 194 · FIND THE STUDIO';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1806,6 +1806,7 @@
       var lnks = elt('div', 'display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:-8px;', null, ov);
       var arc = elt('button', 'background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '📅 Missed a day? Play past holes', lnks); arc.onclick = function () { ov.remove(); enterPastDaily(1); };
       var champ = elt('button', 'background:transparent;border:none;color:#f5c542;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '🏆 All-time champions', lnks); champ.onclick = function () { showChampions(); };
+      var own = elt('button', 'background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '⚙ Owner Studio', lnks); own.title = 'Set & edit the daily hole (passcode)'; own.onclick = function () { location.href = 'owner.html'; };
     }
     var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;border:2px solid #5a3a1a;border-radius:14px;background:linear-gradient(180deg,#2a1e10,#1a1109);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
     var tbl = elt('div', 'text-align:left;', null, tb);
