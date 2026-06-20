@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 187 · OVERLOAD FIX';
+  var BUILD = 'BUILD 188 · GULCH TUNNEL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -122,6 +122,7 @@
   function H1() { // GREENHORN GULCH — hourglass fairway: thread the waist between the slingshots, then curl into the offset green
     var b = builder().box(-410, -40, 410, 1660, { h: 52 });
     botFlip(b, 110);
+    b.tunnel(0, 230, 0, 560, { w: 190, h: 64 });             // see-through glass tunnel over the opening straight into the waist
     b.wall(-410, 620, -130, 850, { h: 52, e: 0.62 }).wall(410, 620, 130, 850, { h: 52, e: 0.62 });    // the pinch
     b.wall(-130, 850, -410, 1090, { h: 52, e: 0.62 }).wall(130, 850, 410, 1090, { h: 52, e: 0.62 });  // opens back out
     b.bumper(-185, 740, 36).bumper(185, 740, 36);            // slingshots guard the waist
