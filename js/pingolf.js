@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 214 · BLOB ISLES';
+  var BUILD = 'BUILD 215 · METAL TUNNEL + SOCIAL FIX';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1389,20 +1389,24 @@
       if (!s.curve) [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);   // posts only on straight box walls — an organic curb gets a clean rail instead of a post at every tiny segment
         var pcap = new T.Mesh(new T.SphereGeometry(10.5, 22, 14, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
-    // SEE-THROUGH TUNNELS — translucent glass covers (side panels + roof, open ends) so the ball rolls through and stays visible; collision is on the rail walls (rendered above is skipped for them)
+    // METAL TUNNELS — a polished-steel skeleton (corner rails + hoop-rib U-frames) with faint smoked-metal glazing, so the ball rolls through and stays visible but it reads as METAL, not cheap blue glass
     (hole.tunnels || []).forEach(function (tn) {
       var tdx = tn.bx - tn.ax, tdz = tn.bz - tn.az, tL = hyp(tdx, tdz); if (tL < 1) return;
       var tmx = (tn.ax + tn.bx) / 2, tmz = (tn.az + tn.bz) / 2, tgy = hole.terrain(tmx, tmz);
-      var glass = new T.MeshStandardMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.15, roughness: 0.06, metalness: 0, side: T.DoubleSide, depthWrite: false });
-      var frameM = new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: 0.55, depthWrite: false });
+      var paneM = new T.MeshStandardMaterial({ color: 0x6f7a86, transparent: true, opacity: 0.17, roughness: 0.12, metalness: 0.92, side: T.DoubleSide, depthWrite: false, envMapIntensity: 1.5 });   // smoked metal-tinted glazing — see-through, but metallic not blue
+      var steelM = metalMat(0xb2b8c2, 1, 1.8), boltM = metalMat(0x8a9099, 1, 1.4);   // polished steel frame
       var grp = new T.Group(); grp.position.set(tmx, tgy, tmz); grp.rotation.y = Math.atan2(tdx, tdz);
-      [-1, 1].forEach(function (sgn) {
-        if (!tn.roofOnly) { var side = new T.Mesh(new T.PlaneGeometry(tL, tn.h), glass); side.rotation.y = PI / 2; side.position.set(sgn * tn.w, tn.h / 2, 0); grp.add(side); }   // roof-only tunnels use the EXISTING channel walls as sides
-        var rail = new T.Mesh(new T.BoxGeometry(6, 6, tL), frameM); rail.position.set(sgn * tn.w, tn.h, 0); grp.add(rail);   // glowing top rail / eave so the channel reads
-      });
-      var roof = new T.Mesh(new T.PlaneGeometry(tn.w * 2, tL), glass); roof.rotation.x = -PI / 2; roof.position.set(0, tn.h, 0); grp.add(roof);
-      var ribs = Math.max(2, Math.round(tL / 130));   // hoop ribs so the cover reads as a tunnel, not a flat pane
-      for (var ri = 0; ri <= ribs; ri++) { var rib = new T.Mesh(new T.BoxGeometry(tn.w * 2, 5, 5), frameM); rib.position.set(0, tn.h, -tL / 2 + (tL * ri / ribs)); grp.add(rib); }
+      [-1, 1].forEach(function (sgn) { if (!tn.roofOnly) { var side = new T.Mesh(new T.PlaneGeometry(tL, tn.h), paneM); side.rotation.y = PI / 2; side.position.set(sgn * tn.w, tn.h / 2, 0); grp.add(side); } });
+      var roof = new T.Mesh(new T.PlaneGeometry(tn.w * 2, tL), paneM); roof.rotation.x = -PI / 2; roof.position.set(0, tn.h, 0); grp.add(roof);
+      // four polished-steel corner rails running the length of the tunnel
+      [[-1, tn.h], [1, tn.h], [-1, 0], [1, 0]].forEach(function (e) { var rail = new T.Mesh(new T.CylinderGeometry(7, 7, tL, 14), steelM); rail.rotation.x = PI / 2; rail.position.set(e[0] * tn.w, e[1], 0); rail.castShadow = true; grp.add(rail); });
+      // metal HOOP RIBS — a U-frame (top beam + 2 posts) every ~120, with bolt collars where they meet the rails
+      var ribs = Math.max(2, Math.round(tL / 120));
+      for (var ri = 0; ri <= ribs; ri++) {
+        var zz = -tL / 2 + (tL * ri / ribs);
+        var beam = new T.Mesh(new T.BoxGeometry(tn.w * 2 + 16, 11, 11), steelM); beam.position.set(0, tn.h, zz); beam.castShadow = true; grp.add(beam);
+        if (!tn.roofOnly) [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.BoxGeometry(11, tn.h, 11), steelM); post.position.set(sgn * tn.w, tn.h / 2, zz); grp.add(post); var bolt = new T.Mesh(new T.CylinderGeometry(10, 10, 8, 12), boltM); bolt.rotation.x = PI / 2; bolt.position.set(sgn * tn.w, tn.h, zz); grp.add(bolt); });
+      }
       R3.group.add(grp);
     });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
@@ -3409,17 +3413,18 @@
     var net = NET();
     if (net && net.enabled && St.dailyDay) {
       var lbWrap = elt('div', 'margin:2px 0 12px;', null, box);
-      var firstTime = !playerName() && !St.dailyPractice;
+      var firstTime = !playerName() && !St.dailyPractice && !St.archive;
+      if (firstTime) setPlayerName('Gunslinger' + (100 + Math.floor(Math.random() * 900)));   // EVERY finisher lands on the board — anon players get an auto-name they can change below + re-post
       if (St.archive) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;line-height:1.4;', '📅 Archive · Daily #' + St.dailyN + ' — a past hole, just for fun (doesn’t count).', lbWrap);
       else if (St.dailyPractice) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;line-height:1.4;', '🎯 Practice round — you already played today’s daily. Scores count once a day; come back tomorrow for a fresh hole!', lbWrap);
-      else if (firstTime) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;', '🤠 Pick a name to claim your spot on today’s leaderboard 👇', lbWrap);
+      else if (firstTime) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;', '🤠 You’re on the board! ✏️ Change your name below + tap POST to claim it.', lbWrap);
       var postRow = elt('div', 'display:flex;gap:6px;', null, lbWrap);
       var nameIn = elt('input', 'flex:1;padding:10px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
       nameIn.placeholder = 'Your name'; nameIn.maxLength = 24; nameIn.value = playerName();
-      nameIn.onchange = function () { var v = (nameIn.value || '').trim(); if (v) setPlayerName(v); };   // remember the name even if they don't hit POST — frictionless next visit
+      nameIn.onchange = function () { var v = (nameIn.value || '').trim(); if (v) { setPlayerName(v); if (!St.dailyPractice && !St.archive) { postBtn.disabled = false; postBtn.textContent = '🏆 POST as ' + v.slice(0, 12); postBtn.style.background = 'linear-gradient(180deg,#3a8a30,#1f5018)'; } } };   // change your name → re-post under it
       if (firstTime) { nameIn.style.borderColor = '#f5c542'; nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.3)'; nameIn.onfocus = function () { nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.6)'; }; }
       var postBtn = elt('button', 'padding:10px 14px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '🏆 POST', postRow);
-      if (St.dailyPractice) { postRow.style.display = 'none'; }   // no posting on practice runs
+      if (St.dailyPractice || St.archive) { postRow.style.display = 'none'; }   // no posting on practice/archive runs
       var lbBox = elt('div', 'margin-top:10px;', null, lbWrap);
       function renderLB() {
         lbBox.textContent = '';
@@ -3457,7 +3462,7 @@
         });
       }
       postBtn.onclick = doPost;
-      if (St.dailyPractice) { renderLB(); } else if (playerName()) { doPost(); } else { renderLB(); }   // practice never posts; returning players auto-post
+      if (St.dailyPractice || St.archive) { renderLB(); } else { doPost(); }   // practice/archive never post; EVERY real finish auto-posts (we always have a name now)
       // ---- TEAMS: form a posse, battle other teams on the daily ----
       var teamWrap = elt('div', 'margin:6px 0 12px;padding:10px;background:rgba(245,197,66,.05);border:1px solid rgba(245,197,66,.25);border-radius:10px;text-align:left;', null, lbWrap);
       function myTeamName() { return (playerName() || (nameIn.value || '').trim() || '').slice(0, 24); }
