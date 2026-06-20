@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 211 · DIAMONDBACK';
+  var BUILD = 'BUILD 212 · THREE FORKS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -553,7 +553,19 @@
   }
   function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.hill(-160, 1040, 320, 90).hill(60, 1660, 280, 80); b.bumper(-40, 1040, 40).bouncer(-160, 1560).coin(-160, 520, 1).coin(240, 1040, 1); }); }
   function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 140, 9999); b.tube(20, 560, 560, 1240, 64); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
-  function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.hill(60, 900, 280, 90); b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
+  function ISL3() {   // THREE FORKS — the fairway fans into THREE lanes (bumper alley / hill / slide) that all reconverge at the cup. Pick your route.
+    var b = builder();
+    var poly = [{ x: -250, z: 0 }, { x: -640, z: 480 }, { x: -700, z: 1000 }, { x: -680, z: 1620 }, { x: -340, z: 2060 }, { x: -150, z: 2360 }, { x: 150, z: 2360 }, { x: 340, z: 2060 }, { x: 680, z: 1620 }, { x: 700, z: 1000 }, { x: 640, z: 480 }, { x: 250, z: 0 }];
+    b.shape(poly, { h: 62, e: 0.55 });
+    b.wall(-230, 600, -230, 1600, { h: 62 });   // lane divider 1
+    b.wall(230, 600, 230, 1600, { h: 62 });      // lane divider 2  → 3 lanes between z 600–1600, merging above
+    b.bumper(-460, 880, 40).bumper(-460, 1320, 40);   // LEFT lane — bumper alley
+    b.hill(0, 1080, 270, 120);                         // MID lane — a hill to climb
+    b.tube(460, 860, 0, 1880, 60);                     // RIGHT lane — a SLIDE straight to the converge
+    b.firering(0, 1780, 110, 170, 150);                // fire hoop in the merge
+    b.coin(-460, 700, 1).coin(460, 700, 1).coin(0, 1880, 2);
+    return finish(b, 'THREE FORKS', 4, { x: 0, z: 150 }, { x: 0, z: 2270 }, -760, 760, -80, 2480);
+  }
   function ISL4() {   // DIAMONDBACK RUN — a long snake: THREE tight pinches between THREE big arenas, with a slide, a hill, a wrecking ball, a fire hoop and a teleport
     return isl('DIAMONDBACK RUN', 4,
       [[0, 0], [-340, 560], [320, 1080], [-300, 1580], [320, 2080], [-140, 2520], [0, 2880]],
