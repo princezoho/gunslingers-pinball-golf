@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 197 · FLOATING ISLANDS (FOUNDATION)';
+  var BUILD = 'BUILD 198 · ISLAND GRASS FILL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -107,7 +107,7 @@
     var plats = feats.filter(function (f) { return f.kind === 'platform'; });   // SEPARATE ISLANDS: each is a polygon at its own height; OFF every island = a deep void (the ball falls)
     return function (x, z) {
       var h = 0;
-      if (plats.length) { h = -2400; for (var pj = 0; pj < plats.length; pj++) { if (inPoly(plats[pj].poly, x, z) || edgeDist(plats[pj].poly, x, z) < 40) { h = plats[pj].y || 0; break; } } }   // land on the island under (x,z) (incl. its curb edge), else void
+      if (plats.length) { h = -2400; for (var pj = 0; pj < plats.length; pj++) { if (inPolyWind(plats[pj].poly, x, z) || edgeDist(plats[pj].poly, x, z) < 40) { h = plats[pj].y || 0; break; } } }   // land on the island under (x,z) (incl. its curb edge), else void
       for (var i = 0; i < feats.length; i++) {
         var f = feats[i];
         if (f.kind === 'hill') h += f.h * gauss(hyp(x - f.x, z - f.z), f.rad);
@@ -832,6 +832,9 @@
   function inPoly(poly, x, z) {   // ray-cast point-in-polygon
     var c = false; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j]; if (((a.z > z) !== (b.z > z)) && (x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x)) c = !c; } return c;
   }
+  function inPolyWind(poly, x, z) {   // NONZERO winding rule — counts self-overlapping regions (curvy ribbons) as INSIDE, so the green fills solid. Same as inPoly for simple polygons.
+    var wn = 0, n = poly.length; for (var i = 0; i < n; i++) { var a = poly[i], b = poly[(i + 1) % n], side = (b.x - a.x) * (z - a.z) - (x - a.x) * (b.z - a.z); if (a.z <= z) { if (b.z > z && side > 0) wn++; } else { if (b.z <= z && side < 0) wn--; } } return wn !== 0;
+  }
   function edgeDist(poly, x, z) {   // shortest distance from (x,z) to the polygon boundary
     var best = 1e18; for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length], dx = b.x - a.x, dz = b.z - a.z, L = dx * dx + dz * dz, t = L ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L)) : 0, px = a.x + t * dx, pz = a.z + t * dz, d = hyp(x - px, z - pz); if (d < best) best = d; } return best;
   }
@@ -844,10 +847,11 @@
     var sxn = Math.max(12, Math.round(gw / 34)), szn = Math.max(12, Math.round(gd / 34));
     var geo = new T.PlaneGeometry(gw, gd, sxn, szn); geo.rotateX(-PI / 2); geo.translate(cmx, 0, cmz);
     var pos = geo.attributes.position;
-    for (i = 0; i < pos.count; i++) pos.setY(i, hole.terrain(pos.getX(i), pos.getZ(i)) + 0.5);
+    var floorY = (skB0 != null) ? (skB0 + 360 - 6) : -1e9;   // ISLAND: clamp green vertices to the island top so edge triangles don't plunge into the void (leaving the surface flat + solid)
+    for (i = 0; i < pos.count; i++) pos.setY(i, Math.max(hole.terrain(pos.getX(i), pos.getZ(i)), floorY) + 0.5);
     var cell = Math.max(gw / sxn, gd / szn), openR = K.cupR + cell;
     var gidx = geo.index.array, keep = [];
-    for (i = 0; i < gidx.length; i += 3) { var i0 = gidx[i], i1 = gidx[i + 1], i2 = gidx[i + 2], ccx = (pos.getX(i0) + pos.getX(i1) + pos.getX(i2)) / 3, ccz = (pos.getZ(i0) + pos.getZ(i1) + pos.getZ(i2)) / 3; if (inPoly(poly, ccx, ccz) && (!hasCup || hyp(ccx - cup.x, ccz - cup.z) > openR)) keep.push(i0, i1, i2); }
+    for (i = 0; i < gidx.length; i += 3) { var i0 = gidx[i], i1 = gidx[i + 1], i2 = gidx[i + 2], ccx = (pos.getX(i0) + pos.getX(i1) + pos.getX(i2)) / 3, ccz = (pos.getZ(i0) + pos.getZ(i1) + pos.getZ(i2)) / 3; if (inPolyWind(poly, ccx, ccz) && (!hasCup || hyp(ccx - cup.x, ccz - cup.z) > openR)) keep.push(i0, i1, i2); }   // winding rule so curvy/self-overlapping islands fill solid
     geo.setIndex(keep); geo.computeVertexNormals();
     var grassN = photoTex('grass_n.jpg#isl', false, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var grassD = photoTex('grass_g.jpg#isl', true, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
