@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 173 · BEST BALL';
+  var BUILD = 'BUILD 174 · COURSE RECORDS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1826,7 +1826,7 @@
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
-    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.archive = false; St.daySummary = null; St.teamBall = false; St.bestBall = false; tbClearTurn(); if (R3.ghostMesh) R3.ghostMesh.visible = false;
+    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.archive = false; St.daySummary = null; St.courseRecord = null; St.teamBall = false; St.bestBall = false; tbClearTurn(); if (R3.ghostMesh) R3.ghostMesh.visible = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -3006,9 +3006,11 @@
   function afterDailyLoaded(urlGhost) {
     showHowTo();
     var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
-    Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 3)]).then(function (res) {
+    var recHi = St.hi;   // the daily's hole layout (>=0 for seeded/published-index; -1 for custom) — for the all-time course record
+    Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 3), net.courseRecord(recHi)]).then(function (res) {
       if (!St.daily) return;
       var sum = res[0], rows = res[1];
+      St.courseRecord = res[2] || null;                       // best score ever on this hole (before this run)
       if (!urlGhost && rows && rows.length && !St.ghost) {   // race the best real player ghost that ISN'T you
         var me = playerName(), pick = null;
         for (var ri = 0; ri < rows.length; ri++) { if (rows[ri].name !== me) { pick = rows[ri]; break; } }
@@ -3061,7 +3063,9 @@
       var da = Number(St.daySummary.avg_over);
       if (da >= 1.5) diff = '\n💀 Brutal one — field avg +' + da; else if (da < -0.4) diff = '\n😎 Everyone’s acing it — field avg ' + da;
     }
-    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + streak + rank + diff + '\n' + dailyCTA() + ' 👉 ' + link + '\n#GunslingersGolf';
+    var record = '';   // course-record brag (huge viral hook) — only on live, fixed-layout runs
+    if (rec.hi >= 0 && !St.archive && !St.dailyPractice) { var cr = St.courseRecord; if (!cr || strokes < cr.best) record = '\n🏆 NEW COURSE RECORD'; else if (strokes === cr.best) record = '\n⚡ Tied the course record'; }
+    var text = '🤠 Gunslingers Daily #' + n + '\n' + name + ' — ' + strokes + ' strokes (' + overStr + ') ' + (over <= -1 || strokes === 1 ? '🔥' : '') + '\n' + bar + vs + record + streak + rank + diff + '\n' + dailyCTA() + ' 👉 ' + link + '\n#GunslingersGolf';
     var who = (playerName() || '').slice(0, 24);   // personalize the challenge so the recipient sees who dared them
     var ghostLink = link + '#g=' + encGhost(rec) + (who ? '&n=' + encodeURIComponent(who) : '') + '&s=' + strokes;
     return { text: text, link: link, ghostLink: ghostLink, verdict: verdict, over: over, overStr: overStr, strokes: strokes, par: par, name: name, n: n };
@@ -3155,6 +3159,17 @@
     // ---- shared difficulty read ----
     var diff = difficultyLine(St.daySummary);
     if (diff) elt('div', 'font:800 13px Georgia;color:#f5c542;margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);border-radius:8px;max-width:340px;', diff, box);
+    // ---- all-time course record on this hole layout (St.courseRecord = the record BEFORE this run) ----
+    if (NET() && St.hi >= 0) {
+      var cr = St.courseRecord, crMsg = '', crCol = '#f5c542';
+      if (!St.archive && !St.dailyPractice) {
+        if (!cr) { crMsg = '🏆 COURSE RECORD — first to conquer this hole (' + S.strokes + ')!'; crCol = '#86d85f'; }
+        else if (S.strokes < cr.best) { crMsg = '🏆 NEW COURSE RECORD! You beat ' + cr.name + '’s ' + cr.best; crCol = '#86d85f'; }
+        else if (S.strokes === cr.best) { crMsg = '⚡ You TIED the course record (' + cr.best + ' · ' + cr.name + ')'; }
+        else { crMsg = '⚡ Course record: ' + cr.best + ' by ' + cr.name; }
+      } else if (cr) { crMsg = '⚡ Course record: ' + cr.best + ' by ' + cr.name; }
+      if (crMsg) elt('div', 'font:800 13px Georgia;color:' + crCol + ';margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);border-radius:8px;max-width:340px;', crMsg, box);
+    }
     // ---- post score + live leaderboard ----
     var net = NET();
     if (net && net.enabled && St.dailyDay) {

@@ -54,7 +54,9 @@
     // ---- teams (team-vs-team daily competition) ----
     createTeam: function (name) { return rpc('create_team', { p_name: name }).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); },
     joinTeam: function (code, player) { return rpc('join_team', { p_code: code, p_player: player }).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); },
-    teamStanding: function (day) { return rpc('team_standing', { p_day: day || todayKey() }).catch(function () { return []; }); }
+    teamStanding: function (day) { return rpc('team_standing', { p_day: day || todayKey() }).catch(function () { return []; }); },
+    // all-time best score on a hole layout (course record); resolves {best,name} or null
+    courseRecord: function (hole) { if (hole == null || hole < 0) return Promise.resolve(null); return rpc('course_record', { p_hole: hole }).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); }
   };
   global.PGNet = PGNet;
 })(typeof window !== 'undefined' ? window : this);
