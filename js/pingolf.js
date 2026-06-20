@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 210 · SMOOTH AIM';
+  var BUILD = 'BUILD 211 · DIAMONDBACK';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -554,7 +554,20 @@
   function ISL1() { return isl('TIDAL TWIST', 3, [[0, 0], [-220, 520], [240, 1040], [-160, 1560], [40, 2040]], 540, function (b) { b.hill(-160, 1040, 320, 90).hill(60, 1660, 280, 80); b.bumper(-40, 1040, 40).bouncer(-160, 1560).coin(-160, 520, 1).coin(240, 1040, 1); }); }
   function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 140, 9999); b.tube(20, 560, 560, 1240, 64); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
   function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.hill(60, 900, 280, 90); b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
-  function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bouncer(320, 1260).coin(0, 1680, 2); }); }
+  function ISL4() {   // DIAMONDBACK RUN — a long snake: THREE tight pinches between THREE big arenas, with a slide, a hill, a wrecking ball, a fire hoop and a teleport
+    return isl('DIAMONDBACK RUN', 4,
+      [[0, 0], [-340, 560], [320, 1080], [-300, 1580], [320, 2080], [-140, 2520], [0, 2880]],
+      function (t) { return 165 + 540 * Math.pow(Math.sin(t * PI * 3), 2); },   // tight ~165 pinches between big ~705 arenas
+      function (b, tee, cup) {
+        b.hill(-340, 560, 320, 130);                                   // hill in arena 1
+        b.bumper(-240, 560, 38).bumper(-440, 560, 38);
+        b.tube(320, 1080, -300, 1580, 66);                             // SLIDE across the bend
+        b.pendulum(0, 1330, { len: 270, amp: 0.8, speed: 1.2, rb: 36 });   // wrecking ball in a pinch
+        b.firering(320, 2080, 115, 175, 150);                          // FIRE HOOP (bonus) in arena 3
+        b.portal(-140, 2520, [{ x: 0, z: 2740 }], 52);                 // TELEPORT toward the cup
+        b.coin(-340, 560, 1).coin(320, 2080, 1).coin(0, 2880, 2);
+      });
+  }
   function ISL5() {   // STEPPING STONES — floating isles: ride a LOOP-DE-LOOP on the tee isle into the tube, land on the mid isle, ride a CONVEYOR to the drop hole, fall to the cup isle
     function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
     var b = builder();
