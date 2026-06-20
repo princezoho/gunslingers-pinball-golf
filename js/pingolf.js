@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 178 · ALWAYS SEE THE BALL';
+  var BUILD = 'BUILD 179 · ONE-TAP SHARE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3321,6 +3321,10 @@
       if (!St.archive) renderTeams();   // teams compete on the live daily, not past-hole archive
     }
     var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
+    if (navigator.share) {   // mobile: one-tap native share sheet (Messages, WhatsApp, Discord, X, …) — the most usable way to share
+      var nsb = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤  SHARE MY SCORE', box);
+      nsb.onclick = function () { var s = shareStrings(rec); try { navigator.share({ title: 'Gunslingers Daily #' + s.n, text: s.text }).catch(function () { }); } catch (e) { copyText(s.text, 'Result copied — paste anywhere!'); } };
+    }
     var xb = elt('button', prim + 'background:linear-gradient(180deg,#1d9bf0,#0d6fb8);', '𝕏  SHARE ON X', box);
     xb.onclick = function () { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareStrings(rec).text), '_blank', 'noopener'); };
     var dc = elt('button', prim + 'background:linear-gradient(180deg,#5865F2,#3b45c4);', '💬  COPY FOR DISCORD', box);
