@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 202 · CONVEYOR BELTS';
+  var BUILD = 'BUILD 203 · STEPPING STONES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -550,7 +550,18 @@
   function ISL2() { return isl('THE ELBOW', 3, [[0, 0], [0, 760], [120, 1080], [560, 1240], [980, 1320]], 500, function (b) { b.tier(880, 140, 9999); b.tube(20, 560, 560, 1240, 64); b.bumper(120, 1080, 42).coin(0, 760, 1).coin(560, 1240, 2); }); }
   function ISL3() { return isl('FISH HOOK', 4, [[0, 0], [60, 900], [-220, 1340], [-620, 1180], [-700, 760]], 480, function (b) { b.hill(60, 900, 280, 90); b.bumper(60, 900, 40).bumper(-220, 1340, 38).coin(-620, 1180, 2); }); }
   function ISL4() { return isl('SIDEWINDER', 4, [[0, 0], [320, 420], [-320, 840], [320, 1260], [-120, 1680]], 440, function (b) { b.hill(-320, 840, 300, 85).hill(320, 1260, 300, 85); b.bumper(320, 420, 36).bumper(-320, 840, 36).bouncer(320, 1260).coin(0, 1680, 2); }); }
-  function ISL5() { return isl('THE BULGE', 3, [[0, 0], [0, 700], [0, 1300], [0, 2000]], function (t) { return 360 + Math.sin(t * PI) * 540; }, function (b) { b.hill(0, 1000, 460, 150); b.cannon(0, 470, 0, 2300); b.bumper(-260, 1000, 44).bumper(260, 1000, 44).coin(0, 1500, 2); }); }
+  function ISL5() {   // STEPPING STONES — floating isles with a CONVEYOR: shoot the tube to the mid isle, ride the belt to the drop hole, fall to the cup isle
+    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    var b = builder();
+    b.island(circ(0, 340, 300), 180, { h: 90 });       // A — tee island
+    b.island(circ(0, 1200, 360), 180, { h: 90 });       // B — mid island (tube lands here; a belt carries you on)
+    b.island(circ(0, 2200, 360), -60, { h: 90 });       // C — cup island
+    b.tube(0, 520, 0, 1200, 70);                         // A -> B
+    b.conveyor(0, 1340, 320, 360, PI / 2, 2400);         // BELT on B: sweeps the ball toward the drop hole
+    b.warp(0, 1500, 0, 2200, 74);                        // DROP B -> C
+    b.bumper(-170, 1200, 36).coin(0, 520, 1).coin(0, 2260, 2);
+    return finish(b, 'STEPPING STONES', 4, { x: 0, z: 250 }, { x: 0, z: 2260 }, -480, 480, -160, 2700);
+  }
   function ISL6() { return isl('CANYON SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.tube(-300, 560, -300, 1500, 66); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
   function ISL7() {   // CASTAWAY COVE — TRUE floating islands: tee on the high isle, DROP through a hole onto a separate lower isle, then a portal TELEPORTS you to the cup island
     function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
