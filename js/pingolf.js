@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 177 · SEE-THROUGH TUNNEL';
+  var BUILD = 'BUILD 178 · ALWAYS SEE THE BALL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1522,6 +1522,9 @@
     R3.flagWave = { geo: fgeo, base: fgeo.attributes.position.array.slice(0), L: FL };
     // balls
     R3.ballMeshes = []; R3.bsh = []; R3.shieldMeshes = [];
+    // always-on-top ball locator — a glow that marks exactly where the ball is when geometry would hide it
+    R3.ballLocator = new T.Mesh(new T.SphereGeometry(K.R * 1.1, 18, 14), new T.MeshBasicMaterial({ color: 0xffe39a, transparent: true, opacity: 0, depthTest: false, depthWrite: false, blending: T.AdditiveBlending }));
+    R3.ballLocator.renderOrder = 10000; R3.ballLocator.visible = false; R3.group.add(R3.ballLocator);
   }
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
@@ -1959,23 +1962,31 @@
     var t = ((cx - ax) * sZ - (cz - az) * sX) / den, u = ((cx - ax) * rZ - (cz - az) * rX) / den;
     return (t >= 0 && t <= 1 && u >= 0 && u <= 1) ? t : -1;
   }
-  function xrayWalls(hole) {   // any wall standing between the camera and the ball goes see-through so the ball is never hidden
-    var pb = primeBall(); if (!pb || !R3.cam) return;
-    var cx = R3.cam.position.x, cy = R3.cam.position.y, cz = R3.cam.position.z;
+  function xrayWalls(hole) {   // any wall standing between the camera and the ball goes see-through so the ball is NEVER hidden
+    var pb = primeBall(); if (!pb || !R3.cam) { St.ballHidden = 0; return; }
+    var cx = R3.cam.position.x, cy = R3.cam.position.y, cz = R3.cam.position.z, maxF = 0;
     for (var wi = 0; wi < hole.walls.length; wi++) {
       var s = hole.walls[wi], m3 = s._m3; if (!m3) continue;
       var blocking = false, t = segCross(cx, cz, pb.x, pb.z, s.ax, s.az, s.bx, s.bz);
       if (t > 0.02 && t < 0.985) { var losY = cy + (pb.y - cy) * t; blocking = losY < m3.gy + s.h + 14; }
-      m3.fade += ((blocking ? 1 : 0) - m3.fade) * 0.22; if (!blocking && m3.fade < 0.015) m3.fade = 0;
-      var tr = m3.fade > 0.01, op = 1 - m3.fade * 0.78;
+      m3.fade += ((blocking ? 1 : 0) - m3.fade) * 0.3; if (!blocking && m3.fade < 0.015) m3.fade = 0;
+      if (m3.fade > maxF) maxF = m3.fade;
+      var tr = m3.fade > 0.01, op = 1 - m3.fade * 0.9;   // a blocking wall goes nearly clear (~10%) so you always see the ball + what you're doing
       for (var mi2 = 0; mi2 < m3.mats.length; mi2++) { var mm2 = m3.mats[mi2]; if (mm2.transparent !== tr) mm2.transparent = tr; mm2.opacity = op; }
     }
+    St.ballHidden = maxF;   // drives the always-on-top ball locator
   }
   function syncMeshes() {
     ensureBallMeshes(); var hole = St.hole;
     xrayWalls(hole);
     for (var i = 0; i < St.balls.length; i++) { var b = St.balls[i], m = R3.ballMeshes[i], sh = R3.bsh[i], bb = R3.shieldMeshes ? R3.shieldMeshes[i] : null; if (!m) continue; if (b.sunk || b.dead) { m.visible = false; sh.visible = false; if (bb) bb.visible = false; continue; } m.visible = true; sh.visible = true; m.position.set(b.x, b.y, b.z); if (R3.cupDimple && !b.air) { var cdp = R3.cupDimple, dd2 = hyp(b.x - cdp.x, b.z - cdp.z); if (dd2 < cdp.R) m.position.y = b.y - cdp.d * (1 - (dd2 / cdp.R) * (dd2 / cdp.R)); } var sp = hyp(b.vx, b.vz); if (sp > 6) { var ax = new T.Vector3(b.vz, 0, -b.vx).normalize(); m.rotateOnWorldAxis(ax, sp / K.R * .018); } var gh = hole.terrain(b.x, b.z); sh.position.set(b.x, gh + 2, b.z); sh.material.opacity = clamp(.34 - (b.y - gh) / 600, 0, .34); if (bb) { if (b.shield) { bb.visible = true; var pul = 0.5 + 0.5 * Math.sin(St.t * 6); bb.position.set(b.x, b.y, b.z); var bsc = 1 + pul * 0.16; bb.scale.set(bsc, bsc, bsc); bb.material.opacity = 0.28 + pul * 0.26; } else bb.visible = false; } }
     for (i = St.balls.length; i < R3.ballMeshes.length; i++) { if (R3.ballMeshes[i]) { R3.ballMeshes[i].visible = false; R3.bsh[i].visible = false; if (R3.shieldMeshes && R3.shieldMeshes[i]) R3.shieldMeshes[i].visible = false; } }
+    // ball locator glow — appears (and brightens) when a wall is hiding the ball, so its position is always clear
+    var pbL = primeBall();
+    if (R3.ballLocator) {
+      if (pbL && !pbL.sunk && !pbL.dead && (St.ballHidden || 0) > 0.04) { R3.ballLocator.visible = true; R3.ballLocator.position.set(pbL.x, pbL.y, pbL.z); R3.ballLocator.material.opacity = Math.min(0.85, (St.ballHidden || 0) * 0.95); }
+      else { R3.ballLocator.visible = false; }
+    }
     syncGhost();
     var bigFl = 0, bigBm = null;
     for (i = 0; i < hole.bumpers.length; i++) {
