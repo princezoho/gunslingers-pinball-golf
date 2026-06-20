@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 217 · ISLAND FLOORS + METAL TUBE + INPUT FIX';
+  var BUILD = 'BUILD 218 · CLEAN UI';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1938,10 +1938,10 @@
   var SETS = [{ base: 0, name: 'FRONT 9', sub: '9 brand-new holes — the toughest run' }, { base: 9, name: 'MIDDLE 9', sub: 'the original desert gauntlet' }, { base: 18, name: 'BACK 9', sub: 'ice, moon, ghost town & the loops' }, { base: 27, name: 'WILD 9', sub: 'crazy multi-tier free-form greens' }];
   function chooseSet() {
     var old = document.getElementById('pg-chooser'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-chooser';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-chooser';
     elt('div', 'font:900 clamp(30px,7vw,54px) Wantedo,Georgia;color:#f5c542;text-align:center;', 'CHOOSE YOUR NINE', ov);
     elt('div', 'font:600 15px Georgia;color:#d8c4a2;margin-top:-12px;', 'No hole over par 4 — pick a run and play through.', ov);
-    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:2px solid #f5c542;border-radius:14px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);', null, ov);
+    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:none;border-radius:14px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);', null, ov);
     var dl = elt('div', 'text-align:left;', null, daily);
     elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '⭐ DAILY HOLE #' + dailyNum(), dl);
     elt('div', 'font:600 12px Georgia;color:#d8c4a2;', 'One shot at today’s hole. Beat the par, share your score, challenge your friends.', dl);
@@ -1980,8 +1980,8 @@
   }
   function showScorecard() {
     var old = document.getElementById('pg-scorecard'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.82);', null, document.body); ov.id = 'pg-scorecard';
-    var box = elt('div', 'width:430px;max-width:94%;max-height:88%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:14px;padding:18px;box-shadow:0 10px 50px rgba(0,0,0,.7);', null, ov); box.className = 'edscroll';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-scorecard';
+    var box = elt('div', 'width:430px;max-width:94%;max-height:88%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:14px;padding:18px;box-shadow:0 10px 50px rgba(0,0,0,.7);', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo, Georgia;color:#f5c542;text-align:center;', '🏆 ' + (SETS[(St.setBase || 0) / 9] ? SETS[(St.setBase || 0) / 9].name : 'NINE') + ' COMPLETE', box);
     var bs = bestStore(), totPar = 0, totYou = 0;
     var hdr = elt('div', 'display:flex;font:700 10px Georgia;color:#f5c542;opacity:.7;margin:8px 0 2px;padding:0 6px;', null, box);
@@ -2036,9 +2036,9 @@
   function editCustom(name) { var o = edStore()[name]; if (o) openEditorWith(edDeserialize(o)); }
   function levelMenu() {
     var ov = ED.dom.lvlmenu;
-    if (!ov) { ov = elt('div', 'position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:rgba(8,5,2,.82);', null, document.body); ov.addEventListener('click', function (e) { if (e.target === ov) ov.style.display = 'none'; }); ED.dom.lvlmenu = ov; }
+    if (!ov) { ov = elt('div', 'position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.addEventListener('click', function (e) { if (e.target === ov) ov.style.display = 'none'; }); ED.dom.lvlmenu = ov; }
     ov.innerHTML = ''; ov.style.display = 'flex';
-    var box = elt('div', 'width:392px;max-height:85%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:12px;padding:16px;box-shadow:0 10px 50px rgba(0,0,0,.6);', null, ov);
+    var box = elt('div', 'width:392px;max-height:85%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:16px;box-shadow:0 10px 50px rgba(0,0,0,.6);', null, ov);
     elt('div', 'font:800 19px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '⛳ SELECT LEVEL', box);
     var sec = function (t) { elt('div', 'font:700 11px Georgia;color:#caa06a;margin:11px 0 4px;', t, box); };
     var rowBtn = function (label, sub, play, edit) {
@@ -2201,7 +2201,7 @@
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
   // AAA type straight on the glass — big Wantedo with a heavy ink outline, no boxes, no pills
-  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.font = '900 ' + Math.round(size * 1.5) + 'px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = Math.max(3, size * 0.18); c.strokeStyle = 'rgba(18,11,5,.6)'; c.strokeText(txt, x, y); c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }   // dark ink outline so HUD type stays crisp/readable on the bright desert (no plates)
+  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.shadowBlur = 0; c.shadowColor = 'transparent'; c.font = '900 ' + Math.round(size * 1.5) + 'px Wantedo, Georgia'; c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }   // plain fill — no stroke, no shadow
   function drawHUD() {
     var c = St.hctx, w = St.w, h = St.h; c.setTransform(St.dpr, 0, 0, St.dpr, 0, 0); c.clearRect(0, 0, w, h);
     if (St.state === 'load') return;
@@ -2238,7 +2238,7 @@
     if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : '#ffffff'; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; var bcap = narrow ? 50 : 62, bfs = bcap; c.font = '900 ' + bcap + 'px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 36) bfs = Math.max(18, Math.floor(bcap * (w - 36) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 4; var by = Math.max(h * 0.26, 236); c.strokeText(St.banner, w / 2, by); c.fillText(St.banner, w / 2, by); c.globalAlpha = 1; }   // hole-intro flash — parked well BELOW the top HUD (min 236px) so it never collides with strokes/best; smaller + ink-outlined
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.shadowBlur = 0; var bcap = narrow ? 50 : 62, bfs = bcap; c.font = '900 ' + bcap + 'px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 36) bfs = Math.max(18, Math.floor(bcap * (w - 36) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; var by = Math.max(h * 0.26, 236); c.fillText(St.banner, w / 2, by); c.globalAlpha = 1; }   // hole-intro flash — parked below the top HUD; plain fill, no stroke
     c.globalAlpha = 0.85;
     var instr = St.state === 'aim' ? (narrow ? 'PULL BACK · RELEASE TO FIRE' : 'PULL BACK TO AIM · RELEASE TO FIRE · ◀ ▶ CAMERA')
       : St.state === 'roll' ? (narrow ? 'TAP L / R FOR FLIPPERS' : 'TAP SCREEN OR A / D FOR FLIPPERS · ◀ ▶ CAMERA') : '';
@@ -2684,7 +2684,7 @@
   // in-app dialog + toast (prompt()/alert()/confirm() are unreliable in embedded/preview frames — never use them)
   function edModal(title, build) {
     var m = ED.dom.modal; if (!m) return; m.innerHTML = ''; m.style.display = 'flex'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; };
-    var box = elt('div', 'width:380px;max-width:92%;max-height:84%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:12px;padding:16px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
+    var box = elt('div', 'width:380px;max-width:92%;max-height:84%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:16px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
     if (title) elt('div', 'font:800 16px Georgia;color:#f5c542;margin-bottom:10px;', title, box);
     build(box, function () { m.style.display = 'none'; });
     return box;
@@ -2755,7 +2755,7 @@
     ED.dom.pal = pal;
     // ---- RIGHT INSPECTOR ----
     var panel = elt('div', 'position:absolute;right:8px;top:56px;bottom:8px;width:200px;overflow-y:auto;overflow-x:hidden;background:rgba(30,20,10,.94);border:2px solid #5a3a1a;border-radius:10px;padding:10px;color:#f5efdc;font:12px Georgia;pointer-events:auto;', null, root); ED.dom.panel = panel; panel.className = 'edscroll';
-    var modal = elt('div', 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(8,5,2,.72);pointer-events:auto;', null, root); ED.dom.modal = modal;
+    var modal = elt('div', 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto;', null, root); ED.dom.modal = modal;
     document.body.appendChild(root);
     window.addEventListener('keydown', edKey);
     St.scene.addEventListener('contextmenu', function (e) { if (ED.on) { e.preventDefault(); var w = edS2W(ptr(e).x, ptr(e).y); var hit = edHit(w.x, w.z); if (hit && hit.arr) { ED.sel = hit; edDelete(); } } });
@@ -2854,7 +2854,7 @@
   }
   function edLevels() {
     var m = ED.dom.modal; if (!m) return; m.innerHTML = ''; m.style.display = 'flex'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; };
-    var box = elt('div', 'width:360px;max-height:80%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:12px;padding:14px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
+    var box = elt('div', 'width:360px;max-height:80%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:14px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
     elt('div', 'font:800 16px Georgia;color:#f5c542;margin-bottom:8px;', '📚 MY LEVELS', box);
     var sr = elt('div', 'display:flex;gap:6px;margin-bottom:12px;', null, box);
     var nin = elt('input', 'flex:1;padding:7px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;', null, sr); nin.value = ED.draft.name;
@@ -2924,7 +2924,7 @@
   }
   function edShapes() {
     var m = ED.dom.modal; if (!m) return; m.innerHTML = ''; m.style.display = 'flex'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; };
-    var box = elt('div', 'width:300px;background:#241a0e;border:2px solid #f5c542;border-radius:12px;padding:14px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
+    var box = elt('div', 'width:300px;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:14px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
     elt('div', 'font:800 16px Georgia;color:#f5c542;margin-bottom:3px;', '⬡ HOLE SHAPES', box);
     elt('div', 'font-size:10px;opacity:.7;margin-bottom:10px;line-height:1.35;', 'Replaces the layout with a preset course shape. Undo (Ctrl+Z) reverts. You can keep adding items after.', box);
     [['s', 'S-Curve  〰'], ['z', 'Z-Bend  ⟋'], ['w', 'W-Zigzag  ⋀⋁'], ['circle', 'Round Arena  ◯'], ['twotier', 'Two-Tier Drop  ⭳'], ['threetier', 'Three-Tier Drop  ⛰']].forEach(function (sh) {
@@ -3224,7 +3224,7 @@
   function showHowTo() {
     try { if (localStorage.getItem('pg_seen_howto')) return; } catch (e) { }
     if (document.getElementById('pg-howto') || St.dailyPractice || St.archive) return;
-    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:#241a0e;border:2px solid #f5c542;border-radius:14px;padding:18px;box-shadow:0 12px 48px rgba(0,0,0,.7);text-align:center;', null, document.body); ov.id = 'pg-howto';
+    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:rgba(20,13,6,.42);border:none;border-radius:14px;padding:18px;box-shadow:0 12px 48px rgba(0,0,0,.7);text-align:center;', null, document.body); ov.id = 'pg-howto';
     elt('div', 'font:900 18px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '🤠 HOW TO PLAY', ov);
     elt('div', 'font:600 14px Georgia;color:#f3eedd;line-height:1.55;margin-bottom:12px;', 'Pull BACK from the ball and let go — like a slingshot. Aim any direction; pull farther for more power. Sink today’s hole in as few shots as you can!', ov);
     var b = elt('button', 'padding:11px 26px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY', ov);
@@ -3377,8 +3377,8 @@
   function showDailyCard(rec) {
     var old = document.getElementById('pg-daily'); if (old) old.remove();
     var S = shareStrings(rec);
-    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-daily';
-    var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-daily';
+    var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
     // ✕ dismiss — close the card and just play/look around (it auto-pops on revisit; let people get out of it)
     var closeX = elt('div', 'position:fixed;top:12px;right:16px;z-index:59;width:40px;height:40px;line-height:38px;text-align:center;font:900 24px Georgia;color:#f5efdc;cursor:pointer;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid rgba(245,197,66,.6);', '✕', ov);
     closeX.title = 'Close — practice this hole'; closeX.onclick = function () { ov.remove(); if ((St.state === 'sunk' || St.state === 'done') && St.hi >= 0) { try { loadHole(St.hi); } catch (e) { } } };
@@ -3640,8 +3640,8 @@
     var verdict = n === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
     var counts = {}; St.tbShots.forEach(function (p) { counts[p] = (counts[p] || 0) + 1; });
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-teamball';
-    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-teamball';
+    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '👥 TEAM BALL', box);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;margin:2px 0 6px;', hole ? hole.name : '', box);
     var sc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a';
@@ -3693,8 +3693,8 @@
     var best = rows[0], over = best.s - par;
     var verdict = best.s === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-teamball';
-    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-teamball';
+    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '🎯 BEST BALL', box);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;margin:2px 0 6px;', hole ? hole.name : '', box);
     var sc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a';
@@ -3720,8 +3720,8 @@
   }
   function showTeamBallSetup() {
     var old = document.getElementById('pg-tbsetup'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.88);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-tbsetup';
-    var box = elt('div', 'width:390px;max-width:92%;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov);
+    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-tbsetup';
+    var box = elt('div', 'width:390px;max-width:92%;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;', '👥 PASS & PLAY', box);
     var blurb = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:6px 0 12px;line-height:1.5;min-height:34px;', '', box);
     var mode = 'team';   // 'team' = alternate shot, 'best' = best ball
@@ -3729,7 +3729,7 @@
     var mTeam = elt('button', '', '🔄 Team Ball', modeRow);
     var mBest = elt('button', '', '🎯 Best Ball', modeRow);
     function paintMode() {
-      var on = 'flex:1;padding:10px;border:2px solid #f5c542;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;';
+      var on = 'flex:1;padding:10px;border:none;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;';
       var off = 'flex:1;padding:10px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 13px Wantedo,Georgia;cursor:pointer;';
       mTeam.style.cssText = (mode === 'team' ? on : off); mBest.style.cssText = (mode === 'best' ? on : off);
       blurb.textContent = mode === 'team'
@@ -3748,9 +3748,9 @@
   function showChampions() {
     var net = NET(); if (!net) return;
     var old = document.getElementById('pg-champs'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.88);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-champs';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-champs';
     ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
-    var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '🏆 CHAMPIONS', box);
     var sub = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:4px 0 10px;line-height:1.4;min-height:30px;', '', box);
     var mode = 'players', period = 'all';
@@ -3764,7 +3764,7 @@
     var me = playerName(), myTeam = getTeam();
     var shareRank = elt('button', 'width:100%;padding:11px;margin-top:10px;border:2px solid #7a5a12;border-radius:8px;background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;font:900 13px Wantedo,Georgia;cursor:pointer;display:none;', '📤 SHARE MY RANK', box);   // viral flex: brag your standing
     function paintTabs() {
-      var on = 'flex:1;padding:9px;border:2px solid #f5c542;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
+      var on = 'flex:1;padding:9px;border:none;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
       var off = 'flex:1;padding:9px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
       tP.style.cssText = (mode === 'players' ? on : off); tT.style.cssText = (mode === 'teams' ? on : off);
       pW.style.cssText = (period === 'week' ? on : off); pA.style.cssText = (period === 'all' ? on : off);
