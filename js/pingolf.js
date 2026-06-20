@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 200 · CASTAWAY ISLES';
+  var BUILD = 'BUILD 201 · CORAL TUBE ISLES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -561,7 +561,17 @@
     b.bumper(150, 1280, 40).coin(0, 560, 1).coin(0, 2000, 2);
     return finish(b, 'CASTAWAY COVE', 4, { x: 0, z: 240 }, { x: 0, z: 2300 }, -520, 520, -160, 2680);
   }
-  function ISL8() { return isl('CORAL BEND', 4, [[0, 0], [240, 520], [-220, 1040], [180, 1560], [-40, 2000]], 560, function (b) { b.tier(1500, 120, 9999); b.bumper(-40, 1040, 42).coin(180, 1560, 2); }); }
+  function ISL8() {   // CORAL BEND — floating isles bridged by a TUBE: shoot through the pipe to the next island, then DROP to the cup isle
+    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    var b = builder();
+    b.island(circ(0, 340, 320), 140, { h: 90 });       // A — tee island
+    b.island(circ(0, 1240, 340), 140, { h: 90 });       // B — same height: the TUBE bridges the gap
+    b.island(circ(0, 2100, 360), -80, { h: 90 });       // C — lower cup island
+    b.tube(0, 540, 0, 1240, 70);                         // TUBE: shoot across the gap from A to B
+    b.warp(0, 1460, 0, 2100, 72);                        // DROP HOLE: fall from B down to the cup isle C
+    b.bumper(-150, 1240, 40).bumper(150, 1240, 40).coin(0, 540, 1).coin(0, 2100, 2);
+    return finish(b, 'CORAL BEND', 4, { x: 0, z: 230 }, { x: 0, z: 2160 }, -500, 500, -160, 2560);
+  }
   function ISL9() { return isl('SNAKE CANYON', 3, [[0, 0], [-260, 560], [260, 1060], [-220, 1520], [260, 1960], [0, 2320]], 500, function (b) { b.tier(1080, 150, 9999); b.tube(-240, 560, 220, 1500, 64); b.hill(40, 760, 260, 80); b.bumper(0, 1060, 44).windmill(40, 1760, 180, 3, -1.4); b.coin(-260, 560, 1).coin(260, 1960, 2); }); }
   var ISLANDS9 = [ISL1, ISL2, ISL3, ISL4, ISL5, ISL6, ISL7, ISL8, ISL9];
   var FRONT9 = [N1, N2, N3, N4, N5, N6, N7, N8, N9];
