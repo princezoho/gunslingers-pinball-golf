@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 170 · TEAMS BACKEND';
+  var BUILD = 'BUILD 171 · TEAMS UI';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2893,6 +2893,9 @@
   // ---- player handle (for the leaderboard) ----
   function playerName() { try { return localStorage.getItem('pg_name') || ''; } catch (e) { return ''; } }
   function setPlayerName(n) { try { localStorage.setItem('pg_name', (n || '').slice(0, 24)); } catch (e) { } }
+  // ---- team membership (team-vs-team daily competition) ----
+  function getTeam() { try { return JSON.parse(localStorage.getItem('pg_team') || 'null'); } catch (e) { return null; } }
+  function setTeam(t) { try { if (t) localStorage.setItem('pg_team', JSON.stringify(t)); else localStorage.removeItem('pg_team'); } catch (e) { } }
   // ---- daily play streak (retention) ----
   function prevDay(ymd) { try { var d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); } catch (e) { return ''; } }
   function streakUpdate(day) {
@@ -3197,6 +3200,62 @@
       }
       postBtn.onclick = doPost;
       if (St.dailyPractice) { renderLB(); } else if (playerName()) { doPost(); } else { renderLB(); }   // practice never posts; returning players auto-post
+      // ---- TEAMS: form a posse, battle other teams on the daily ----
+      var teamWrap = elt('div', 'margin:6px 0 12px;padding:10px;background:rgba(245,197,66,.05);border:1px solid rgba(245,197,66,.25);border-radius:10px;text-align:left;', null, lbWrap);
+      function myTeamName() { return (playerName() || (nameIn.value || '').trim() || '').slice(0, 24); }
+      function renderTeams() {
+        teamWrap.textContent = '';
+        elt('div', 'font:900 12px Wantedo,Georgia;color:#f5c542;letter-spacing:1px;margin-bottom:6px;text-align:center;', '🏴 TEAMS', teamWrap);
+        var team = getTeam();
+        if (team && team.id) {
+          elt('div', 'font:800 13px Georgia;color:#f5efdc;text-align:center;margin-bottom:4px;', 'Your team: ' + team.name, teamWrap);
+          var codeRow = elt('div', 'display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:8px;', null, teamWrap);
+          elt('div', 'font:700 12px Georgia;color:#d8c4a2;', 'Code', codeRow);
+          elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;letter-spacing:2px;', team.code, codeRow);
+          var cpy = elt('button', 'padding:4px 10px;border:1px solid #5a3a1a;border-radius:6px;background:#3a2614;color:#f5c542;font:800 11px Georgia;cursor:pointer;', '📋 Invite', codeRow);
+          cpy.onclick = function () { copyText('🤠 Join my Gunslingers team “' + team.name + '”! Invite code: ' + team.code + '\nPlay today’s daily 👉 ' + S.link, 'Team invite copied — send it to your crew!'); };
+          var tlist = elt('div', 'margin-top:2px;', null, teamWrap);
+          net.teamStanding(St.dailyDay).then(function (rows) {
+            if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;text-align:center;', 'No team scores yet today — rally your crew!', tlist); return; }
+            elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;text-align:center;', 'TEAM LEADERBOARD', tlist);
+            rows.slice(0, 8).forEach(function (r, i) {
+              var mine = team.id && r.team_id === team.id;
+              var rw = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;border-radius:6px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, tlist);
+              elt('div', 'width:24px;color:#f5c542;font-weight:700;', (i + 1) + '.', rw);
+              elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.team + (mine ? ' (you)' : '') + ' · ' + r.members + 'p', rw);
+              elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', 'best ' + r.best, rw);
+            });
+          });
+        } else {
+          elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin-bottom:6px;line-height:1.4;text-align:center;', 'Form a posse and battle other teams on the daily.', teamWrap);
+          var crRow = elt('div', 'display:flex;gap:6px;margin-bottom:6px;', null, teamWrap);
+          var crIn = elt('input', 'flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;text-align:center;', null, crRow); crIn.placeholder = 'New team name'; crIn.maxLength = 24;
+          var crBtn = elt('button', 'padding:9px 12px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '➕ CREATE', crRow);
+          var jnRow = elt('div', 'display:flex;gap:6px;', null, teamWrap);
+          var jnIn = elt('input', 'flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;text-align:center;letter-spacing:2px;', null, jnRow); jnIn.placeholder = 'Invite code'; jnIn.maxLength = 6;
+          var jnBtn = elt('button', 'padding:9px 12px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', 'JOIN', jnRow);
+          crBtn.onclick = function () {
+            var tn = (crIn.value || '').trim(); if (!tn) { socialToast('Name your team first'); return; }
+            var who = myTeamName(); if (!who) { socialToast('Enter your name above first'); try { nameIn.focus(); } catch (e) { } return; }
+            crBtn.disabled = true; crBtn.textContent = '…';
+            net.createTeam(tn).then(function (t) {
+              if (!t || !t.code) { crBtn.disabled = false; crBtn.textContent = '➕ CREATE'; socialToast('Couldn’t create team — try again'); return; }
+              setPlayerName(who);
+              net.joinTeam(t.code, who).then(function () { setTeam({ id: t.id, name: t.name, code: t.code }); socialToast('Team “' + t.name + '” created — code ' + t.code); renderTeams(); });
+            });
+          };
+          jnBtn.onclick = function () {
+            var code = (jnIn.value || '').trim(); if (!code) { socialToast('Enter an invite code'); return; }
+            var who = myTeamName(); if (!who) { socialToast('Enter your name above first'); try { nameIn.focus(); } catch (e) { } return; }
+            jnBtn.disabled = true; jnBtn.textContent = '…';
+            net.joinTeam(code, who).then(function (j) {
+              if (!j || !j.team_id) { jnBtn.disabled = false; jnBtn.textContent = 'JOIN'; socialToast('No team with that code'); return; }
+              setPlayerName(who); setTeam({ id: j.team_id, name: j.name, code: code.toUpperCase() }); socialToast('Joined “' + j.name + '”!'); renderTeams();
+            });
+          };
+        }
+      }
+      if (!St.archive) renderTeams();   // teams compete on the live daily, not past-hole archive
     }
     var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
     var xb = elt('button', prim + 'background:linear-gradient(180deg,#1d9bf0,#0d6fb8);', '𝕏  SHARE ON X', box);
@@ -3380,6 +3439,7 @@
   PG.__streak = function (day) { return streakUpdate(day); }; PG.__prevDay = function (d) { return prevDay(d); };
   PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
+  PG.__getTeam = function () { return getTeam(); }; PG.__setTeam = function (t) { setTeam(t); }; PG.__clearTeam = function () { setTeam(null); };
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
   PG.__capReplay = function (path) { return capReplay(path); };
   PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
