@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 189 · OWNER PULSE';
+  var BUILD = 'BUILD 190 · STREAK ON THE LINE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1794,6 +1794,11 @@
     elt('div', 'font:600 12px Georgia;color:#d8c4a2;', 'One shot at today’s hole. Beat the par, share your score, challenge your friends.', dl);
     var dsp = elt('div', 'font:800 11px Georgia;color:#86d85f;margin-top:3px;min-height:14px;', '', dl);   // live social proof so the daily feels alive BEFORE you commit
     (function () { var nt = NET(); if (!nt) return; nt.daySummary().then(function (s) { if (!dsp.parentNode) return; dsp.textContent = (s && s.players > 0) ? ('👥 ' + s.players + ' played today' + (s.best != null ? '  ·  🏆 best ' + s.best : '')) : '🤠 Be the first to play today!'; }); })();
+    (function () {   // loss-aversion: a streak that's on the line today is a strong reason to come back
+      var sk; try { sk = JSON.parse(localStorage.getItem('pg_streak') || 'null'); } catch (e) { sk = null; }
+      var todayK = new Date().toISOString().slice(0, 10);
+      if (sk && sk.count > 1 && sk.last === prevDay(todayK)) elt('div', 'font:800 12px Georgia;color:#ff9a3a;margin-top:3px;', '🔥 Your ' + sk.count + '-day streak is on the line — play today!', dl);
+    })();
     elt('div', 'font:900 15px Wantedo,Georgia;color:#86d85f;white-space:nowrap;', 'PLAY ▶', daily);
     daily.onmouseenter = function () { daily.style.transform = 'translateY(-3px)'; }; daily.onmouseleave = function () { daily.style.transform = 'none'; };
     daily.onclick = function () { ov.remove(); enterDaily(null, null); };
