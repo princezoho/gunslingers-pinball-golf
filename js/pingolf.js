@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 182 · ONE-TAP POSSE';
+  var BUILD = 'BUILD 183 · TEAM CHAMPIONS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3551,23 +3551,39 @@
     ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
     var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '🏆 ALL-TIME CHAMPIONS', box);
-    elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:4px 0 12px;line-height:1.4;', 'Ranked by daily wins, then scoring average. Play every day to climb the ladder.', box);
+    var sub = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:4px 0 10px;line-height:1.4;min-height:30px;', '', box);
+    var mode = 'players';
+    var tabRow = elt('div', 'display:flex;gap:8px;margin-bottom:10px;', null, box);
+    var tP = elt('button', '', '👤 PLAYERS', tabRow);
+    var tT = elt('button', '', '🏴 TEAMS', tabRow);
     var listBox = elt('div', 'min-height:60px;', null, box);
-    elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Loading…', listBox);
-    var me = playerName();
-    net.champions(25).then(function (rows) {
-      listBox.textContent = '';
-      if (!rows || !rows.length) { elt('div', 'font:600 13px Georgia;color:#9c8a6a;', 'No champions yet — win a daily to claim the top spot!', listBox); return; }
-      rows.forEach(function (r, i) {
-        var mine = me && r.name === me;
-        var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:3px 0;border-radius:8px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, listBox);
-        elt('div', 'width:28px;color:#f5c542;font-weight:700;text-align:center;', i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.', row);
-        elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
-        var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av);
-        elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', r.wins + '🏆', row);
-        elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row);
+    var me = playerName(), myTeam = getTeam();
+    function paintTabs() {
+      var on = 'flex:1;padding:9px;border:2px solid #f5c542;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
+      var off = 'flex:1;padding:9px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
+      tP.style.cssText = (mode === 'players' ? on : off); tT.style.cssText = (mode === 'teams' ? on : off);
+    }
+    function render() {
+      paintTabs();
+      sub.textContent = mode === 'players' ? 'Players ranked by daily wins, then scoring average. Play every day to climb.' : 'Teams ranked by daily wins (your crew’s best score each day). Recruit + dominate.';
+      listBox.textContent = ''; elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Loading…', listBox);
+      (mode === 'players' ? net.champions(25) : net.teamChampions(25)).then(function (rows) {
+        listBox.textContent = '';
+        if (!rows || !rows.length) { elt('div', 'font:600 13px Georgia;color:#9c8a6a;', mode === 'players' ? 'No champions yet — win a daily to claim the top spot!' : 'No team champions yet — form a posse and win a daily!', listBox); return; }
+        rows.forEach(function (r, i) {
+          var mine = mode === 'players' ? (me && r.name === me) : (myTeam && myTeam.name === r.name);
+          var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:3px 0;border-radius:8px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, listBox);
+          elt('div', 'width:28px;color:#f5c542;font-weight:700;text-align:center;', i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.', row);
+          elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
+          elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', r.wins + '🏆', row);
+          if (mode === 'players') { var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av); elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row); }
+          else { elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.days + 'd · best ' + r.best, row); }
+        });
       });
-    });
+    }
+    tP.onclick = function () { mode = 'players'; render(); };
+    tT.onclick = function () { mode = 'teams'; render(); };
+    render();
     var close = elt('button', 'width:100%;padding:12px;margin-top:12px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     close.onclick = function () { ov.remove(); };
   }

@@ -60,7 +60,9 @@
     // all-time best score on a hole layout (course record); resolves {best,name} or null
     courseRecord: function (hole) { if (hole == null || hole < 0) return Promise.resolve(null); return rpc('course_record', { p_hole: hole }).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); },
     // all-time champions ladder: [{name,dailies,avg_over,wins}], ranked by wins then avg
-    champions: function (limit) { return rpc('champions', { p_limit: limit || 25 }).catch(function () { return []; }); }
+    champions: function (limit) { return rpc('champions', { p_limit: limit || 25 }).catch(function () { return []; }); },
+    // all-time TEAM champions: [{name,days,best,wins}], ranked by team daily wins
+    teamChampions: function (limit) { return rpc('team_champions', { p_limit: limit || 25 }).catch(function () { return []; }); }
   };
   global.PGNet = PGNet;
 })(typeof window !== 'undefined' ? window : this);
