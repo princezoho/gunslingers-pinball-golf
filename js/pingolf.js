@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 185 · WEEKLY LADDER';
+  var BUILD = 'BUILD 186 · FLEX YOUR RANK';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3562,6 +3562,7 @@
     var pA = elt('button', '', '⭐ ALL-TIME', perRow);
     var listBox = elt('div', 'min-height:60px;', null, box);
     var me = playerName(), myTeam = getTeam();
+    var shareRank = elt('button', 'width:100%;padding:11px;margin-top:10px;border:2px solid #7a5a12;border-radius:8px;background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;font:900 13px Wantedo,Georgia;cursor:pointer;display:none;', '📤 SHARE MY RANK', box);   // viral flex: brag your standing
     function paintTabs() {
       var on = 'flex:1;padding:9px;border:2px solid #f5c542;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
       var off = 'flex:1;padding:9px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
@@ -3585,6 +3586,13 @@
           if (mode === 'players') { var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av); elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row); }
           else { elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.days + 'd · best ' + r.best, row); }
         });
+        // viral flex: if you're on the board, let you share your rank
+        var myIdx = -1; rows.forEach(function (r, i) { var mine = mode === 'players' ? (me && r.name === me) : (myTeam && myTeam.name === r.name); if (mine) myIdx = i; });
+        if (myIdx >= 0) {
+          shareRank.style.display = 'block';
+          var who = mode === 'players' ? 'I’m' : ('Team ' + myTeam.name + ' is'), pr = period === 'week' ? 'this week' : 'all-time', rk = rows[myIdx];
+          shareRank.onclick = function () { shareLocalResult('🏆 ' + who + ' #' + (myIdx + 1) + ' ' + pr + ' on Gunslingers Pinball Golf — ' + rk.wins + ' daily win' + (rk.wins === 1 ? '' : 's') + '! Climb past me 👉 ' + shareBase() + '?daily'); };
+        } else { shareRank.style.display = 'none'; }
       });
     }
     tP.onclick = function () { mode = 'players'; render(); };
