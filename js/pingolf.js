@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 213 · WILD DAILY';
+  var BUILD = 'BUILD 214 · BLOB ISLES';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -581,7 +581,7 @@
       });
   }
   function ISL5() {   // STEPPING STONES — floating isles: ride a LOOP-DE-LOOP on the tee isle into the tube, land on the mid isle, ride a CONVEYOR to the drop hole, fall to the cup isle
-    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    function circ(cx, cz, r) { var p = [], n = 18, sd = cz * 0.01 + cx * 0.013; for (var i = 0; i < n; i++) { var t = i / n * TAU; var rr = r * (0.82 + 0.26 * Math.sin(t * 2 + sd) + 0.12 * Math.sin(t * 3 - sd * 1.7)); p.push({ x: Math.round(cx + Math.cos(t) * rr), z: Math.round(cz + Math.sin(t) * rr * 1.04) }); } return p; }   // organic BLOB island (lobed, seeded by position) — not a plain circle; min radius 0.44r keeps centers/exits safely inside
     var b = builder();
     b.island(circ(0, 360, 320), 180, { h: 90 });       // A — tee island (now wider, to fit the loop)
     b.island(circ(0, 1240, 360), 180, { h: 90 });       // B — mid island (tube lands here; a belt carries you on)
@@ -594,7 +594,7 @@
     return finish(b, 'STEPPING STONES', 4, { x: 0, z: 230 }, { x: 0, z: 2300 }, -480, 480, -160, 2740);
   }
   function ISL6() {   // ARCHIPELAGO — the LONGEST island run: four separate isles, each hop a different contraption — TUBE, DROP, then PORTAL, descending to the cup isle
-    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    function circ(cx, cz, r) { var p = [], n = 18, sd = cz * 0.01 + cx * 0.013; for (var i = 0; i < n; i++) { var t = i / n * TAU; var rr = r * (0.82 + 0.26 * Math.sin(t * 2 + sd) + 0.12 * Math.sin(t * 3 - sd * 1.7)); p.push({ x: Math.round(cx + Math.cos(t) * rr), z: Math.round(cz + Math.sin(t) * rr * 1.04) }); } return p; }   // organic BLOB island (lobed, seeded by position) — not a plain circle; min radius 0.44r keeps centers/exits safely inside
     var b = builder();
     b.island(circ(0, 320, 290), 220, { h: 90 });       // A — tee
     b.island(circ(0, 1100, 300), 220, { h: 90 });       // B — tube lands here
@@ -607,7 +607,7 @@
     return finish(b, 'ARCHIPELAGO', 4, { x: 0, z: 240 }, { x: 0, z: 2720 }, -440, 440, -160, 3140);
   }
   function ISL7() {   // CASTAWAY COVE — TRUE floating islands: tee on the high isle, DROP through a hole onto a separate lower isle, then a portal TELEPORTS you to the cup island
-    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    function circ(cx, cz, r) { var p = [], n = 18, sd = cz * 0.01 + cx * 0.013; for (var i = 0; i < n; i++) { var t = i / n * TAU; var rr = r * (0.82 + 0.26 * Math.sin(t * 2 + sd) + 0.12 * Math.sin(t * 3 - sd * 1.7)); p.push({ x: Math.round(cx + Math.cos(t) * rr), z: Math.round(cz + Math.sin(t) * rr * 1.04) }); } return p; }   // organic BLOB island (lobed, seeded by position) — not a plain circle; min radius 0.44r keeps centers/exits safely inside
     var b = builder();
     b.island(circ(0, 360, 340), 180, { h: 90 });      // A — tee island (high)
     b.island(circ(0, 1280, 360), 40, { h: 90 });       // B — middle island
@@ -618,7 +618,7 @@
     return finish(b, 'CASTAWAY COVE', 4, { x: 0, z: 240 }, { x: 0, z: 2300 }, -520, 520, -160, 2680);
   }
   function ISL8() {   // CORAL BEND — floating isles bridged by a TUBE: shoot through the pipe to the next island, then DROP to the cup isle
-    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    function circ(cx, cz, r) { var p = [], n = 18, sd = cz * 0.01 + cx * 0.013; for (var i = 0; i < n; i++) { var t = i / n * TAU; var rr = r * (0.82 + 0.26 * Math.sin(t * 2 + sd) + 0.12 * Math.sin(t * 3 - sd * 1.7)); p.push({ x: Math.round(cx + Math.cos(t) * rr), z: Math.round(cz + Math.sin(t) * rr * 1.04) }); } return p; }   // organic BLOB island (lobed, seeded by position) — not a plain circle; min radius 0.44r keeps centers/exits safely inside
     var b = builder();
     b.island(circ(0, 340, 320), 140, { h: 90 });       // A — tee island
     b.island(circ(0, 1240, 340), 140, { h: 90 });       // B — same height: the TUBE bridges the gap
