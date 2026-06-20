@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 183 · TEAM CHAMPIONS';
+  var BUILD = 'BUILD 184 · GLASS BARN';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -66,7 +66,7 @@
       wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32, curve: !!o.curve, tunnel: !!o.tunnel }); return this; },   // curve:true = part of an organic curb (rendered as one smooth rail, no per-segment posts); tunnel:true = a glass channel rail (collides, but renders see-through, not as plank)
       box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
       // SEE-THROUGH TUNNEL — a covered channel from (ax,az)→(bx,bz): two glass side rails (collision via wall()) + a translucent roof (rendered in buildScene). The ball rolls through on the ground and stays VISIBLE the whole way — the "blocking" geometry is see-through glass.
-      tunnel: function (ax, az, bx, bz, o) { o = o || {}; var w = o.w || 200, h = o.h || 62; var dx = bx - ax, dz = bz - az, L = Math.sqrt(dx * dx + dz * dz); if (L < 1) return this; var nx = -dz / L, nz = dx / L; this.wall(ax + nx * w, az + nz * w, bx + nx * w, bz + nz * w, { tunnel: true, h: h, e: o.e }); this.wall(ax - nx * w, az - nz * w, bx - nx * w, bz - nz * w, { tunnel: true, h: h, e: o.e }); (this.tunnels = this.tunnels || []).push({ ax: ax, az: az, bx: bx, bz: bz, w: w, h: h }); return this; },
+      tunnel: function (ax, az, bx, bz, o) { o = o || {}; var w = o.w || 200, h = o.h || 62; var dx = bx - ax, dz = bz - az, L = Math.sqrt(dx * dx + dz * dz); if (L < 1) return this; if (!o.noRails) { var nx = -dz / L, nz = dx / L; this.wall(ax + nx * w, az + nz * w, bx + nx * w, bz + nz * w, { tunnel: true, h: h, e: o.e }); this.wall(ax - nx * w, az - nz * w, bx - nx * w, bz - nz * w, { tunnel: true, h: h, e: o.e }); } (this.tunnels = this.tunnels || []).push({ ax: ax, az: az, bx: bx, bz: bz, w: w, h: h, roofOnly: !!o.noRails }); return this; },   // noRails:true = glass roof only over an EXISTING channel (collision already there) — zero physics change
       shape: function (poly, o) {   // ORGANIC FAIRWAY — poly is a closed ring of {x,z}; curb walls run along every edge and the green is rendered to this exact outline. No rectangle.
         o = o || {}; o.curve = true;   // smooth rail, no per-segment posts
         for (var i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length]; this.wall(a.x, a.z, bp.x, bp.z, o); }
@@ -136,6 +136,7 @@
     botFlip(b, 120, 180);
     b.bumper(-300, 520, 40).bumper(300, 520, 40);            // slingshots
     b.wall(-160, 760, -160, 1480, { h: 52 }).wall(160, 760, 160, 1480, { h: 52 });   // barn stalls
+    b.tunnel(0, 760, 0, 1480, { w: 160, h: 66, noRails: true });                     // SEE-THROUGH glass barn roof over the bumper alley (reuses the stall walls — no physics change)
     b.bumper(0, 900, 44).bumper(0, 1130, 46).bumper(0, 1360, 44);                    // the gauntlet lane
     b.coin(-315, 900, 1).coin(-315, 1130, 1).coin(315, 900, 1).coin(315, 1130, 1);   // loot down the safe lanes
     b.booster(0, 1700, PI / 2, 130, 2900);
@@ -1297,8 +1298,8 @@
       var frameM = new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: 0.55, depthWrite: false });
       var grp = new T.Group(); grp.position.set(tmx, tgy, tmz); grp.rotation.y = Math.atan2(tdx, tdz);
       [-1, 1].forEach(function (sgn) {
-        var side = new T.Mesh(new T.PlaneGeometry(tL, tn.h), glass); side.rotation.y = PI / 2; side.position.set(sgn * tn.w, tn.h / 2, 0); grp.add(side);
-        var rail = new T.Mesh(new T.BoxGeometry(6, 6, tL), frameM); rail.position.set(sgn * tn.w, tn.h, 0); grp.add(rail);   // glowing top rail so the channel reads
+        if (!tn.roofOnly) { var side = new T.Mesh(new T.PlaneGeometry(tL, tn.h), glass); side.rotation.y = PI / 2; side.position.set(sgn * tn.w, tn.h / 2, 0); grp.add(side); }   // roof-only tunnels use the EXISTING channel walls as sides
+        var rail = new T.Mesh(new T.BoxGeometry(6, 6, tL), frameM); rail.position.set(sgn * tn.w, tn.h, 0); grp.add(rail);   // glowing top rail / eave so the channel reads
       });
       var roof = new T.Mesh(new T.PlaneGeometry(tn.w * 2, tL), glass); roof.rotation.x = -PI / 2; roof.position.set(0, tn.h, 0); grp.add(roof);
       var ribs = Math.max(2, Math.round(tL / 130));   // hoop ribs so the cover reads as a tunnel, not a flat pane
