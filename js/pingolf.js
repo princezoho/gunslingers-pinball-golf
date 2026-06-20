@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 215 · METAL TUNNEL + SOCIAL FIX';
+  var BUILD = 'BUILD 216 · HUD SPACING + SMOOTH AIM';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2216,7 +2216,7 @@
     var topLine = St.hi >= 0 ? ('HOLE ' + (St.hi - (St.setBase || 0) + 1) + '/9 · PAR ' + St.hole.par) : ('★ ' + (St.customName || St.hole.name));
     hudTxt(c, topLine, 22, 36, narrow ? 15 : 19, '#ffffff');
     if (St.hi >= 0 && !narrow) hudTxt(c, St.hole.name, 22, 60, 15, 'rgba(255,255,255,.8)');
-    var sy = narrow ? 86 : 112, ssz = narrow ? 38 : 50;
+    var sy = narrow ? 92 : 124, ssz = narrow ? 34 : 40;
     var nw = hudTxt(c, String(St.strokes), 22, sy, ssz, COL.cream);
     hudTxt(c, St.strokes === 1 ? 'STROKE' : 'STROKES', 30 + nw, sy, Math.round(ssz * 0.42), '#ffffff');
     if (St.holeBest != null) hudTxt(c, '★ BEST ' + St.holeBest, 22, sy + 26, 14, 'rgba(255,255,255,.85)');
@@ -2236,7 +2236,7 @@
     if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : '#ffffff'; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
     c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
     if (St.state === 'aim') powerMeter(c, w, h);
-    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; var bfs = 80; c.font = '900 80px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 28) bfs = Math.max(20, Math.floor(80 * (w - 28) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.fillText(St.banner, w / 2, h * .17); c.globalAlpha = 1; }   // white, parked ABOVE the table - never on top of the playfield
+    if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; var bcap = narrow ? 50 : 62, bfs = bcap; c.font = '900 ' + bcap + 'px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 36) bfs = Math.max(18, Math.floor(bcap * (w - 36) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 4; var by = Math.max(h * 0.26, 236); c.strokeText(St.banner, w / 2, by); c.fillText(St.banner, w / 2, by); c.globalAlpha = 1; }   // hole-intro flash — parked well BELOW the top HUD (min 236px) so it never collides with strokes/best; smaller + ink-outlined
     c.globalAlpha = 0.85;
     if (St.state === 'aim') hudTxt(c, narrow ? 'PULL BACK FROM THE BALL · RELEASE TO FIRE' : 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, narrow ? 10 : 13, COL.cream, 'center');
     else if (St.state === 'roll') hudTxt(c, narrow ? 'TAP LEFT / RIGHT TO FIRE THE FLIPPERS' : 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, narrow ? 10 : 13, COL.cream, 'center');
@@ -2279,10 +2279,11 @@
   }
   function drawAim(c, b) {
     var bs = project(b.x, b.y, b.z); if (!bs.vis) return;
-    // throttle the forward simulation to ~30Hz (reuse the cached path between) — the dotted preview doesn't need 60fps, and this frees the frame so the aim stays smooth on wall-heavy holes
+    // while ACTIVELY dragging, recompute every frame so the trajectory tracks your finger smoothly (the wall-culling keeps it cheap ~2ms). Only when idle (just looking) do we throttle to ~12Hz to save the frame.
     var _now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     var pts;
-    if (St._aimPts && (_now - (St._aimMs || 0)) < 33) pts = St._aimPts;
+    if (St.drag) { pts = predictPath(b, St.power); St._aimPts = pts; St._aimMs = _now; }
+    else if (St._aimPts && (_now - (St._aimMs || 0)) < 80) pts = St._aimPts;
     else { pts = predictPath(b, St.power); St._aimPts = pts; St._aimMs = _now; }
     var n = pts.length;
     // faint connecting line
