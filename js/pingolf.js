@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 176 · DAILY PULSE';
+  var BUILD = 'BUILD 177 · SEE-THROUGH TUNNEL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -63,8 +63,10 @@
     var b = {
       walls: [], bumpers: [], boosters: [], flippers: [], windmills: [], lasers: [], loops: [], warps: [], portals: [], firerings: [], enemies: [], coins: [], powerups: [], spinners: [], cannons: [], bouncers: [], multiball: null,
       terrainFeatures: [], noBox: false,
-      wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32, curve: !!o.curve }); return this; },   // curve:true = part of an organic curb (rendered as one smooth rail, no per-segment posts)
+      wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32, curve: !!o.curve, tunnel: !!o.tunnel }); return this; },   // curve:true = part of an organic curb (rendered as one smooth rail, no per-segment posts); tunnel:true = a glass channel rail (collides, but renders see-through, not as plank)
       box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
+      // SEE-THROUGH TUNNEL — a covered channel from (ax,az)→(bx,bz): two glass side rails (collision via wall()) + a translucent roof (rendered in buildScene). The ball rolls through on the ground and stays VISIBLE the whole way — the "blocking" geometry is see-through glass.
+      tunnel: function (ax, az, bx, bz, o) { o = o || {}; var w = o.w || 200, h = o.h || 62; var dx = bx - ax, dz = bz - az, L = Math.sqrt(dx * dx + dz * dz); if (L < 1) return this; var nx = -dz / L, nz = dx / L; this.wall(ax + nx * w, az + nz * w, bx + nx * w, bz + nz * w, { tunnel: true, h: h, e: o.e }); this.wall(ax - nx * w, az - nz * w, bx - nx * w, bz - nz * w, { tunnel: true, h: h, e: o.e }); (this.tunnels = this.tunnels || []).push({ ax: ax, az: az, bx: bx, bz: bz, w: w, h: h }); return this; },
       shape: function (poly, o) {   // ORGANIC FAIRWAY — poly is a closed ring of {x,z}; curb walls run along every edge and the green is rendered to this exact outline. No rectangle.
         o = o || {}; o.curve = true;   // smooth rail, no per-segment posts
         for (var i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length]; this.wall(a.x, a.z, bp.x, bp.z, o); }
@@ -410,6 +412,7 @@
     b.hill(220, 2230, 300, 130);
     b.coin(0,780,1).coin(-140,1500,1).coin(160,2050,2);
     b.booster(-260, 360, 0.5, 110, 2500);
+    b.tunnel(0, 230, 0, 540, { w: 300, h: 66 });   // see-through glass tunnel over the opening straight — roll through and stay visible
     return finish(b, "DEAD MAN'S DRIFT", 4, { x:0, z:120 }, { x:-150, z:2330 }, -520, 520, -60, 2540);
   }
   function N2() { // TWO-STEP MESA — climb a tier, a windmill gate, drop-hole to the low green
@@ -1273,7 +1276,7 @@
       var m = new T.MeshStandardMaterial({ map: tx.d, normalMap: tx.n, color: tint, roughness: .82, envMapIntensity: env == null ? .55 : env }); m.normalScale = new T.Vector2(1.4, 1.4); return m;
     }
     var postWoodM = plankMat(1, 2.2, 0, 0xb58a5c, .5);
-    hole.walls.forEach(function (s) { var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2);
+    hole.walls.forEach(function (s) { if (s.tunnel) return; var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2);   // tunnel rails render as glass below, not plank
       var prnd2 = function (n) { var v = Math.sin((s.ax + s.az + n) * 12.97) * 43758.5453; return v - Math.floor(v); };
       var repX = Math.max(1.4, L / 360), repY = Math.max(0.55, s.h / 150), tint = new T.Color(s.c).lerp(new T.Color(0xffffff), 0.5);
       var pm = plankMat(repX, repY, prnd2(1) * 0.7, tint, .5);   // per-wall vertical offset so neighbouring walls never show the same board row -> no obvious repeat
@@ -1286,6 +1289,22 @@
       if (!s.curve) [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);   // posts only on straight box walls — an organic curb gets a clean rail instead of a post at every tiny segment
         var pcap = new T.Mesh(new T.SphereGeometry(10.5, 22, 14, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
+    // SEE-THROUGH TUNNELS — translucent glass covers (side panels + roof, open ends) so the ball rolls through and stays visible; collision is on the rail walls (rendered above is skipped for them)
+    (hole.tunnels || []).forEach(function (tn) {
+      var tdx = tn.bx - tn.ax, tdz = tn.bz - tn.az, tL = hyp(tdx, tdz); if (tL < 1) return;
+      var tmx = (tn.ax + tn.bx) / 2, tmz = (tn.az + tn.bz) / 2, tgy = hole.terrain(tmx, tmz);
+      var glass = new T.MeshStandardMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.15, roughness: 0.06, metalness: 0, side: T.DoubleSide, depthWrite: false });
+      var frameM = new T.MeshBasicMaterial({ color: 0xf5c542, transparent: true, opacity: 0.55, depthWrite: false });
+      var grp = new T.Group(); grp.position.set(tmx, tgy, tmz); grp.rotation.y = Math.atan2(tdx, tdz);
+      [-1, 1].forEach(function (sgn) {
+        var side = new T.Mesh(new T.PlaneGeometry(tL, tn.h), glass); side.rotation.y = PI / 2; side.position.set(sgn * tn.w, tn.h / 2, 0); grp.add(side);
+        var rail = new T.Mesh(new T.BoxGeometry(6, 6, tL), frameM); rail.position.set(sgn * tn.w, tn.h, 0); grp.add(rail);   // glowing top rail so the channel reads
+      });
+      var roof = new T.Mesh(new T.PlaneGeometry(tn.w * 2, tL), glass); roof.rotation.x = -PI / 2; roof.position.set(0, tn.h, 0); grp.add(roof);
+      var ribs = Math.max(2, Math.round(tL / 130));   // hoop ribs so the cover reads as a tunnel, not a flat pane
+      for (var ri = 0; ri <= ribs; ri++) { var rib = new T.Mesh(new T.BoxGeometry(tn.w * 2, 5, 5), frameM); rib.position.set(0, tn.h, -tL / 2 + (tL * ri / ribs)); grp.add(rib); }
+      R3.group.add(grp);
+    });
     // bumpers — classic pinball POP BUMPERS: chrome base + slam ring, glossy red skirt, glass dome over a glowing bulb that FLASHES on every hit
     var chromeB = metalMat(0xf4f6fa, 1, 2.4);
     var bumpRed = new T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ color: 0x9c0e16, metalness: .15, roughness: .85, envMapIntensity: 1.0, clearcoat: 1, clearcoatRoughness: .14, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) }) : new T.MeshStandardMaterial({ color: 0x9c0e16, metalness: .2, roughness: .3 });
