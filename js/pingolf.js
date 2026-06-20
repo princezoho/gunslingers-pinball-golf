@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 196 · TUBE SAVE + BUILDER UTILS';
+  var BUILD = 'BUILD 197 · FLOATING ISLANDS (FOUNDATION)';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -83,6 +83,8 @@
       loopde: function (x, z, r, ang) { this.loops.push({ x: x, z: z, r: r || 130, ang: ang == null ? 0 : ang }); return this; },   // ang 0 = the loop runs DOWN the lane (tee->cup) like a traditional loop-de-loop; PI/2 was sideways
       warp: function (x, z, ex, ez, r) { this.warps.push({ x: x, z: z, ex: ex == null ? x : ex, ez: ez == null ? z + 360 : ez, r: r || 50, flash: 0 }); return this; },
       tube: function (ax, az, bx, bz, r) { this.warps.push({ x: ax, z: az, ex: bx, ez: bz, r: r || 58, flash: 0, tube: true }); return this; },   // a PIPE the ball rolls into and shoots out the far end (uses the warp teleport physics, drawn as an arcing tube)
+      // SEPARATE FLOATING ISLAND — a green polygon at its OWN height (y), with a cliff skirt + curb walls; off every island is a void. Connect islands with drop-holes/tubes/portals.
+      island: function (poly, y, o) { o = o || {}; y = y || 0; var p = poly.map(function (q) { return { x: q.x, z: q.z }; }); (this.islands = this.islands || []).push({ poly: p, y: y }); this.terrainFeatures.push({ kind: 'platform', poly: p, y: y }); for (var i = 0; i < p.length; i++) { var a = p[i], b = p[(i + 1) % p.length]; this.wall(a.x, a.z, b.x, b.z, { e: o.e == null ? 0.55 : o.e, h: o.h || 66, curve: true }); } this.noBox = true; return this; },
       portal: function (x, z, exits, r) { this.portals.push({ x: x, z: z, exits: (exits && exits.length) ? exits : [{ x: x + 320, z: z }], r: r || 46, flash: 0 }); return this; },
       firering: function (x, z, r, h, points, period) { this.firerings.push({ x: x, z: z, r: r || 120, h: h == null ? 170 : h, points: points == null ? 100 : points, period: period || 2.4, on: true, flash: 0, passedCd: 0, passed: false }); return this; },
       enemy: function (x, z, ex, ez, r, speed, type, behavior, effect) { this.enemies.push({ x: x, z: z, ex: ex == null ? x + 420 : ex, ez: ez == null ? z : ez, r: r || 42, speed: speed || 0.8, type: type || 'spiky', behavior: behavior || 'patrol', effect: effect || 'knockback', ph: 0, cx: x, cz: z, flash: 0 }); return this; },
@@ -102,8 +104,10 @@
   function gauss(d, w) { var x = d / w; return Math.exp(-x * x); }
   function terrainFn(features, cup) {
     var feats = cup ? features.filter(function (f) { return !(f.kind === 'funnel' && hyp(f.x - cup.x, f.z - cup.z) < 140); }) : features;   // design rule: the cup sits ON the green, never at the bottom of a funnel pit
+    var plats = feats.filter(function (f) { return f.kind === 'platform'; });   // SEPARATE ISLANDS: each is a polygon at its own height; OFF every island = a deep void (the ball falls)
     return function (x, z) {
       var h = 0;
+      if (plats.length) { h = -2400; for (var pj = 0; pj < plats.length; pj++) { if (inPoly(plats[pj].poly, x, z) || edgeDist(plats[pj].poly, x, z) < 40) { h = plats[pj].y || 0; break; } } }   // land on the island under (x,z) (incl. its curb edge), else void
       for (var i = 0; i < feats.length; i++) {
         var f = feats[i];
         if (f.kind === 'hill') h += f.h * gauss(hyp(x - f.x, z - f.z), f.rad);
@@ -831,9 +835,9 @@
   function edgeDist(poly, x, z) {   // shortest distance from (x,z) to the polygon boundary
     var best = 1e18; for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length], dx = b.x - a.x, dz = b.z - a.z, L = dx * dx + dz * dz, t = L ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L)) : 0, px = a.x + t * dx, pz = a.z + t * dz, d = hyp(x - px, z - pz); if (d < best) best = d; } return best;
   }
-  function buildShapedGreen(hole, bn, midZ, spanX, spanZ) {   // CRAZY-SHAPED GREEN — renders hole.shape as a grassy, terrain-FOLLOWING (multi-tier) fairway that sits in the NORMAL gunslinger world (painted backdrop + desert apron + props + paddles). NOT an island: no water/cliffs. Just replaces the rectangular green with an organic, tiered one.
+  function buildShapedGreen(hole, bn, midZ, spanX, spanZ, polyArg, skB0) {   // CRAZY-SHAPED GREEN — renders a polygon as a grassy, terrain-FOLLOWING fairway. polyArg lets a hole render SEVERAL separate islands (one call each); skB0 sets how deep the cliff/skirt drops (floating-island look).
     if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false;
-    var poly = hole.shape, i, cup = hole.cup;
+    var poly = polyArg || hole.shape, i, cup = hole.cup, hasCup = inPoly(poly, cup.x, cup.z);   // only the island that CONTAINS the cup punches the cup hole
     var minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9; poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
     var gw = maxX - minX, gd = maxZ - minZ, cmx = (minX + maxX) / 2, cmz = (minZ + maxZ) / 2;
     // THE GREEN — a grid clipped to the organic outline; each vertex lifted by hole.terrain() so tiers/ramps/mounds read as real multi-level height; real grass texture; cup hole punched out
@@ -843,13 +847,14 @@
     for (i = 0; i < pos.count; i++) pos.setY(i, hole.terrain(pos.getX(i), pos.getZ(i)) + 0.5);
     var cell = Math.max(gw / sxn, gd / szn), openR = K.cupR + cell;
     var gidx = geo.index.array, keep = [];
-    for (i = 0; i < gidx.length; i += 3) { var i0 = gidx[i], i1 = gidx[i + 1], i2 = gidx[i + 2], ccx = (pos.getX(i0) + pos.getX(i1) + pos.getX(i2)) / 3, ccz = (pos.getZ(i0) + pos.getZ(i1) + pos.getZ(i2)) / 3; if (inPoly(poly, ccx, ccz) && hyp(ccx - cup.x, ccz - cup.z) > openR) keep.push(i0, i1, i2); }
+    for (i = 0; i < gidx.length; i += 3) { var i0 = gidx[i], i1 = gidx[i + 1], i2 = gidx[i + 2], ccx = (pos.getX(i0) + pos.getX(i1) + pos.getX(i2)) / 3, ccz = (pos.getZ(i0) + pos.getZ(i1) + pos.getZ(i2)) / 3; if (inPoly(poly, ccx, ccz) && (!hasCup || hyp(ccx - cup.x, ccz - cup.z) > openR)) keep.push(i0, i1, i2); }
     geo.setIndex(keep); geo.computeVertexNormals();
     var grassN = photoTex('grass_n.jpg#isl', false, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var grassD = photoTex('grass_g.jpg#isl', true, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var _gc = new T.Color(0x4eaa3c); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // bright fairway green (gray grass texture × this tint reads as real grass)
     var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.1 })); green.receiveShadow = true; R3.group.add(green); R3.turf = green;
-    // CUP COLLAR — fill the ragged gap between the cup hole and the punched grid with continuing grass + a worn lip, so the rim is clean (same treatment as the rectangular holes)
+    // CUP COLLAR — only the island holding the cup gets the worn rim
+    if (hasCup) {
     var collarMat = green.material.clone();
     var cInner = K.cupR, cOuter = openR + cell + 30, cgeo = new T.RingGeometry(cInner, cOuter, 80, 3), cp = cgeo.attributes.position, cuv = cgeo.attributes.uv, ccol = new Float32Array(cp.count * 3);
     for (var ci = 0; ci < cp.count; ci++) {
@@ -860,8 +865,9 @@
     }
     cgeo.computeVertexNormals(); cgeo.setAttribute('color', new T.BufferAttribute(ccol, 3)); collarMat.vertexColors = true;
     var collar = new T.Mesh(cgeo, collarMat); collar.receiveShadow = true; R3.group.add(collar);
-    // short dirt SKIRT from the green edge down to the desert apron so the shaped green isn't a paper-thin sheet
-    var skB = -40, verts = [], sidx = [];
+    }
+    // dirt SKIRT / CLIFF from the green edge down — deep (skB0) for floating islands, shallow for ground-level greens
+    var skB = (skB0 != null ? skB0 : -40), verts = [], sidx = [];
     for (i = 0; i < poly.length; i++) { var a = poly[i], bp = poly[(i + 1) % poly.length], ay = hole.terrain(a.x, a.z), by = hole.terrain(bp.x, bp.z), base = verts.length / 3; verts.push(a.x, ay + 1, a.z, bp.x, by + 1, bp.z, bp.x, skB, bp.z, a.x, skB, a.z); sidx.push(base, base + 2, base + 1, base, base + 3, base + 2); }
     var sg = new T.BufferGeometry(); sg.setAttribute('position', new T.Float32BufferAttribute(verts, 3)); sg.setIndex(sidx); sg.computeVertexNormals();
     var skirt = new T.Mesh(sg, new T.MeshStandardMaterial({ color: 0x9a7548, roughness: 1, flatShading: true })); R3.group.add(skirt);
@@ -1079,7 +1085,8 @@
       var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, -34, midZ); patch.receiveShadow = true; R3.group.add(patch);
     }
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
-    if (Array.isArray(hole.shape)) buildShapedGreen(hole, bn, midZ, spanX, spanZ);   // organic holes carry hole.shape as the polygon ARRAY (normal holes leave it as the builder method) — replace the rectangular green with the organic tiered one
+    if (Array.isArray(hole.islands) && hole.islands.length) { hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); }); }   // SEPARATE FLOATING ISLANDS: render each at its own height with a deep cliff skirt
+    else if (Array.isArray(hole.shape)) buildShapedGreen(hole, bn, midZ, spanX, spanZ);   // organic holes carry hole.shape as the polygon ARRAY (normal holes leave it as the builder method) — replace the rectangular green with the organic tiered one
     // DIORAMA DRESSING — props on the apron just outside the walls (visual only, no collision). PER-HOLE: the RNG is salted by the hole so every hole gets DIFFERENT props in DIFFERENT spots (before, it was seeded only by prop index → identical cacti on every level), and each hole draws from its own "biome" palette (saguaro / crystal field / fungal grove / boulder badlands / oasis / frontier / alien garden).
     (function () {
       var WESTERN = { grass: 1, sand: 1, mud: 1, speed: 1, rubber: 1 };
@@ -3733,7 +3740,7 @@
   PG.__shareStrings = function () { return St.rec ? shareStrings(St.rec) : null; }; PG.__dailyFinish = function () { dailyFinish(); };
   PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
   PG.__highlightSubPath = function (rec) { return highlightSubPath(rec || St.rec); };
-  PG.__isl = function (name, par, wp, width, fn) { return isl(name, par, wp, width, fn); }; PG.__ribbon = function (wp, w) { return ribbon(wp, w); }; PG.__loadHoleObj = function (h) { h.terrain = terrainFn(h.terrainFeatures, h.cup); rebuildBox(h); St.hole = h; St.hi = -1; St.customName = h.name; var t = h.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = h.terrain(t.x, t.z) + K.R; buildScene(h); St.strokes = 0; St.state = 'aim'; St.testing = true; var hy = Math.atan2(h.cup.x - t.x, h.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; return h.name; };
+  PG.__isl = function (name, par, wp, width, fn) { return isl(name, par, wp, width, fn); }; PG.__ribbon = function (wp, w) { return ribbon(wp, w); }; PG.__builder = function () { return builder(); }; PG.__finishHole = function (b, name, par, tee, cup, mnx, mxx, mnz, mxz) { return finish(b, name, par, tee, cup, mnx, mxx, mnz, mxz); }; PG.__loadHoleObj = function (h) { h.terrain = terrainFn(h.terrainFeatures, h.cup); rebuildBox(h); St.hole = h; St.hi = -1; St.customName = h.name; var t = h.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = h.terrain(t.x, t.z) + K.R; buildScene(h); St.strokes = 0; St.state = 'aim'; St.testing = true; var hy = Math.atan2(h.cup.x - t.x, h.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; return h.name; };
   PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
   PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
   PG.__testDraft = function (tries, max) { return ED.draft ? testDraftBeatable(ED.draft, tries, max) : null; };
