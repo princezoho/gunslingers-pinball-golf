@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 181 · CHAMPIONS LADDER';
+  var BUILD = 'BUILD 182 · ONE-TAP POSSE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2936,10 +2936,16 @@
   }
   // ---- player handle (for the leaderboard) ----
   function playerName() { try { return localStorage.getItem('pg_name') || ''; } catch (e) { return ''; } }
-  function setPlayerName(n) { try { localStorage.setItem('pg_name', (n || '').slice(0, 24)); } catch (e) { } }
+  function setPlayerName(n) { try { localStorage.setItem('pg_name', (n || '').slice(0, 24)); } catch (e) { } if (St.pendingTeam && n) joinPendingTeam((n || '').slice(0, 24)); }
   // ---- team membership (team-vs-team daily competition) ----
   function getTeam() { try { return JSON.parse(localStorage.getItem('pg_team') || 'null'); } catch (e) { return null; } }
   function setTeam(t) { try { if (t) localStorage.setItem('pg_team', JSON.stringify(t)); else localStorage.removeItem('pg_team'); } catch (e) { } }
+  // one-tap team invite: ?team=CODE stashes St.pendingTeam; this joins it once we have a player name
+  function joinPendingTeam(name) {
+    if (!St.pendingTeam || !name) return; var net = NET(); if (!net) return;
+    var code = St.pendingTeam; St.pendingTeam = null;   // consume so we only try once
+    net.joinTeam(code, name).then(function (j) { if (j && j.team_id) { setTeam({ id: j.team_id, name: j.name, code: code }); socialToast('🏴 Joined team “' + j.name + '”! Race today’s daily for your crew.'); } });
+  }
   // ---- daily play streak (retention) ----
   function prevDay(ymd) { try { var d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); } catch (e) { return ''; } }
   function streakUpdate(day) {
@@ -3041,6 +3047,7 @@
   function dismissHowTo() { try { localStorage.setItem('pg_seen_howto', '1'); } catch (e) { } var h = document.getElementById('pg-howto'); if (h) h.remove(); }
   function afterDailyLoaded(urlGhost) {
     showHowTo();
+    if (St.pendingTeam && playerName()) setTimeout(function () { joinPendingTeam(playerName()); }, 900);   // invited via ?team= and already named → auto-join
     var net = NET(); if (!net || !net.enabled || !St.dailyDay) return;
     var recHi = St.hi;   // the daily's hole layout (>=0 for seeded/published-index; -1 for custom) — for the all-time course record
     Promise.all([net.daySummary(St.dailyDay), urlGhost ? Promise.resolve(null) : net.fetchGhosts(St.dailyDay, 3), net.courseRecord(recHi)]).then(function (res) {
@@ -3272,7 +3279,7 @@
           elt('div', 'font:700 12px Georgia;color:#d8c4a2;', 'Code', codeRow);
           elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;letter-spacing:2px;', team.code, codeRow);
           var cpy = elt('button', 'padding:4px 10px;border:1px solid #5a3a1a;border-radius:6px;background:#3a2614;color:#f5c542;font:800 11px Georgia;cursor:pointer;', '📋 Invite', codeRow);
-          cpy.onclick = function () { copyText('🤠 Join my Gunslingers team “' + team.name + '”! Invite code: ' + team.code + '\nPlay today’s daily 👉 ' + S.link, 'Team invite copied — send it to your crew!'); };
+          cpy.onclick = function () { var jl = S.link + (S.link.indexOf('?') > -1 ? '&' : '?') + 'team=' + team.code; copyText('🤠 Join my Gunslingers posse “' + team.name + '”! One tap to join + play today’s daily 👉 ' + jl, 'Team invite copied — one tap joins them!'); };
           var tlist = elt('div', 'margin-top:2px;', null, teamWrap);
           net.teamStanding(St.dailyDay).then(function (rows) {
             if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#9c8a6a;text-align:center;', 'No team scores yet today — rally your crew!', tlist); return; }
@@ -3587,6 +3594,7 @@
     St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
+    var _tm = _qs && _qs.get('team'); if (_tm) St.pendingTeam = _tm.toUpperCase().trim();   // one-tap team invite: join once we have a name
     try { if (sessionStorage.getItem('pg_ownerMode') === '1') St.ownerMode = true; } catch (e) { }
     if (_qs && (_qs.get('owner') === '1' || _qs.has('edit'))) { St.ownerMode = true; try { sessionStorage.setItem('pg_ownerMode', '1'); } catch (e) { } }
     var _ed = _qs && _qs.get('edit');
@@ -3680,6 +3688,7 @@
   PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
   PG.__getTeam = function () { return getTeam(); }; PG.__setTeam = function (t) { setTeam(t); }; PG.__clearTeam = function () { setTeam(null); };
+  PG.__pendingTeam = function (c) { if (c !== undefined) St.pendingTeam = c; return St.pendingTeam; }; PG.__joinPendingTeam = function (n) { joinPendingTeam(n); };
   PG.__enterTeamBall = function (players, hi) { enterTeamBall(players, hi); }; PG.__teamBallFinish = function () { teamBallFinish(); }; PG.__showTeamBallSetup = function () { showTeamBallSetup(); };
   PG.__enterBestBall = function (players, hi) { enterBestBall(players, hi); };
   PG.__showChampions = function () { showChampions(); };
