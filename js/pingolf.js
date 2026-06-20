@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 190 · STREAK ON THE LINE';
+  var BUILD = 'BUILD 193 · BEST SHOT GIF';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3137,12 +3137,23 @@
     var max = 280; if (!path || path.length <= max) return (path || []).slice();
     var step = path.length / max, out = []; for (var i = 0; i < max; i++) out.push(path[Math.floor(i * step)]); out.push(path[path.length - 1]); return out;
   }
-  // pick the most shareable segment of the run: the final (sinking) shot, padded to enough frames
+  // pick the most shareable segment of the run: your BEST shot — the one whose ball-path covered the
+  // most ground (a long drive, bank, loop or sinking putt) — NOT just the final tap-in.
   function highlightSubPath(rec) {
     var path = rec.path || []; if (path.length < 4) return path.slice();
-    var startI = (rec.shots && rec.shots.length) ? rec.shots[rec.shots.length - 1].i : 0;
-    if (path.length - startI < 8) startI = Math.max(0, path.length - 26);
-    var sub = path.slice(startI), MAXF = 34;
+    var shots = rec.shots || [], n = path.length;
+    var bestStart = -1, bestEnd = -1, bestLen = -1;
+    for (var k = 0; k < shots.length; k++) {
+      var si = shots[k].i | 0, ei = (k + 1 < shots.length) ? (shots[k + 1].i | 0) : n;
+      if (si < 0) si = 0; if (ei > n) ei = n;
+      if (ei - si < 4) continue;   // too short to read as a highlight
+      var d = 0; for (var j = si; j + 1 < ei; j++) { var a = path[j], b = path[j + 1]; if (a && b) { var dx = a[0] - b[0], dz = a[2] - b[2]; d += Math.sqrt(dx * dx + dz * dz); } }
+      if (d > bestLen) { bestLen = d; bestStart = si; bestEnd = ei; }
+    }
+    var startI, endI;
+    if (bestStart >= 0) { startI = bestStart; endI = bestEnd; }       // your biggest shot
+    else { startI = Math.max(0, n - 26); endI = n; }                   // fallback (capped/decoded ghosts): last chunk
+    var sub = path.slice(startI, endI), MAXF = 34;
     if (sub.length > MAXF) { var step = sub.length / MAXF, ds = []; for (var i = 0; i < MAXF; i++) ds.push(sub[Math.floor(i * step)]); ds.push(sub[sub.length - 1]); sub = ds; }
     return sub;
   }
@@ -3719,6 +3730,7 @@
   PG.__encGhost = function () { return St.rec ? encGhost(St.rec) : null; }; PG.__decGhost = decGhost;
   PG.__shareStrings = function () { return St.rec ? shareStrings(St.rec) : null; }; PG.__dailyFinish = function () { dailyFinish(); };
   PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
+  PG.__highlightSubPath = function (rec) { return highlightSubPath(rec || St.rec); };
   PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
   PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
   PG.__testDraft = function (tries, max) { return ED.draft ? testDraftBeatable(ED.draft, tries, max) : null; };
