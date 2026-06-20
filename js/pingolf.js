@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 171 · TEAMS UI';
+  var BUILD = 'BUILD 172 · TEAM BALL';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1731,6 +1731,7 @@
     var curved = St.power * St.power, power = lerp(K.shotMin, K.shotMax, curved), f = aimDir();
     b.vx = f.x * power; b.vz = f.z * power; b.vy = 0; b.stillT = 0; b.air = false; b.settled = false; b.shotFrom = { x: b.x, z: b.z };
     St.strokes++; St.state = 'roll'; St.shake = 2; St.combo = 0; sfx('hit');
+    if (St.teamBall && St.tbPlayers && St.tbPlayers.length) { St.tbShots.push(St.tbPlayers[St.tbTurn % St.tbPlayers.length]); St.tbTurn = (St.tbTurn + 1) % St.tbPlayers.length; tbTurnUpdate(); }   // alternate shot: credit the shooter, pass to the next partner
     recShot(); if (St.ghost && !St.ghost.playing) { St.ghost.playing = true; St.ghost.t = 0; }
     if (document.getElementById('pg-howto')) dismissHowTo();   // they figured it out
   }
@@ -1742,7 +1743,7 @@
     St.scores[St.hi] = St.strokes; St.parDone = (St.parDone || 0) + St.hole.par; var over = St.strokes - St.hole.par;
     var word = St.strokes === 1 ? 'HOLE IN ONE!' : over <= -2 ? 'EAGLE!' : over === -1 ? 'BIRDIE!' : over === 0 ? 'PAR' : over === 1 ? 'BOGEY' : '+' + over;
     // personal-best per hole (persists across sessions/builds) — not while testing a draft
-    if (!St.testing) { var bk = holeKey(), bs = bestStore(); St.newBest = (bs[bk] == null || St.strokes < bs[bk]); if (St.newBest) { bs[bk] = St.strokes; try { localStorage.setItem('pg_best', JSON.stringify(bs)); } catch (e) { } } St.holeBest = bs[bk]; if (St.newBest && St.strokes !== 1 && over > -2) word = word + ' · ★ BEST'; }
+    if (!St.testing && !St.teamBall) { var bk = holeKey(), bs = bestStore(); St.newBest = (bs[bk] == null || St.strokes < bs[bk]); if (St.newBest) { bs[bk] = St.strokes; try { localStorage.setItem('pg_best', JSON.stringify(bs)); } catch (e) { } } St.holeBest = bs[bk]; if (St.newBest && St.strokes !== 1 && over > -2) word = word + ' · ★ BEST'; }
     St.banner = word; St.bannerT = 3.2;
     var great = (over <= -1) || St.strokes === 1, cx = St.hole.cup.x, cz = St.hole.cup.z, gy = St.hole.terrain(cx, cz);
     St.shake = great ? 22 : (over <= 0 ? 14 : 9);
@@ -1752,7 +1753,7 @@
       var cols = ['#f5c542', '#df3b32', '#3aa0ff', '#86d85f', '#c45cff', '#ff8a2a', '#ffffff'];
       for (var k = 0; k < 70; k++) { var a = Math.random() * TAU, sp = 120 + Math.random() * 360; St.fx.push({ x: cx, y: gy + 16, z: cz, vx: Math.cos(a) * sp, vy: 280 + Math.random() * 420, vz: Math.sin(a) * sp, life: 1.1 + Math.random() * 0.7, max: 1.8, col: cols[(Math.random() * cols.length) | 0], r: 3 + Math.random() * 3 }); }
     }
-    if (St.daily) { setTimeout(dailyFinish, 1500); } else { setTimeout(nextHole, 3000); }
+    if (St.teamBall) { setTimeout(teamBallFinish, 1500); } else if (St.daily) { setTimeout(dailyFinish, 1500); } else { setTimeout(nextHole, 3000); }
   }
   function nextHole() { var base = St.setBase || 0; if (St.hi >= base + 8) { finishGame(); return; } loadHole(St.hi + 1); }
   function finishGame() { var base = St.setBase || 0, t = 0; for (var i = base; i < base + 9; i++) t += (St.scores[i] || 0); St.total = t; St.state = 'done'; St.banner = (SETS[base / 9] ? SETS[base / 9].name : 'NINE') + ' COMPLETE'; St.bannerT = 2.5; showScorecard(); }
@@ -1770,6 +1771,12 @@
     daily.onmouseenter = function () { daily.style.transform = 'translateY(-3px)'; }; daily.onmouseleave = function () { daily.style.transform = 'none'; };
     daily.onclick = function () { ov.remove(); enterDaily(null, null); };
     if (NET()) { var arc = elt('button', 'margin-top:-8px;background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '📅 Missed a day? Play past holes', ov); arc.onclick = function () { ov.remove(); enterPastDaily(1); }; }
+    var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;border:2px solid #5a3a1a;border-radius:14px;background:linear-gradient(180deg,#2a1e10,#1a1109);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
+    var tbl = elt('div', 'text-align:left;', null, tb);
+    elt('div', 'font:900 17px Wantedo,Georgia;color:#f5c542;', '👥 TEAM BALL', tbl);
+    elt('div', 'font:600 11px Georgia;color:#d8c4a2;', 'Pass & play — take turns hitting the same ball with friends.', tbl);
+    elt('div', 'font:900 14px Wantedo,Georgia;color:#86d85f;white-space:nowrap;', 'PLAY ▶', tb);
+    tb.onclick = function () { ov.remove(); showTeamBallSetup(); };
     var row = elt('div', 'display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:760px;', null, ov);
     SETS.forEach(function (set) {
       var card = elt('button', 'width:210px;min-height:150px;padding:20px 16px;border:none;border-radius:0;background:transparent;color:#f5efdc;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;', null, row);
@@ -1818,7 +1825,7 @@
     var t = St.hole.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = St.hole.terrain(t.x, t.z) + K.R;
     St.strokes = 0; St.camOrbit = 0; St.fx = []; St.pops = []; St.trail = []; St.coins = 0; St.points = 0; St.customName = null; St.magnetT = 0; St.slowT = 0;
     St.holeBest = bestStore()['h' + hi]; St.newBest = false; St.testing = false;
-    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.archive = false; St.daySummary = null; if (R3.ghostMesh) R3.ghostMesh.visible = false;
+    St.daily = false; St.rec = null; St.ghost = null; St.ghostStrokes = null; St.ghostName = null; St.leaderGhost = null; St.challenged = false; St.dailyPractice = false; St.archive = false; St.daySummary = null; St.teamBall = false; tbClearTurn(); if (R3.ghostMesh) R3.ghostMesh.visible = false;
     var hy = Math.atan2(St.hole.cup.x - t.x, St.hole.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; St.state = 'aim';
     St.banner = '#' + (hi + 1) + '  ' + St.hole.name; St.bannerT = 2.0;   // hole-intro flash
   }
@@ -3324,6 +3331,67 @@
     elt('div', 'font:600 11px Georgia;color:#9c8a6a;margin-top:4px;line-height:1.5;', 'A fresh hole drops every day. Share your score and challenge your friends.', box);
     return ov;
   }
+  // ===== TEAM BALL — local pass & play: partners take turns hitting the SAME ball (alternate shot) =====
+  var TB_POOL = [7, 6, 4, 30, 33], TEAM_BALL_HOLE = 7;
+  function tbNextHole() { var pool = TB_POOL.filter(function (h) { return h !== St.hi; }); return pool[(Math.random() * pool.length) | 0]; }
+  function tbClearTurn() { var e = document.getElementById('pg-tbturn'); if (e) e.remove(); }
+  function tbTurnUpdate() {
+    if (!St.teamBall || !St.tbPlayers || !St.tbPlayers.length) { tbClearTurn(); return; }
+    var e = document.getElementById('pg-tbturn');
+    if (!e) { e = elt('div', 'position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:40;padding:8px 18px;border:2px solid #160d06;border-radius:20px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 15px Wantedo,Georgia;box-shadow:0 6px 22px rgba(0,0,0,.5);pointer-events:none;text-align:center;white-space:nowrap;', null, document.body); e.id = 'pg-tbturn'; }
+    e.textContent = '👥 ' + St.tbPlayers[St.tbTurn % St.tbPlayers.length] + '’s turn — shot ' + (St.strokes + 1);
+  }
+  function enterTeamBall(players, hi) {
+    players = (players || []).map(function (s) { return (s || '').trim().slice(0, 16); }).filter(Boolean);
+    if (players.length < 2) players = ['Player 1', 'Player 2'];
+    if (players.length > 4) players = players.slice(0, 4);
+    if (hi == null) hi = TEAM_BALL_HOLE;
+    St.daily = false; St.ghost = null;
+    loadHole(hi);
+    St.teamBall = true; St.tbPlayers = players; St.tbTurn = 0; St.tbShots = [];
+    St.banner = '👥 TEAM BALL — ' + players.join(', '); St.bannerT = 2.6;
+    tbTurnUpdate();
+  }
+  function teamBallFinish() {
+    tbClearTurn();
+    var hole = St.hole, n = St.tbShots.length || St.strokes, par = hole ? hole.par : 3, over = n - par;
+    var verdict = n === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
+    var counts = {}; St.tbShots.forEach(function (p) { counts[p] = (counts[p] || 0) + 1; });
+    var old = document.getElementById('pg-teamball'); if (old) old.remove();
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.86);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-teamball';
+    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '👥 TEAM BALL', box);
+    elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;margin:2px 0 6px;', hole ? hole.name : '', box);
+    var sc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a';
+    elt('div', 'font:900 44px Wantedo,Georgia;color:' + sc + ';line-height:1.05;', n + ' shots', box);
+    elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:12px;', verdict + ' (par ' + par + ')', box);
+    elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:6px;', 'WHO HIT WHAT', box);
+    St.tbPlayers.forEach(function (p) {
+      var rw = elt('div', 'display:flex;justify-content:space-between;padding:5px 10px;margin:2px 0;border-radius:6px;background:rgba(245,197,66,.06);font:13px Georgia;color:#f5efdc;', null, box);
+      elt('div', 'font-weight:700;', p, rw);
+      elt('div', 'font-weight:800;color:#f5c542;', (counts[p] || 0) + ' shot' + ((counts[p] || 0) === 1 ? '' : 's'), rw);
+    });
+    var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var again = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔁 NEXT HOLE, SAME TEAM', box);
+    again.onclick = function () { ov.remove(); enterTeamBall(St.tbPlayers, tbNextHole()); };
+    var nt = elt('button', prim + 'background:linear-gradient(180deg,#8a6a1e,#5a3a10);', '👥 NEW TEAM', box);
+    nt.onclick = function () { ov.remove(); St.teamBall = false; showTeamBallSetup(); };
+    var ex = elt('button', prim + 'background:#3a2614;color:#f5c542;', '🎮 BACK TO MENU', box);
+    ex.onclick = function () { ov.remove(); St.teamBall = false; chooseSet(); };
+  }
+  function showTeamBallSetup() {
+    var old = document.getElementById('pg-tbsetup'); if (old) old.remove();
+    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.88);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-tbsetup';
+    var box = elt('div', 'width:380px;max-width:92%;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov);
+    elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;', '👥 TEAM BALL', box);
+    elt('div', 'font:600 13px Georgia;color:#d8c4a2;margin:6px 0 14px;line-height:1.5;', 'Pass & play on one device. Take turns hitting the SAME ball — fewest shots as a team wins. Add 2–4 players.', box);
+    var inp = elt('input', 'width:100%;padding:11px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, box);
+    inp.placeholder = 'Names, comma-separated'; inp.value = (playerName() || 'Tex') + ', Annie';
+    var start = elt('button', 'width:100%;padding:13px;margin-top:12px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ START TEAM BALL', box);
+    start.onclick = function () { var names = (inp.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); if (names.length < 2) { socialToast('Add at least 2 players'); return; } ov.remove(); enterTeamBall(names, TEAM_BALL_HOLE); };
+    var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
+    cancel.onclick = function () { ov.remove(); chooseSet(); };
+  }
   function boot() {
     audioLoadPrefs();
     St.scene = document.getElementById('scene'); St.hud = document.getElementById('hud'); St.hctx = St.hud.getContext('2d');
@@ -3440,6 +3508,7 @@
   PG.__countdown = function () { return { ms: msToNextDaily(), str: fmtCountdown() }; };
   PG.__dailyDone = function () { return dailyDone(); }; PG.__clearDailyDone = function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } };
   PG.__getTeam = function () { return getTeam(); }; PG.__setTeam = function (t) { setTeam(t); }; PG.__clearTeam = function () { setTeam(null); };
+  PG.__enterTeamBall = function (players, hi) { enterTeamBall(players, hi); }; PG.__teamBallFinish = function () { teamBallFinish(); }; PG.__showTeamBallSetup = function () { showTeamBallSetup(); };
   PG.__cta = function () { return dailyCTA(); }; PG.__ctas = function () { return SHARE_CTAS; };
   PG.__capReplay = function (path) { return capReplay(path); };
   PG.__stats = function () { return statsGet(); }; PG.__clearStats = function () { try { localStorage.removeItem('pg_stats'); } catch (e) { } };
