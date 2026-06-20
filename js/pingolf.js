@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 209 · LOOP ISLE';
+  var BUILD = 'BUILD 210 · SMOOTH AIM';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -63,7 +63,8 @@
     var b = {
       walls: [], bumpers: [], boosters: [], flippers: [], windmills: [], lasers: [], loops: [], warps: [], portals: [], firerings: [], enemies: [], coins: [], powerups: [], spinners: [], cannons: [], bouncers: [], gates: [], conveyors: [], pendulums: [], turntables: [], multiball: null,
       terrainFeatures: [], noBox: false,
-      wall: function (ax, az, bx, bz, o) { o = o || {}; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32, curve: !!o.curve, tunnel: !!o.tunnel }); return this; },   // curve:true = part of an organic curb (rendered as one smooth rail, no per-segment posts); tunnel:true = a glass channel rail (collides, but renders see-through, not as plank)
+      wall: function (ax, az, bx, bz, o) { o = o || {}; var _dx = bx - ax, _dz = bz - az; this.walls.push({ ax: ax, az: az, bx: bx, bz: bz, e: o.e == null ? K.wallE : o.e, h: Math.min(o.h || 46, 240), c: o.c || 0x8a5a32, curve: !!o.curve, tunnel: !!o.tunnel, _mx: (ax + bx) / 2, _mz: (az + bz) / 2, _hl: Math.sqrt(_dx * _dx + _dz * _dz) / 2 + K.R + K.wallHalf + 8 }); return this; },   // _mx/_mz/_hl = bounding circle for fast broad-phase culling (skip far walls in predictPath + collide). curve:true = organic curb rail; tunnel:true = glass channel rail
+
       box: function (x0, z0, x1, z1, o) { this.wall(x0, z0, x1, z0, o); this.wall(x1, z0, x1, z1, o); this.wall(x1, z1, x0, z1, o); this.wall(x0, z1, x0, z0, o); this.hw = Math.max(Math.abs(x0), Math.abs(x1)); return this; },
       // SEE-THROUGH TUNNEL — a covered channel from (ax,az)→(bx,bz): two glass side rails (collision via wall()) + a translucent roof (rendered in buildScene). The ball rolls through on the ground and stays VISIBLE the whole way — the "blocking" geometry is see-through glass.
       tunnel: function (ax, az, bx, bz, o) { o = o || {}; var w = o.w || 200, h = o.h || 62; var dx = bx - ax, dz = bz - az, L = Math.sqrt(dx * dx + dz * dz); if (L < 1) return this; if (!o.noRails) { var nx = -dz / L, nz = dx / L; this.wall(ax + nx * w, az + nz * w, bx + nx * w, bz + nz * w, { tunnel: true, h: h, e: o.e }); this.wall(ax - nx * w, az - nz * w, bx - nx * w, bz - nz * w, { tunnel: true, h: h, e: o.e }); } (this.tunnels = this.tunnels || []).push({ ax: ax, az: az, bx: bx, bz: bz, w: w, h: h, roofOnly: !!o.noRails }); return this; },   // noRails:true = glass roof only over an EXISTING channel (collision already there) — zero physics change
@@ -1755,7 +1756,7 @@
       } else b.oobT = 0;
     }
     var i, gy = gh;
-    for (i = 0; i < hole.walls.length; i++) collideWall(b, hole.walls[i], gy);
+    for (i = 0; i < hole.walls.length; i++) { var _w = hole.walls[i]; if (_w._hl !== undefined) { var _wx = b.x - _w._mx, _wz = b.z - _w._mz; if (_wx * _wx + _wz * _wz > _w._hl * _w._hl) continue; } collideWall(b, _w, gy); }   // broad-phase cull: skip far walls
     if (Array.isArray(hole.shape) && !b.air) containShape(b, hole.shape);   // organic-hole backstop so a fast ball can't tunnel through the curb
     for (i = 0; i < hole.bumpers.length; i++) collideBumper(b, hole.bumpers[i], gy);
     for (i = 0; i < hole.flippers.length; i++) collideFlipper(b, hole.flippers[i], gy);
@@ -2216,7 +2217,7 @@
   function predictPath(b, power) {
     var f = aimDir(), v = lerp(K.shotMin, K.shotMax, power * power), hole = St.hole, bn = hole.bounds;
     var x = b.x, z = b.z, y = b.y, vx = f.x * v, vz = f.z * v, vy = 0, dt = 1 / 90, pts = [{ x: x, y: y, z: z }], bounces = 0, walls = hole.walls;
-    for (var step = 0; step < 150 && bounces < 4; step++) {
+    for (var step = 0; step < 110 && bounces < 4; step++) {
       vy -= K.g * dt; vx *= (1 - K.airDrag * dt); vz *= (1 - K.airDrag * dt);
       x += vx * dt; y += vy * dt; z += vz * dt;
       if (x < bn.minX + 12) { x = bn.minX + 12; vx = Math.abs(vx) * .5; bounces++; }
@@ -2225,7 +2226,8 @@
       else if (z > bn.maxZ - 12) { z = bn.maxZ - 12; vz = -Math.abs(vz) * .5; bounces++; }
       var gh = hole.terrain(x, z), surf = gh + K.R;
       if (y <= surf) { y = surf; if (vy < 0) vy = 0; var sp = Math.sqrt(vx * vx + vz * vz); if (sp > 0) { var ns = Math.max(0, sp - K.rollFric * dt), kf = ns / sp; vx *= kf; vz *= kf; } }
-      for (var wi = 0; wi < walls.length; wi++) { var s = walls[wi]; if (y > gh + s.h - 4) continue; var cc = nearestOnSeg(x, z, s.ax, s.az, s.bx, s.bz), dx = x - cc.x, dz = z - cc.z, dd = Math.sqrt(dx * dx + dz * dz), R = K.R + K.wallHalf; if (dd < R) { var nx = dd > 1e-4 ? dx / dd : 0, nz = dd > 1e-4 ? dz / dd : -1; x = cc.x + nx * R; z = cc.z + nz * R; var vn = vx * nx + vz * nz; if (vn < 0) { var e = (s.e == null ? K.wallE : s.e); vx -= (1 + e) * vn * nx; vz -= (1 + e) * vn * nz; bounces++; } } }
+      for (var wi = 0; wi < walls.length; wi++) { var s = walls[wi]; if (y > gh + s.h - 4) continue; if (s._hl !== undefined) { var _bx = x - s._mx, _bz = z - s._mz; if (_bx * _bx + _bz * _bz > s._hl * s._hl) continue; }   // broad-phase: skip walls whose bounding circle the ball can't reach this step
+        var cc = nearestOnSeg(x, z, s.ax, s.az, s.bx, s.bz), dx = x - cc.x, dz = z - cc.z, dd = Math.sqrt(dx * dx + dz * dz), R = K.R + K.wallHalf; if (dd < R) { var nx = dd > 1e-4 ? dx / dd : 0, nz = dd > 1e-4 ? dz / dd : -1; x = cc.x + nx * R; z = cc.z + nz * R; var vn = vx * nx + vz * nz; if (vn < 0) { var e = (s.e == null ? K.wallE : s.e); vx -= (1 + e) * vn * nx; vz -= (1 + e) * vn * nz; bounces++; } } }
       pts.push({ x: x, y: y, z: z });
       if (Math.sqrt(vx * vx + vz * vz) < 45 && y <= surf + 1) break;
     }
@@ -2248,7 +2250,12 @@
   }
   function drawAim(c, b) {
     var bs = project(b.x, b.y, b.z); if (!bs.vis) return;
-    var pts = predictPath(b, St.power), n = pts.length;
+    // throttle the forward simulation to ~30Hz (reuse the cached path between) — the dotted preview doesn't need 60fps, and this frees the frame so the aim stays smooth on wall-heavy holes
+    var _now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var pts;
+    if (St._aimPts && (_now - (St._aimMs || 0)) < 33) pts = St._aimPts;
+    else { pts = predictPath(b, St.power); St._aimPts = pts; St._aimMs = _now; }
+    var n = pts.length;
     // faint connecting line
     c.globalAlpha = .5; c.lineWidth = 3; c.lineCap = 'round'; c.strokeStyle = 'rgba(255,240,200,.45)'; c.beginPath(); var started = false;
     for (var i = 0; i < n; i++) { var s = project(pts[i].x, pts[i].y + 12, pts[i].z); if (!s.vis) { started = false; continue; } if (!started) { c.moveTo(s.x, s.y); started = true; } else c.lineTo(s.x, s.y); }
