@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 205 · CONTRAPTION ALLEY';
+  var BUILD = 'BUILD 206 · ARCHIPELAGO';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -564,7 +564,19 @@
     b.bumper(-170, 1200, 36).coin(0, 520, 1).coin(0, 2260, 2);
     return finish(b, 'STEPPING STONES', 4, { x: 0, z: 250 }, { x: 0, z: 2260 }, -480, 480, -160, 2700);
   }
-  function ISL6() { return isl('CANYON SWEEP', 3, [[0, 0], [-440, 720], [-340, 1520], [240, 1980]], 520, function (b) { b.hill(-340, 1100, 340, 110); b.tube(-300, 560, -300, 1500, 66); b.windmill(-340, 1100, 200, 4, 1.3); b.coin(-440, 720, 1).coin(240, 1980, 2); }); }
+  function ISL6() {   // ARCHIPELAGO — the LONGEST island run: four separate isles, each hop a different contraption — TUBE, DROP, then PORTAL, descending to the cup isle
+    function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
+    var b = builder();
+    b.island(circ(0, 320, 290), 220, { h: 90 });       // A — tee
+    b.island(circ(0, 1100, 300), 220, { h: 90 });       // B — tube lands here
+    b.island(circ(0, 1880, 300), 80, { h: 90 });        // C — drop lands here
+    b.island(circ(0, 2660, 320), -100, { h: 90 });      // D — cup island (portal)
+    b.tube(0, 480, 0, 1100, 68);                         // A -> B
+    b.warp(0, 1280, 0, 1880, 72);                        // B -> C
+    b.portal(0, 2060, [{ x: 0, z: 2660 }], 54);          // C -> D
+    b.bumper(150, 1100, 36).bumper(-150, 1880, 36).coin(0, 480, 1).coin(0, 2060, 1).coin(0, 2720, 2);
+    return finish(b, 'ARCHIPELAGO', 4, { x: 0, z: 240 }, { x: 0, z: 2720 }, -440, 440, -160, 3140);
+  }
   function ISL7() {   // CASTAWAY COVE — TRUE floating islands: tee on the high isle, DROP through a hole onto a separate lower isle, then a portal TELEPORTS you to the cup island
     function circ(cx, cz, r) { var p = [], n = 20; for (var i = 0; i < n; i++) { var t = i / n * TAU; p.push({ x: Math.round(cx + Math.cos(t) * r), z: Math.round(cz + Math.sin(t) * r * 1.06) }); } return p; }
     var b = builder();
