@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 179 · ONE-TAP SHARE';
+  var BUILD = 'BUILD 180 · SHARE THE POSSE';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3420,6 +3420,8 @@
     St.banner = '👥 TEAM BALL — ' + players.join(', '); St.bannerT = 2.6;
     tbTurnUpdate();
   }
+  // share a local pass-&-play result — native share sheet on mobile, copy fallback on desktop
+  function shareLocalResult(text) { if (navigator.share) { try { navigator.share({ title: 'Gunslingers Pinball Golf', text: text }).catch(function () { }); return; } catch (e) { } } copyText(text, 'Result copied — paste anywhere!'); }
   function teamBallFinish() {
     tbClearTurn();
     var hole = St.hole, n = St.tbShots.length || St.strokes, par = hole ? hole.par : 3, over = n - par;
@@ -3440,6 +3442,9 @@
       elt('div', 'font-weight:800;color:#f5c542;', (counts[p] || 0) + ' shot' + ((counts[p] || 0) === 1 ? '' : 's'), rw);
     });
     var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var tbText = '👥 Team Ball — ' + St.tbPlayers.join(', ') + ' sank ' + (hole ? hole.name : 'the hole') + ' in ' + n + ' shots (' + verdict.replace(/[🎯🦅🐦✅😬💀]/g, '').trim() + ')! 🤠 Play Gunslingers Pinball Golf 👉 ' + shareBase() + '?daily';
+    var sh = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤 SHARE RESULT', box);
+    sh.onclick = function () { shareLocalResult(tbText); };
     var again = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔁 NEXT HOLE, SAME TEAM', box);
     again.onclick = function () { ov.remove(); enterTeamBall(St.tbPlayers, tbNextHole()); };
     var nt = elt('button', prim + 'background:linear-gradient(180deg,#8a6a1e,#5a3a10);', '👥 NEW TEAM', box);
@@ -3491,6 +3496,9 @@
       elt('div', 'font-weight:800;color:' + roc + ';', r.s + (ro !== 0 ? (ro > 0 ? ' +' + ro : ' ' + ro) : ''), rw);
     });
     var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var bbText = '🎯 Best Ball — ' + best.name + ' led the crew with ' + best.s + ' on ' + (hole ? hole.name : 'the hole') + ' (' + St.bbPlayers.join(', ') + ')! 🤠 Play Gunslingers Pinball Golf 👉 ' + shareBase() + '?daily';
+    var sh = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤 SHARE RESULT', box);
+    sh.onclick = function () { shareLocalResult(bbText); };
     var again = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔁 NEXT HOLE, SAME TEAM', box);
     again.onclick = function () { ov.remove(); enterBestBall(St.bbPlayers, tbNextHole()); };
     var nt = elt('button', prim + 'background:linear-gradient(180deg,#8a6a1e,#5a3a10);', '👥 NEW TEAM', box);
