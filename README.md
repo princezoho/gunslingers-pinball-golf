@@ -4,7 +4,7 @@
 
 # 🤠 Gunslingers Pinball Golf
 
-**A _daily_ Wild-West golf game — one shared hole every day, race everyone's ghosts, and share your score. Plus 36 holes of six-shooter _pinball + mini-golf_ chaos, right in your browser.**
+**A _daily_ Wild-West golf game — one shared hole every day. Race everyone's ghosts, form a posse, climb the champions ladder, and share your score. Plus 36 holes of six-shooter _pinball + mini-golf_ chaos — with see-through glass tunnels — right in your browser.**
 
 ### [⭐ &nbsp;Play today's daily](https://princezoho.github.io/gunslingers-pinball-golf/game.html?daily) &nbsp;·&nbsp; [▶ &nbsp;All 36 holes](https://princezoho.github.io/gunslingers-pinball-golf/)
 
@@ -14,7 +14,7 @@ No installs, no sign-up. Runs on Three.js + a single JS file.
 
 ---
 
-Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops and teleport portals — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **36 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
+Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops, teleport portals and **see-through glass tunnels** — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **36 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
 
 ## ⭐ The Daily — a new hole every day
 
@@ -22,12 +22,21 @@ The heart of the game is the **daily hole**: one shared hole that everyone plays
 
 - **One shot a day.** Sink today's hole, then come back tomorrow for a fresh one. Re-opening the daily shows your result instantly (replays are just practice).
 - **Race the ghosts.** From your first swing you race a translucent rival — the best real player's run that day — and the result card tells you if you **beat them**.
-- **Live leaderboard.** Post your score to today's board, see your **rank of N players** and the **field difficulty** ("🔥 Brutal hole today — field avg +2").
-- **Share it everywhere.** One tap to **share on X**, **copy for Discord**, or copy a **challenge link** that drops a friend into the same hole racing _your_ ghost. Plus a one-tap **highlight GIF** of your sinking shot, signed with your name.
-- **Keep your streak.** Daily play streaks, lifetime career stats, and a **past-days archive** to play holes you missed.
-- **Owner sets the hole.** A passcode-gated **Daily Studio** (`owner.html`) lets the owner propose, edit, and publish each day's hole (or bank holes for future dates).
+- **Live leaderboard + records.** Post your score to today's board, see your **rank of N players**, the **field difficulty** ("🔥 Brutal hole today — field avg +2"), and the hole's **all-time course record** — beat it for a "🏆 NEW COURSE RECORD".
+- **Share it everywhere.** One tap to the **native share sheet** (Messages / WhatsApp / Discord / X / anywhere), **share on X**, **copy for Discord**, or copy a **challenge link** that drops a friend into the same hole racing _your_ ghost. Plus a one-tap **highlight GIF** of your sinking shot, signed with your name.
+- **Keep your streak.** Daily play streaks (with a "🔥 your streak is on the line" nudge), lifetime career stats, and a **past-days archive** to play holes you missed.
+- **Owner sets the hole.** A passcode-gated **Daily Studio** (`owner.html`) lets the owner propose, edit, and publish each day's hole (or bank holes for future dates) — and watch a live **engagement panel** (players/plays today + this week, top teams).
 
-> The daily, ghosts, leaderboard and sharing run on a free [Supabase](https://supabase.com) backend; the game itself is still a static site and falls back to a date-seeded hole if offline.
+> The daily, ghosts, leaderboard, teams and sharing run on a free [Supabase](https://supabase.com) backend (anti-cheat run submission guarded by row-level security); the game itself is still a static site and falls back to a date-seeded hole if offline.
+
+## 🏴 Teams &amp; competition — play with your posse
+
+The daily isn't just you vs. the field — it's **teams vs. teams** and a season-long climb.
+
+- **Form a posse.** Create or join a **team** with a one-tap invite link, then battle other teams on the daily **team leaderboard** (best-ball: your crew's lowest score counts). Teams keep their own **all-time record + daily streak**.
+- **Champions ladder.** A persistent **🏆 Champions** board ranks **players _and_ teams**, **this week** or **all-time**, by daily wins. Flex your standing with a one-tap **"share my rank"**.
+- **Pass &amp; play modes.** Grab friends on one device: **Team Ball** (alternate shot — partners take turns hitting the _same_ ball) or **Best Ball** (everyone plays the hole, lowest score wins). Both are shareable.
+- **Always see the ball.** Walls between the camera and your ball go **see-through** automatically, and **glass tunnels** let the ball roll through cover while staying fully visible — so you can always see what you're doing.
 
 ## 📸 Screenshots
 
