@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 216 · HUD SPACING + SMOOTH AIM';
+  var BUILD = 'BUILD 217 · ISLAND FLOORS + METAL TUBE + INPUT FIX';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -925,7 +925,7 @@
     var best = 1e18; for (var i = 0; i < poly.length; i++) { var a = poly[i], b = poly[(i + 1) % poly.length], dx = b.x - a.x, dz = b.z - a.z, L = dx * dx + dz * dz, t = L ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L)) : 0, px = a.x + t * dx, pz = a.z + t * dz, d = hyp(x - px, z - pz); if (d < best) best = d; } return best;
   }
   function buildShapedGreen(hole, bn, midZ, spanX, spanZ, polyArg, skB0) {   // CRAZY-SHAPED GREEN — renders a polygon as a grassy, terrain-FOLLOWING fairway. polyArg lets a hole render SEVERAL separate islands (one call each); skB0 sets how deep the cliff/skirt drops (floating-island look).
-    if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false;
+    if (!polyArg) { if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false; }   // single-green case hides the rectangular turf; ISLAND calls (polyArg set) must NOT touch R3.turf or they'd hide the PREVIOUS island's floor
     var poly = polyArg || hole.shape, i, cup = hole.cup, hasCup = inPoly(poly, cup.x, cup.z);   // only the island that CONTAINS the cup punches the cup hole
     var minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9; poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
     var gw = maxX - minX, gd = maxZ - minZ, cmx = (minX + maxX) / 2, cmz = (minZ + maxZ) / 2;
@@ -942,7 +942,7 @@
     var grassN = photoTex('grass_n.jpg#isl', false, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var grassD = photoTex('grass_g.jpg#isl', true, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var _gc = new T.Color(0x4eaa3c); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // bright fairway green (gray grass texture × this tint reads as real grass)
-    var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.1 })); green.receiveShadow = true; R3.group.add(green); R3.turf = green;
+    var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.1 })); green.receiveShadow = true; R3.group.add(green); if (!polyArg) R3.turf = green;   // don't reassign R3.turf for island calls (each island would otherwise hide the next)
     // CUP COLLAR — only the island holding the cup gets the worn rim
     if (hasCup) {
     var collarMat = green.material.clone();
@@ -1176,7 +1176,7 @@
       var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, patchY, midZ); patch.receiveShadow = true; R3.group.add(patch);
     }
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
-    if (Array.isArray(hole.islands) && hole.islands.length) { hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); }); }   // SEPARATE FLOATING ISLANDS: render each at its own height with a deep cliff skirt
+    if (Array.isArray(hole.islands) && hole.islands.length) { if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false; hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); }); }   // hide the rectangular turf ONCE, then render each island's own green floor (none of which hide each other now)
     else if (Array.isArray(hole.shape)) buildShapedGreen(hole, bn, midZ, spanX, spanZ);   // organic holes carry hole.shape as the polygon ARRAY (normal holes leave it as the builder method) — replace the rectangular green with the organic tiered one
     // DIORAMA DRESSING — props on the apron just outside the walls (visual only, no collision). PER-HOLE: the RNG is salted by the hole so every hole gets DIFFERENT props in DIFFERENT spots (before, it was seeded only by prop index → identical cacti on every level), and each hole draws from its own "biome" palette (saguaro / crystal field / fungal grove / boulder badlands / oasis / frontier / alien garden).
     (function () {
@@ -1598,12 +1598,14 @@
     });
     (hole.warps || []).forEach(function (wp) {
       var gy = hole.terrain(wp.x, wp.z), gy2 = hole.terrain(wp.ex, wp.ez);
-      if (wp.tube) {   // a wooden PIPE that arcs from the entrance up and over to the exit
+      if (wp.tube) {   // a polished-STEEL pipe that arcs from the entrance up and over to the exit (metal, not wood)
         var dxt = wp.ex - wp.x, dzt = wp.ez - wp.z, dist = hyp(dxt, dzt), arc = 200 + dist * 0.22, R = wp.r;
         var crv = new T.CatmullRomCurve3([new T.Vector3(wp.x, gy + R * 0.5, wp.z), new T.Vector3(wp.x + dxt * 0.28, gy + arc * 0.7 + R, wp.z + dzt * 0.28), new T.Vector3(wp.x + dxt * 0.5, gy + arc + R, wp.z + dzt * 0.5), new T.Vector3(wp.x + dxt * 0.72, gy2 + arc * 0.7 + R, wp.z + dzt * 0.72), new T.Vector3(wp.ex, gy2 + R * 0.5, wp.ez)]);
-        var tubeMat = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#tube', true), normalMap: photoTex('wood_n.jpg#tube', false), color: 0xc6924f, roughness: .7, metalness: .1, side: T.DoubleSide });
-        var pipe = new T.Mesh(new T.TubeGeometry(crv, 40, R, 18, false), tubeMat); pipe.castShadow = true; R3.group.add(pipe);
-        var rimM = new T.MeshStandardMaterial({ color: 0x6e4a25, roughness: .8 });
+        var tubeMat = metalMat(0xb4bac4, 1, 1.8); tubeMat.side = T.DoubleSide;   // polished steel
+        var pipe = new T.Mesh(new T.TubeGeometry(crv, 44, R, 20, false), tubeMat); pipe.castShadow = true; R3.group.add(pipe);
+        var bandM = metalMat(0x7c818b, 1, 1.3);   // darker steel bands every few segments for a riveted-pipe read
+        for (var tb = 1; tb < 5; tb++) { var tp = crv.getPoint(tb / 5), band = new T.Mesh(new T.TorusGeometry(R * 1.06, R * 0.13, 10, 22), bandM); var tng = crv.getTangent(tb / 5); band.position.copy(tp); band.lookAt(tp.clone().add(tng)); R3.group.add(band); }
+        var rimM = metalMat(0x6a6f78, 1, 1.2);
         [[wp.x, gy, wp.z], [wp.ex, gy2, wp.ez]].forEach(function (e, ei) { var mouth = new T.Mesh(new T.CylinderGeometry(R * 1.08, R * 1.08, 26, 20, 1, true), rimM); mouth.position.set(e[0], e[1] + R * 0.5, e[2]); R3.group.add(mouth); var hole2 = new T.Mesh(new T.CircleGeometry(R * 0.92, 20), new T.MeshBasicMaterial({ color: 0x0a0608 })); hole2.rotation.x = -PI / 2; hole2.position.set(e[0], e[1] + 2.5, e[2]); R3.group.add(hole2); if (ei === 0) wp.mesh = mouth; });
         return;
       }
@@ -2199,7 +2201,7 @@
   }
   function rrect(c, a, b, w, h, r) { c.beginPath(); c.moveTo(a + r, b); c.arcTo(a + w, b, a + w, b + h, r); c.arcTo(a + w, b + h, a, b + h, r); c.arcTo(a, b + h, a, b, r); c.arcTo(a, b, a + w, b, r); c.closePath(); }
   // AAA type straight on the glass — big Wantedo with a heavy ink outline, no boxes, no pills
-  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.font = '900 ' + Math.round(size * 1.5) + 'px Wantedo, Georgia'; c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }
+  function hudTxt(c, txt, x, y, size, col, align) { c.textAlign = align || 'left'; c.font = '900 ' + Math.round(size * 1.5) + 'px Wantedo, Georgia'; c.lineJoin = 'round'; c.lineWidth = Math.max(3, size * 0.18); c.strokeStyle = 'rgba(18,11,5,.6)'; c.strokeText(txt, x, y); c.fillStyle = col; c.fillText(txt, x, y); return c.measureText(txt).width; }   // dark ink outline so HUD type stays crisp/readable on the bright desert (no plates)
   function drawHUD() {
     var c = St.hctx, w = St.w, h = St.h; c.setTransform(St.dpr, 0, 0, St.dpr, 0, 0); c.clearRect(0, 0, w, h);
     if (St.state === 'load') return;
@@ -2238,8 +2240,9 @@
     if (St.state === 'aim') powerMeter(c, w, h);
     if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; var bcap = narrow ? 50 : 62, bfs = bcap; c.font = '900 ' + bcap + 'px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 36) bfs = Math.max(18, Math.floor(bcap * (w - 36) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 4; var by = Math.max(h * 0.26, 236); c.strokeText(St.banner, w / 2, by); c.fillText(St.banner, w / 2, by); c.globalAlpha = 1; }   // hole-intro flash — parked well BELOW the top HUD (min 236px) so it never collides with strokes/best; smaller + ink-outlined
     c.globalAlpha = 0.85;
-    if (St.state === 'aim') hudTxt(c, narrow ? 'PULL BACK FROM THE BALL · RELEASE TO FIRE' : 'PULL BACK FROM THE BALL — AIM ANY DIRECTION · RELEASE TO FIRE · ARROWS MOVE CAMERA', w / 2, h - 14, narrow ? 10 : 13, COL.cream, 'center');
-    else if (St.state === 'roll') hudTxt(c, narrow ? 'TAP LEFT / RIGHT TO FIRE THE FLIPPERS' : 'TAP SCREEN OR PRESS A / D TO FIRE THE FLIPPERS · ARROW KEYS MOVE CAMERA', w / 2, h - 14, narrow ? 10 : 13, COL.cream, 'center');
+    var instr = St.state === 'aim' ? (narrow ? 'PULL BACK · RELEASE TO FIRE' : 'PULL BACK TO AIM · RELEASE TO FIRE · ◀ ▶ CAMERA')
+      : St.state === 'roll' ? (narrow ? 'TAP L / R FOR FLIPPERS' : 'TAP SCREEN OR A / D FOR FLIPPERS · ◀ ▶ CAMERA') : '';
+    if (instr) { var isz = narrow ? 11 : 14; c.font = '900 ' + Math.round(isz * 1.5) + 'px Wantedo, Georgia'; var iw = c.measureText(instr).width; if (iw > w - 24) isz = isz * (w - 24) / iw; hudTxt(c, instr, w / 2, h - 14, isz, COL.cream, 'center'); }   // auto-fit so it never overflows the screen
     c.globalAlpha = 1;
   }
   // simulate the shot forward (gravity, terrain, roll friction, wall bounces) so the aim guide shows the real path + bank shots
@@ -2310,9 +2313,9 @@
 
   /* ================================================================ input */
   function ptr(e) { var r = St.scene.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-  function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'R' : 'L'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
-  function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0, len = Math.sqrt(dx * dx + dy * dy); St.drag.pull = len; if (len > 8) St.aimYaw = St.drag.yaw0 + Math.atan2(dx, dy); St.power = clamp(len / K.pullPx, 0.05, 1); }   // SLINGSHOT: pull any way — the shot fires the opposite way, full 360° incl. backwards
-  function onUp(e) { if (ED.on) { edUp(); return; } if (St.ptr) { var role = St.ptr[e.pointerId]; if (role === 'L' || role === 'R') { delete St.ptr[e.pointerId]; var any = false; for (var k in St.ptr) if (St.ptr[k] === role) any = true; flipPress(role, any); return; } delete St.ptr[e.pointerId]; } if (!St.drag) return; var pull = St.drag.pull; St.drag = null; if (pull >= 14) shoot(); }
+  function onDown(e) { e.preventDefault(); audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); musicStart(); if (ED.on) { edDown(ptr(e), e.shiftKey); return; } var p = ptr(e); St.ptr = St.ptr || {}; if (St.state === 'aim') { St.drag = { x0: p.x, y0: p.y, sx: p.x, sy: p.y, pull: 0, yaw0: St.camYaw, id: e.pointerId }; St.ptr[e.pointerId] = 'aim'; } else if (St.state === 'roll') { var side = p.x < St.w / 2 ? 'R' : 'L'; St.ptr[e.pointerId] = side; flipPress(side, true); } }
+  function onMove(e) { if (ED.on) { ED.curS = ptr(e); if (ED.moving || ED.moving3d || ED.drawing || ED.erasing || ED.painting || ED.dragHandle || ED.camDrag) edMove(ED.curS); return; } if (!St.drag || (St.drag.id != null && e.pointerId !== St.drag.id)) return; var p = ptr(e); St.drag.sx = p.x; St.drag.sy = p.y; var dx = p.x - St.drag.x0, dy = p.y - St.drag.y0, len = Math.sqrt(dx * dx + dy * dy); St.drag.pull = len; if (len > 8) St.aimYaw = St.drag.yaw0 + Math.atan2(dx, dy); St.power = clamp(len / K.pullPx, 0.05, 1); }   // SLINGSHOT — only the pointer that STARTED the drag drives it (stray touches can't jam it)
+  function onUp(e) { if (ED.on) { edUp(); return; } if (St.ptr) { var role = St.ptr[e.pointerId]; if (role === 'L' || role === 'R') { delete St.ptr[e.pointerId]; var any = false; for (var k in St.ptr) if (St.ptr[k] === role) any = true; flipPress(role, any); return; } delete St.ptr[e.pointerId]; } if (!St.drag) return; if (St.drag.id != null && e.pointerId !== St.drag.id) return; var pull = St.drag.pull; St.drag = null; if (pull >= 14) shoot(); }
   function onKey(down, e) {
     var k = e.code; if (ED.on || St.state === 'load') return;
     // A / D fire the flippers — available AT ANY TIME (they animate in every state; they bat the ball while it's rolling)
