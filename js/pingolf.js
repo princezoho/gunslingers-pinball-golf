@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 207 · TURNTABLE';
+  var BUILD = 'BUILD 208 · FULL GAUNTLET';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -601,14 +601,14 @@
     b.bumper(-150, 1240, 40).bumper(150, 1240, 40).coin(0, 540, 1).coin(0, 2100, 2);
     return finish(b, 'CORAL BEND', 4, { x: 0, z: 230 }, { x: 0, z: 2160 }, -500, 500, -160, 2560);
   }
-  function ISL9() {   // CONTRAPTION ALLEY — the WILD-9 finale: a gauntlet of the new contraptions. Time the sliding gate, then dodge the swinging wrecking ball.
-    var b = builder().box(-400, -40, 400, 2400, { h: 58 });
+  function ISL9() {   // CONTRAPTION ALLEY — the WILD-9 finale: a gauntlet of ALL the new contraptions — conveyor, sliding gate, spinning turntable, swinging wrecking ball.
+    var b = builder().box(-400, -40, 400, 2500, { h: 58 });
     b.conveyor(0, 560, 360, 320, PI / 2, 2200);                          // speed strip off the tee
     b.gate(-400, 1000, 400, 1000, { barFrac: 0.4, speed: 1.3, h: 70 });  // time the sliding gate
-    b.bumper(-250, 1340, 38).bumper(250, 1340, 38);
-    b.pendulum(0, 1760, { len: 340, amp: 1.0, speed: 1.2, rb: 44 });     // dodge the wrecking ball
-    b.coin(0, 560, 1).coin(0, 2080, 2);
-    return finish(b, 'CONTRAPTION ALLEY', 4, { x: 0, z: 120 }, { x: 0, z: 2260 }, -460, 460, -60, 2520);
+    b.turntable(0, 1380, 175, 1.8);                                       // spin zone
+    b.pendulum(0, 1860, { len: 340, amp: 1.0, speed: 1.2, rb: 44 });     // dodge the wrecking ball
+    b.coin(0, 560, 1).coin(0, 2180, 2);
+    return finish(b, 'CONTRAPTION ALLEY', 4, { x: 0, z: 120 }, { x: 0, z: 2360 }, -460, 460, -60, 2620);
   }
   var ISLANDS9 = [ISL1, ISL2, ISL3, ISL4, ISL5, ISL6, ISL7, ISL8, ISL9];
   var FRONT9 = [N1, N2, N3, N4, N5, N6, N7, N8, N9];
