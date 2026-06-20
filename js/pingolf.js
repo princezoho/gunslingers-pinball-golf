@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 174 · COURSE RECORDS';
+  var BUILD = 'BUILD 175 · TEAM RECORDS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3248,6 +3248,14 @@
               elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.team + (mine ? ' (you)' : '') + ' · ' + r.members + 'p', rw);
               elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', 'best ' + r.best, rw);
             });
+          });
+          // team all-time record + current streak
+          var trec = elt('div', 'margin-top:6px;padding-top:6px;border-top:1px solid rgba(245,197,66,.15);', null, teamWrap);
+          net.teamRecord(team.id).then(function (tr) {
+            if (!tr || tr.best == null) return;   // no team record yet
+            elt('div', 'font:800 12px Georgia;color:#f5c542;text-align:center;', '🏆 Team record: ' + tr.best + ' (best ball) · ' + tr.days + ' day' + (tr.days === 1 ? '' : 's') + ' played', trec);
+            var cur = false; try { var dd = Date.parse(St.dailyDay + 'T00:00:00Z'), ld = Date.parse(tr.last_day + 'T00:00:00Z'); cur = (dd - ld) >= 0 && (dd - ld) <= 86400000; } catch (e) { }
+            if (tr.streak >= 2 && cur) elt('div', 'font:800 12px Georgia;color:#ff9a3a;text-align:center;margin-top:2px;', '🔥 ' + tr.streak + '-day team streak — keep it alive!', trec);
           });
         } else {
           elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin-bottom:6px;line-height:1.4;text-align:center;', 'Form a posse and battle other teams on the daily.', teamWrap);
