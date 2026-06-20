@@ -14,7 +14,7 @@ No installs, no sign-up. Runs on Three.js + a single JS file.
 
 ---
 
-Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops, teleport portals and **see-through glass tunnels** — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens — across **36 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
+Putt the ball through pinball mayhem — flippers, bumpers, Dutch windmills, lasers, loop-de-loops, fire hoops, teleport portals, **see-through glass tunnels**, **sliding gates**, **conveyor belts** and **swinging wrecking-ball pendulums** — and mini-golf wackiness — ramps, jumps, funnels, multi-tier greens and **separate floating islands** you drop and teleport between — across **36 hand-built holes**. Play against golf par (birdies, bogeys, hole-in-ones), chain **bumper combos**, save your **best score per hole**, and tally it on an end-of-round scorecard. Then **build your own courses** in a full **2D + 3D level editor**.
 
 ## ⭐ The Daily — a new hole every day
 
@@ -75,7 +75,7 @@ Buttons (top-left in game): **Level Editor**, **Levels** (pick/skip any hole), *
 
 ## 🛠 Level Editor
 
-- **2D top-down editor** with a tool palette: walls (freehand draw, click-corners, or 2-click), bumpers, boosters, flippers, windmills, loops, drop-holes, **portals with up to 3 random exits**, fire hoops, enemies (patrol/chase, knockback/reset/stun), coins, power-ups, lasers, hills, funnels, ramps, tiers, and up/down terrain painting.
+- **2D top-down editor** with a tool palette: walls (freehand draw, click-corners, or 2-click), bumpers, boosters, flippers, windmills, loops, drop-holes, **portals with up to 3 random exits**, fire hoops, enemies (patrol/chase, knockback/reset/stun), coins, power-ups, lasers, **sliding gates**, **conveyor belts**, **swinging pendulums**, hills, funnels, ramps, tiers, and up/down terrain painting.
 - **3D editor mode** (🧊): orbit the level in 3D and click items to select/drag them.
 - Every item has live, editable stats (radius, bounce, speed, rotation, height, points, …).
 - **7 terrain themes**, each with its own physics _and look_: Grass, Ice (slides), Moon (low-G), Mud, Rubber, Speedway, Sand.
