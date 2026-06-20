@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 184 · GLASS BARN';
+  var BUILD = 'BUILD 185 · WEEKLY LADDER';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3551,24 +3551,29 @@
     var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(8,5,2,.88);backdrop-filter:blur(2px);', null, document.body); ov.id = 'pg-champs';
     ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
     var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:#241a0e;border:2px solid #f5c542;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
-    elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '🏆 ALL-TIME CHAMPIONS', box);
+    elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '🏆 CHAMPIONS', box);
     var sub = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:4px 0 10px;line-height:1.4;min-height:30px;', '', box);
-    var mode = 'players';
-    var tabRow = elt('div', 'display:flex;gap:8px;margin-bottom:10px;', null, box);
+    var mode = 'players', period = 'all';
+    var tabRow = elt('div', 'display:flex;gap:8px;margin-bottom:6px;', null, box);
     var tP = elt('button', '', '👤 PLAYERS', tabRow);
     var tT = elt('button', '', '🏴 TEAMS', tabRow);
+    var perRow = elt('div', 'display:flex;gap:8px;margin-bottom:10px;', null, box);
+    var pW = elt('button', '', '📅 THIS WEEK', perRow);
+    var pA = elt('button', '', '⭐ ALL-TIME', perRow);
     var listBox = elt('div', 'min-height:60px;', null, box);
     var me = playerName(), myTeam = getTeam();
     function paintTabs() {
       var on = 'flex:1;padding:9px;border:2px solid #f5c542;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
       var off = 'flex:1;padding:9px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
       tP.style.cssText = (mode === 'players' ? on : off); tT.style.cssText = (mode === 'teams' ? on : off);
+      pW.style.cssText = (period === 'week' ? on : off); pA.style.cssText = (period === 'all' ? on : off);
     }
     function render() {
       paintTabs();
-      sub.textContent = mode === 'players' ? 'Players ranked by daily wins, then scoring average. Play every day to climb.' : 'Teams ranked by daily wins (your crew’s best score each day). Recruit + dominate.';
+      var pl = period === 'week' ? 'This week’s ' : 'All-time ', days = period === 'week' ? 7 : null;
+      sub.textContent = mode === 'players' ? (pl + 'players ranked by daily wins, then scoring average. Play every day to climb.') : (pl + 'teams ranked by daily wins (your crew’s best score each day). Recruit + dominate.');
       listBox.textContent = ''; elt('div', 'font:600 12px Georgia;color:#9c8a6a;', 'Loading…', listBox);
-      (mode === 'players' ? net.champions(25) : net.teamChampions(25)).then(function (rows) {
+      (mode === 'players' ? net.champions(25, days) : net.teamChampions(25, days)).then(function (rows) {
         listBox.textContent = '';
         if (!rows || !rows.length) { elt('div', 'font:600 13px Georgia;color:#9c8a6a;', mode === 'players' ? 'No champions yet — win a daily to claim the top spot!' : 'No team champions yet — form a posse and win a daily!', listBox); return; }
         rows.forEach(function (r, i) {
@@ -3584,6 +3589,8 @@
     }
     tP.onclick = function () { mode = 'players'; render(); };
     tT.onclick = function () { mode = 'teams'; render(); };
+    pW.onclick = function () { period = 'week'; render(); };
+    pA.onclick = function () { period = 'all'; render(); };
     render();
     var close = elt('button', 'width:100%;padding:12px;margin-top:12px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     close.onclick = function () { ov.remove(); };

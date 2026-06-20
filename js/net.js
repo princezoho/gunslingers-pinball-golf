@@ -59,10 +59,10 @@
     teamRecord: function (teamId) { if (!teamId) return Promise.resolve(null); return rpc('team_record', { p_team_id: teamId }).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); },
     // all-time best score on a hole layout (course record); resolves {best,name} or null
     courseRecord: function (hole) { if (hole == null || hole < 0) return Promise.resolve(null); return rpc('course_record', { p_hole: hole }).then(function (r) { return r && r[0] ? r[0] : null; }, function () { return null; }); },
-    // all-time champions ladder: [{name,dailies,avg_over,wins}], ranked by wins then avg
-    champions: function (limit) { return rpc('champions', { p_limit: limit || 25 }).catch(function () { return []; }); },
-    // all-time TEAM champions: [{name,days,best,wins}], ranked by team daily wins
-    teamChampions: function (limit) { return rpc('team_champions', { p_limit: limit || 25 }).catch(function () { return []; }); }
+    // champions ladder: [{name,dailies,avg_over,wins}]. days=null all-time, days=7 this week
+    champions: function (limit, days) { return rpc('champions', { p_limit: limit || 25, p_days: days == null ? null : days }).catch(function () { return []; }); },
+    // TEAM champions: [{name,days,best,wins}], same optional period
+    teamChampions: function (limit, days) { return rpc('team_champions', { p_limit: limit || 25, p_days: days == null ? null : days }).catch(function () { return []; }); }
   };
   global.PGNet = PGNet;
 })(typeof window !== 'undefined' ? window : this);
