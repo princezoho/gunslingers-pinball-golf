@@ -686,11 +686,11 @@
     redglow: { name: '🔴 Red Glow', exp: 0.82, sun: { c: 0xff5a3a, i: 1.6 }, amb: { c: 0x441010, i: 0.22 }, hemi: { s: 0x561616, g: 0x0c0303, i: 0.36 }, rim: { c: 0xff9a66, i: 0.75 }, fill: { c: 0x741f1f, i: 0.2 }, fog: 0x190505, grade: { sat: 0.96, sep: 0, shad: [0.48, 0.09, 0.09], high: [1.52, 0.68, 0.34], lo: 0.12, hi: 0.72, con: 1.36, bright: 0.84, lift: 1.3, gmAmt: 0.52, gm: [[0.12, 0.01, 0.02], [0.66, 0.12, 0.05], [1.0, 0.62, 0.22]] }, ca: 0.0036, grain: 0.2, vig: 0.64 },
     sincity: { name: '🖤 Sin City', exp: 1.05, sun: { c: 0xffffff, i: 2.35 }, amb: { c: 0x141414, i: 0.1 }, hemi: { s: 0x343434, g: 0x060606, i: 0.22 }, rim: { c: 0xffffff, i: 0.75 }, fill: { c: 0x222222, i: 0.08 }, fog: 0x101010, grade: { sat: 0.07, sep: 0, shad: [0.9, 0.9, 0.95], high: [1.06, 1.0, 1.0], lo: 0.16, hi: 0.74, con: 1.98, bright: 1.0, lift: 0.5 }, ca: 0.0016, grain: 0.28, vig: 0.78 },
     vaporwave: { name: '🌴 Vaporwave', exp: 1.16, sun: { c: 0xff6ad5, i: 1.5 }, amb: { c: 0x3a1a6a, i: 0.42 }, hemi: { s: 0x6a2aa8, g: 0x12204a, i: 0.62 }, rim: { c: 0x46e0ff, i: 1.0 }, fill: { c: 0xff6ad5, i: 0.42 }, fog: 0x2a0a4a, grade: { sat: 1.1, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.18, hi: 0.78, con: 1.18, bright: 1.0, lift: 1.2, gmAmt: 0.9, gm: [[0.16, 0.03, 0.34], [0.96, 0.22, 0.66], [0.36, 0.96, 0.99]], scan: 0.1 }, ca: 0.0062, grain: 0.08, vig: 0.42 },
-    cartoon: { name: '✏ Cartoon', exp: 1.3, sun: { c: 0xffffff, i: 1.35 }, amb: { c: 0xffffff, i: 0.72 }, hemi: { s: 0xffffff, g: 0xaa9988, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xc9b89a, grade: { sat: 1.55, sep: 0, shad: [0.96, 0.98, 1.02], high: [1.04, 1.02, 0.96], lo: 0.2, hi: 0.8, con: 1.15, bright: 1.05, lift: 0.6, post: 6.0, edge: 1.4, style: 1.0 }, ca: 0.0014, grain: 0.0, vig: 0.3 },
-    cel: { name: '🖍 Cel Shaded', exp: 1.22, sun: { c: 0xfff0d0, i: 1.6 }, amb: { c: 0xdde6ff, i: 0.5 }, hemi: { s: 0xcfe0ff, g: 0x6a5a3a, i: 0.6 }, rim: { c: 0xffffff, i: 0.4 }, fill: { c: 0xffe8c0, i: 0.4 }, fog: 0xccb89a, grade: { sat: 1.32, sep: 0, shad: [0.9, 0.96, 1.06], high: [1.08, 1.04, 0.92], lo: 0.18, hi: 0.78, con: 1.2, bright: 1.02, lift: 0.7, post: 4.0, edge: 1.3, style: 1.0 }, ca: 0.0014, grain: 0.0, vig: 0.34 },
+    cartoon: { name: '✏ Cartoon', exp: 1.3, sun: { c: 0xffffff, i: 1.35 }, amb: { c: 0xffffff, i: 0.72 }, hemi: { s: 0xffffff, g: 0xaa9988, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xc9b89a, grade: { sat: 1.55, sep: 0, shad: [0.96, 0.98, 1.02], high: [1.04, 1.02, 0.96], lo: 0.2, hi: 0.8, con: 1.15, bright: 1.05, lift: 0.6, edge: 1.4, style: 1.0 }, ca: 0.0014, grain: 0.0, vig: 0.3 },
+    cel: { name: '🖍 Cel Shaded', exp: 1.22, sun: { c: 0xfff0d0, i: 1.6 }, amb: { c: 0xdde6ff, i: 0.5 }, hemi: { s: 0xcfe0ff, g: 0x6a5a3a, i: 0.6 }, rim: { c: 0xffffff, i: 0.4 }, fill: { c: 0xffe8c0, i: 0.4 }, fog: 0xccb89a, grade: { sat: 1.32, sep: 0, shad: [0.9, 0.96, 1.06], high: [1.08, 1.04, 0.92], lo: 0.18, hi: 0.78, con: 1.2, bright: 1.02, lift: 0.7, edge: 1.3, style: 1.0 }, ca: 0.0014, grain: 0.0, vig: 0.34 },
     tron: { name: '⬡ Tron', exp: 1.0, sun: { c: 0x2aa0ff, i: 1.2 }, amb: { c: 0x041018, i: 0.2 }, hemi: { s: 0x0a2030, g: 0x000408, i: 0.3 }, rim: { c: 0x46e0ff, i: 1.2 }, fill: { c: 0x103040, i: 0.2 }, fog: 0x020608, grade: { sat: 0.6, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.3, bright: 1.0, lift: 0.6, gmAmt: 0.72, gm: [[0.0, 0.03, 0.07], [0.05, 0.3, 0.7], [0.4, 0.95, 1.0]], edge: 1.25, style: 2.0 }, ca: 0.003, grain: 0.06, vig: 0.6 },
     line: { name: '✎ Line Art', exp: 1.3, sun: { c: 0xffffff, i: 1.4 }, amb: { c: 0xffffff, i: 0.7 }, hemi: { s: 0xffffff, g: 0xcccccc, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xeeeae0, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.1, lift: 0.6, edge: 1.4, style: 3.0 }, ca: 0.0, grain: 0.04, vig: 0.2 },
-    wireframe: { name: '△ Wireframe', exp: 1.0, sun: { c: 0xffffff, i: 1.5 }, amb: { c: 0x111111, i: 0.3 }, hemi: { s: 0x222222, g: 0x000000, i: 0.3 }, rim: { c: 0xffffff, i: 0.5 }, fill: { c: 0x222222, i: 0.2 }, fog: 0x000000, grade: { sat: 0.4, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.0, lift: 0.6, gm: [[0, 0, 0], [0.3, 0.8, 0.5], [0.45, 1.0, 0.7]], edge: 1.3, style: 4.0 }, ca: 0.002, grain: 0.04, vig: 0.5 }
+    wireframe: { name: '△ Wireframe', exp: 1.0, sun: { c: 0xffffff, i: 1.5 }, amb: { c: 0x111111, i: 0.3 }, hemi: { s: 0x222222, g: 0x000000, i: 0.3 }, rim: { c: 0xffffff, i: 0.5 }, fill: { c: 0x222222, i: 0.2 }, fog: 0x000000, grade: { sat: 0.4, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.0, lift: 0.6 }, ca: 0.002, grain: 0.03, vig: 0.52, wire: true }
   };
   var MOOD_ORDER = ['daytime', 'sunset', 'night', 'noir', 'faded', 'redglow', 'sincity', 'vaporwave', 'cartoon', 'cel', 'tron', 'line', 'wireframe'];
   // theatrical SPOTLIGHT per mood (tracks the ball; i=intensity, c=colour, a=cone angle). Dramatic for the dark looks, off for the flat/bright ones.
@@ -716,7 +716,47 @@
     var _gf = m.grade.sat < 0.12 ? 'grayscale(1) contrast(1.04)' : '';
     [St.hud, document.getElementById('cam'), document.getElementById('snd')].concat(R3.hudBtns || []).forEach(function (e) { if (e) try { e.style.filter = _gf; } catch (x) { } });
     if (R3.r.shadowMap) R3.r.shadowMap.needsUpdate = true;
+    wireSync();
     return m;
+  }
+  // REAL wireframe: build LineSegments from each mesh's EdgesGeometry (only FEATURE edges — a flat floor = its outline, a box = 12 edges, NOT every triangle) on a black world; the ball keeps a full WireframeGeometry so it still reads as a sphere. Overlays follow moving objects (ball, obstacles) every frame.
+  function buildWireframe() {
+    R3.wireDirty = false;
+    if (R3.wireGroup) { R3.scene.remove(R3.wireGroup); R3.wireGroup.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); }
+    R3.wireGroup = new T.Group(); R3.wireGroup.frustumCulled = false;
+    if (!R3.wireLineMat) R3.wireLineMat = new T.LineBasicMaterial({ color: 0x2cffe0, fog: false });
+    var balls = R3.ballMeshes || [];
+    R3.group.traverse(function (o) {
+      if (!o.isMesh || !o.geometry || o === R3.ballLocator) return;
+      var isBall = balls.indexOf(o) >= 0, eg;
+      try { eg = isBall ? new T.WireframeGeometry(o.geometry) : new T.EdgesGeometry(o.geometry, 32); } catch (e) { return; }   // 32° threshold = only structural edges survive, smooth curves/terrain stay clean
+      if (!eg) return;
+      if (eg.attributes.position && eg.attributes.position.count === 0) { eg.dispose(); if (!isBall) return; try { eg = new T.WireframeGeometry(o.geometry); } catch (e2) { return; } }   // a smooth sphere has no hard edges → fall back to full wireframe so it isn't invisible
+      var ls = new T.LineSegments(eg, R3.wireLineMat); ls.matrixAutoUpdate = false; ls.frustumCulled = false;
+      o.updateWorldMatrix(true, false); ls.matrix.copy(o.matrixWorld); ls.userData.src = o;
+      R3.wireGroup.add(ls);
+    });
+    R3.scene.add(R3.wireGroup);
+  }
+  function wireSync() {
+    if (!R3.scene || !R3.group) return;
+    if (St.mood === 'wireframe') {
+      if (!R3.wireBg) R3.wireBg = new T.Color(0x02040b);
+      if (R3.wireDirty || !R3.wireGroup) buildWireframe();
+      R3.group.visible = false;                                  // hide the textured fills; the edge overlay renders instead
+      if (R3.wireGroup) {
+        R3.wireGroup.visible = true;
+        R3.group.updateWorldMatrix(false, true);                 // refresh world matrices even though the group is hidden (so overlays track the ball / moving parts)
+        var kids = R3.wireGroup.children;
+        for (var i = 0; i < kids.length; i++) { var s = kids[i].userData.src; if (s && s.visible) { kids[i].visible = true; kids[i].matrix.copy(s.matrixWorld); } else kids[i].visible = false; }
+      }
+      if (R3.scene.background !== R3.wireBg) { R3.scene.background = R3.wireBg; if (R3.scene.fog) R3.scene.fog.color.setHex(0x02040b); }
+    } else {
+      if (!R3.group.visible) R3.group.visible = true;
+      if (R3.wireGroup) R3.wireGroup.visible = false;
+      if (R3.scene.overrideMaterial) R3.scene.overrideMaterial = null;
+      if (R3.holeBg && R3.scene.background !== R3.holeBg) R3.scene.background = R3.holeBg;
+    }
   }
   function tex(key, w, h, paint, rep) { if (R3['_' + key]) return R3['_' + key]; var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; R3['_' + key] = t; return t; }
   function photoTex(file, srgb, rp) {   // real photographic PBR maps (CC0, Poly Haven) — diffuse in sRGB, normal maps LINEAR or lighting breaks
@@ -1120,6 +1160,7 @@
   }
   function renderGL() {
     var _rm = resolveMood(); if (_rm !== St.mood) applyMood(_rm);   // keep the active lighting mood in sync (hole default or player's setting)
+    wireSync();   // enforce the real-wireframe override + black world every frame (survives hole rebuilds)
     if (R3.spot && R3.spotBase > 0.001 && St.hole && St.balls && St.balls[0]) { var _sb = St.balls[0], _sgy = St.hole.terrain(_sb.x, _sb.z); R3.spot.position.set(_sb.x + Math.sin(St.t * 0.9) * 90, _sgy + 1400, _sb.z - 120); R3.spot.target.position.set(_sb.x, _sgy, _sb.z); R3.spot.intensity = R3.spotBase * (0.82 + 0.18 * Math.sin(St.t * 3.5)); }   // SPOTLIGHT tracks the ball with a gentle sway + pulse = drama/action
     R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
     var p = R3.post;
@@ -1163,7 +1204,7 @@
     R3.group = new T.Group(); R3.scene.add(R3.group);
     R3.portalSwirls = []; R3.flagWave = null;
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
-    R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
+    R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); R3.holeBg = R3.scene.background; R3.wireDirty = true; if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
     R3.scene.environment = (hole.theme === 'moon') ? null : (R3.env || null);   // night scene: no warm desert IBL
     var scene = sceneFor(hole);   // this hole's backdrop painting + matching ground/fog/tint — computed up front so the turf can harmonize with it
     var bn = hole.bounds, midZ = (bn.minZ + bn.maxZ) / 2, spanX = bn.maxX - bn.minX + 600, spanZ = bn.maxZ - bn.minZ + 600;
