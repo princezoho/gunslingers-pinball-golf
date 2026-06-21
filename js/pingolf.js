@@ -3113,7 +3113,7 @@
      The viral loop: one daily hole, record your run, race other players' ghosts, share your score. */
   var DAILY_EPOCH = Date.UTC(2026, 0, 1);
   function dailyNum() { return Math.max(1, Math.floor((Date.now() - DAILY_EPOCH) / 86400000) + 1); }
-  function dailyIndexFor(n) { return 27 + ((((n * 7 + 5) % 9) + 9) % 9); }   // deterministic WILD hole (27-35: organic snakes, forks, islands, gauntlet) — the auto daily is always a weird-shaped hole, never a plain box fairway
+  function dailyIndexFor(n) { return 27 + ((((n * 7 + 5) % 4) + 4) % 4); }   // deterministic APPROACHABLE weird hole (27-30: organic snakes + branching forks, all SINGLE-green) — the multi-island holes (31-35) are too hard for a casual daily, so the fallback avoids them. Owner should publish generated single-green holes for variety.
   function dailyIndex() { return dailyIndexFor(dailyNum()); }            // spread across all 36 holes
   function dailyNumFor(ymd) { try { var t = Date.UTC(+ymd.slice(0, 4), +ymd.slice(5, 7) - 1, +ymd.slice(8, 10)); return Math.max(1, Math.floor((t - DAILY_EPOCH) / 86400000) + 1); } catch (e) { return dailyNum(); } }
   function pastDayKey(daysAgo) { var net = NET(); var base = net ? net.todayKey() : new Date().toISOString().slice(0, 10); try { var d = new Date(base + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - daysAgo); return d.toISOString().slice(0, 10); } catch (e) { return base; } }
@@ -3847,12 +3847,18 @@
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
     edInit();
     var BTNCSS = 'position:fixed;left:14px;z-index:30;padding:2px 0;border:none;background:transparent;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;text-align:left;';
-    var eb = elt('button', BTNCSS + 'bottom:104px;', '✎ EDIT LEVEL', document.body);
-    eb.onclick = function () { if (St.testing && ED.draft) { edEnter(); return; } if (St.hole && St.hi >= 0) { editBuiltin(St.hi); return; } if (St.hole && St.hi < 0 && St.customName) { editCustom(St.customName); return; } edEnter(); };
+    // OWNER MODE: in-game admin/dev tools (EDIT LEVEL + ⚙ OWNER) are HIDDEN from regular players. Enable on YOUR device with game.html?owner=1 (or after logging into owner.html); disable with ?owner=0. Players just get a clean game; admin lives in owner.html.
+    var _ownerMode = false; try { var _oq = new URLSearchParams(location.search); if (_oq.get('owner') === '0') localStorage.removeItem('pg_ownerMode'); else if (_oq.get('owner') === '1' || _oq.has('edit')) localStorage.setItem('pg_ownerMode', '1'); _ownerMode = localStorage.getItem('pg_ownerMode') === '1' || sessionStorage.getItem('pg_ownerMode') === '1'; } catch (e) { }
     var lb = elt('button', BTNCSS + 'bottom:74px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
     var sk = elt('button', BTNCSS + 'bottom:44px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
-    ED.dom.gameBtns = [eb, lb, sk];
+    ED.dom.gameBtns = [lb, sk];
+    if (_ownerMode) {
+      var eb = elt('button', BTNCSS + 'bottom:104px;', '✎ EDIT LEVEL', document.body);
+      eb.onclick = function () { if (St.testing && ED.draft) { edEnter(); return; } if (St.hole && St.hi >= 0) { editBuiltin(St.hi); return; } if (St.hole && St.hi < 0 && St.customName) { editCustom(St.customName); return; } edEnter(); };
+      ED.dom.gameBtns.unshift(eb);
+    }
     // OWNER / DEBUG menu — high z-index so it's reachable on EVERY screen (over the chooser, daily card, etc.)
+    if (_ownerMode) {
     var ownBtn = elt('button', 'position:fixed;left:12px;bottom:140px;z-index:9600;padding:5px 11px;border:none;background:rgba(20,13,6,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;', '⚙ OWNER', document.body);
     var ownMenu = elt('div', 'position:fixed;left:12px;bottom:178px;z-index:9601;width:214px;padding:7px;background:rgba(18,12,5,.5);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);display:none;flex-direction:column;gap:4px;', null, document.body);
     function ownRow(label, fn) { var r = elt('button', 'padding:10px 11px;border:none;background:rgba(245,197,66,.09);color:#f5efdc;font:800 13px Georgia;cursor:pointer;text-align:left;', label, ownMenu); r.onclick = function () { ownMenu.style.display = 'none'; fn(); }; return r; }
@@ -3865,6 +3871,7 @@
     ownRow('♻ Reset today’s daily (replay)', function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } location.reload(); });
     ownRow('🔄 Hard reload', function () { location.replace(location.pathname + '?bust=' + Date.now()); });
     elt('div', 'padding:7px 11px 3px;color:rgba(245,197,66,.6);font:700 11px Georgia;', BUILD, ownMenu);
+    }
     St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }

@@ -106,7 +106,7 @@
     // mirror the game's date-seeded fallback so the owner can see what players get if nothing is published
     var DAILY_EPOCH = Date.UTC(2026,0,1);
     function dailyNumFor(s){ try{ var t=Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)); return Math.max(1, Math.floor((t-DAILY_EPOCH)/86400000)+1); }catch(e){ return 1; } }
-    function dailyIndexFor(n){ return 27 + ((((n*7+5)%9)+9)%9); }   // WILD holes only (27-35) — keep in sync with pingolf.js
+    function dailyIndexFor(n){ return 27 + ((((n*7+5)%4)+4)%4); }   // approachable single-green weird holes (27-30) — keep in sync with pingolf.js (multi-island 31-35 too hard for the daily)
     function autoHoleFor(day){ var idx=dailyIndexFor(dailyNumFor(day)); return { idx:idx, name:(HOLES[idx]?HOLES[idx].name:('hole '+idx)) }; }
 
     function unlock(){
@@ -121,7 +121,7 @@
       }).catch(function(e){ $('gateErr').textContent = /unauth/i.test(e.message||'') ? 'Wrong passcode.' : ('Error: '+e.message); });
     }
     function enter(){
-      try{ sessionStorage.setItem('pg_owner_pass', pass); }catch(e){}
+      try{ sessionStorage.setItem('pg_owner_pass', pass); localStorage.setItem('pg_ownerMode','1'); }catch(e){}
       $('gate').style.display='none'; $('app').style.display='block';
       var t=new Date(); $('day').value=ymd(t); refreshDayStatus(); loadEngagement(); loadRecent(); loadBank(); loadSched();
     }
