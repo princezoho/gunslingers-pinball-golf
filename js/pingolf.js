@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 219 · SMOOTH CONTROLS';
+  var BUILD = 'BUILD 220 · RENDER EFFICIENCY';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -662,7 +662,7 @@
       var coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches; R3.r.setPixelRatio(Math.min(coarse ? 1.2 : 1.5, window.devicePixelRatio || 1));   // phones get a lighter pixel load; FXAA+MSAA keep edges clean   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
       if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.14; }
-      R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap;
+      R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap; R3.r.shadowMap.autoUpdate = false;   // we drive shadow updates manually (every few frames) instead of a full shadow re-render EVERY frame — big CPU + GC win, the soft shadows lag imperceptibly
       R3.scene = new T.Scene(); R3.scene.fog = new T.Fog(0xc9a06a, 2200, 5600);
       R3.cam = new T.PerspectiveCamera(58, 1, 1, 14000);
       R3.scene.add(new T.AmbientLight(0xffdcb0, 0.2));
@@ -1055,6 +1055,7 @@
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
+    R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
     var p = R3.post;
     if (p && p.on) {
       try {
@@ -2226,8 +2227,8 @@
     hudTxt(c, St.strokes === 1 ? 'STROKE' : 'STROKES', 30 + nw, sy, Math.round(ssz * 0.42), '#ffffff');
     if (St.holeBest != null) hudTxt(c, '★ BEST ' + St.holeBest, 22, sy + 26, 14, 'rgba(255,255,255,.85)');
     var dp = b ? Math.round(hyp(b.x - St.hole.cup.x, b.z - St.hole.cup.z)) : 0;
-    hudTxt(c, 'TO PIN', w - 22, 30, 13, 'rgba(255,255,255,.85)', 'right');
-    hudTxt(c, dp + ' YD', w - 22, narrow ? 54 : 64, narrow ? 15 : 32, COL.cream, 'right');
+    hudTxt(c, 'TO PIN', w - 22, 26, 12, 'rgba(255,255,255,.85)', 'right');
+    hudTxt(c, dp + ' YD', w - 22, narrow ? 56 : 68, narrow ? 15 : 26, COL.cream, 'right');
     var tot = St.scores.reduce(function (a, cv) { return a + (cv || 0); }, 0), tp = tot - (St.parDone || 0);
     if (!narrow && St.hi - (St.setBase || 0) > 0) hudTxt(c, 'THRU ' + (St.hi - (St.setBase || 0)) + ' · ' + tot + ' (' + (tp > 0 ? '+' + tp : tp === 0 ? 'E' : tp) + ')', w / 2, 34, 16, '#ffffff', 'center');
     if ((St.coins || 0) > 0 || (St.points || 0) > 0) { var cpz = 1 + (St.coinPulse || 0) * 0.55, cyy = sy + (St.holeBest != null ? 50 : 28); c.save(); c.translate(22, cyy); c.scale(cpz, cpz); hudTxt(c, '🪙 ' + (St.coins || 0) + '   ★ ' + (St.points || 0), 0, 0, 17, (St.coinPulse || 0) > 0.25 ? '#fff0a0' : COL.gold); c.restore(); }
@@ -2239,7 +2240,7 @@
     badges.forEach(function (bd, bi) { hudTxt(c, bd[0], w / 2, 64 + bi * 26, 17, bd[1], 'center'); });
     // bumper-combo meter — pulsing multiplier while the ball racks up hits this shot
     if (St.state === 'roll' && (St.combo || 0) >= 2) { var cpz = 1 + (St.comboPulse || 0) * 0.5; c.save(); c.translate(w / 2, h * 0.3); c.scale(cpz, cpz); c.textAlign = 'center'; c.globalAlpha = clamp(0.5 + (St.comboPulse || 0) * 1.1, 0, 1); var ctxt = 'COMBO ×' + St.combo; c.font = '900 ' + (narrow ? 38 : 52) + 'px Wantedo, Georgia'; c.fillStyle = St.combo >= 5 ? COL.red : '#ffffff'; c.fillText(ctxt, 0, 0); c.restore(); c.globalAlpha = 1; }
-    c.textAlign = 'left'; c.fillStyle = 'rgba(245,197,66,.55)'; c.font = '900 12px Wantedo, Georgia'; c.fillText(BUILD, 18, h - 16);
+    c.textAlign = 'left';   // (build label moved to the owner menu — it was overlapping the bottom instruction)
     if (St.state === 'aim') powerMeter(c, w, h);
     if (St.bannerT > 0) { c.globalAlpha = clamp(St.bannerT, 0, 1); c.textAlign = 'center'; c.shadowBlur = 0; var bcap = narrow ? 50 : 62, bfs = bcap; c.font = '900 ' + bcap + 'px Wantedo, Georgia'; var btw = c.measureText(St.banner).width; if (btw > w - 36) bfs = Math.max(18, Math.floor(bcap * (w - 36) / btw)); c.font = '900 ' + bfs + 'px Wantedo, Georgia'; c.fillStyle = '#ffffff'; var by = Math.max(h * 0.26, 236); c.fillText(St.banner, w / 2, by); c.globalAlpha = 1; }   // hole-intro flash — parked below the top HUD; plain fill, no stroke
     c.globalAlpha = 0.85;
@@ -3823,7 +3824,7 @@
     audioUI();
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
     edInit();
-    var BTNCSS = 'position:fixed;left:14px;z-index:30;padding:2px 0;border:none;background:transparent;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;text-shadow:2px 2px 0 #100803,-1px -1px 0 #100803,1px -1px 0 #100803,-1px 1px 0 #100803;text-align:left;';
+    var BTNCSS = 'position:fixed;left:14px;z-index:30;padding:2px 0;border:none;background:transparent;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;text-align:left;';
     var eb = elt('button', BTNCSS + 'bottom:104px;', '✎ EDIT LEVEL', document.body);
     eb.onclick = function () { if (St.testing && ED.draft) { edEnter(); return; } if (St.hole && St.hi >= 0) { editBuiltin(St.hi); return; } if (St.hole && St.hi < 0 && St.customName) { editCustom(St.customName); return; } edEnter(); };
     var lb = elt('button', BTNCSS + 'bottom:74px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
@@ -3863,7 +3864,7 @@
           bar.onclick = function () { location.replace(self + '?bust=' + Date.now()); };
         }
       }).catch(function () { });
-    }, 4000);
+    }, 20000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
