@@ -4000,6 +4000,28 @@
     gen(); render();
   }
   PG.__genStudio = function () { genStudio(); };
+  // headless beatability test of a serialized hole JSON (used by owner.html's generator iframe before publishing) → {beatable, strokes}
+  PG.__testHole = function (json, tries) {
+    tries = tries || 9; var maxStrokes = 13, h;
+    try { h = edDeserialize(json); } catch (e) { return { beatable: false, err: 'deserialize' }; }
+    var sunk = false, best = 99;
+    for (var t = 0; t < tries && !sunk; t++) {
+      try { PG.__loadHoleObj(h); } catch (e) { return { beatable: false, err: 'load' }; }
+      var cup = St.hole.cup, scale = 0.78 + (t % 5) * 0.11, strokes = 0;
+      while (strokes < maxStrokes) {
+        if (St.state !== 'aim') break;
+        var b = primeBall(); if (!b) break;
+        var dx = cup.x - b.x, dz = cup.z - b.z, dist = hyp(dx, dz);
+        St.aimYaw = Math.atan2(dx, dz) + (Math.random() * 2 - 1) * (0.03 + (t / tries) * 0.5); St.camYaw = St.aimYaw;
+        St.power = clamp(Math.sqrt(dist / 2600) * scale + (Math.random() * 2 - 1) * 0.1, 0.1, 1);
+        shoot(); strokes++;
+        var settled = false;
+        for (var s = 0; s < 800; s++) { tick(1 / 60); var pb = primeBall(); if (St.state === 'sunk' || (pb && pb.sunk)) { sunk = true; break; } if (St.state === 'aim') { settled = true; break; } }
+        if (sunk) { best = Math.min(best, strokes); break; } if (!settled) break;
+      }
+    }
+    return { beatable: sunk, strokes: sunk ? best : null };
+  };
   // propose N fresh wacky holes — returns [{name, par, json}] ready to preview/publish
   PG.__proposeWacky = function (n, baseSeed) {
     n = n || 3; var out = [], seed = (baseSeed >>> 0) || ((new Date().getTime() ^ (St.frame || 0)) >>> 0);
