@@ -1753,6 +1753,17 @@
     if (b.z > bn.maxZ - 12) { b.z = bn.maxZ - 12; b.vz = -Math.abs(b.vz) * .5; }
     // ground
     var gh = hole.terrain(b.x, b.z), surf = gh + K.R, wasAir = b.air;
+    // ISLAND HOLES: off every island is a deep void. If the ball drops into the gap between islands, rescue it to where the shot was played — BEFORE it plummets into the abyss (which read as a render bug). Works mid-air; the connectors (drop/portal/tube) teleport, so legit traversal never lingers over the void.
+    if (hole.islands && hole.islands.length && gh <= -2000) {
+      b.voidT = (b.voidT || 0) + dt;
+      if (b.voidT > 0.4) {
+        b.voidT = 0; var vrs = b.shotFrom || hole.tee, vgy = hole.terrain(vrs.x, vrs.z);
+        pop3d(vrs.x, vrs.z, vgy, 'BACK ON THE ISLAND!', COL.gold); sfx('tick');
+        b.x = vrs.x; b.z = vrs.z; b.y = vgy + K.R + 80; b.vx = 0; b.vz = 0; b.vy = 0; b.air = true; b.stillT = 0; b.settled = false;
+        spawnShock(vrs.x, vgy, vrs.z, COL.gold); St.shake = Math.min(8, St.shake + 4);
+        gh = vgy; surf = gh + K.R;   // refresh for the rest of this step
+      }
+    } else if (b.voidT) b.voidT = 0;
     if (b.y <= surf) {
       var n = normalAt(hole, b.x, b.z); b.y = surf;
       var vn = b.vx * n.x + b.vy * n.y + b.vz * n.z;
