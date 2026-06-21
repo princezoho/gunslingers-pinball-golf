@@ -727,15 +727,15 @@
   }
   // CINEMATIC FX OVERLAY — real bokeh/dust/film footage (assets/fx/*.mp4) screen-blended over the render per mood. Black footage → transparent; only the light/particles/grain show. This is the AAA way (compositing real plates), not 3D point sprites.
   var FXLAYERS = {
-    faded:     { src: 'dust-motes',     op: 0.6 },    // warm airborne dust for the sun-baked look
-    sunset:    { src: 'bokeh-gold',     op: 0.34 },   // dreamy golden bokeh
-    redglow:   { src: 'bokeh-gold',     op: 0.36 },   // warm embers glow
-    daytime:   { src: 'bokeh-soft',     op: 0.14 },   // faint lens bokeh
-    night:     { src: 'haze',           op: 0.42 },   // atmospheric haze / motes
-    noir:      { src: 'film-dirt',      op: 0.5 },    // old-film scratches + dirt
-    sincity:   { src: 'film-dirt',      op: 0.55 },   // heavier film damage
-    prismatic: { src: 'haze',           op: 0.34 },
-    vaporwave: { src: 'particles-fine', op: 0.32 }
+    faded:     { src: 'dust-motes',     op: 0.3 },    // warm airborne dust — subtle
+    sunset:    { src: 'bokeh-gold',     op: 0.16 },   // dreamy golden bokeh, a hint
+    redglow:   { src: 'bokeh-gold',     op: 0.18 },   // warm embers, a hint
+    daytime:   { src: 'bokeh-soft',     op: 0.07 },   // faint lens bokeh
+    night:     { src: 'haze',           op: 0.2 },    // light atmospheric haze
+    noir:      { src: 'film-dirt',      op: 0.26 },   // old-film scratches, subtle
+    sincity:   { src: 'film-dirt',      op: 0.28 },   // film damage, subtle
+    prismatic: { src: 'haze',           op: 0.16 },
+    vaporwave: { src: 'particles-fine', op: 0.17 }
   };
   function setFxOverlay(mood) {
     var v = document.getElementById('fxOverlay'); if (!v) return;
@@ -2180,7 +2180,7 @@
   }
   function showScorecard() {
     var old = document.getElementById('pg-scorecard'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-scorecard';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-scorecard';
     var box = elt('div', 'width:430px;max-width:94%;max-height:88%;overflow:auto;background:transparent;border:none;padding:18px;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo, Georgia;color:#ffffff;text-align:center;', '' + (SETS[(St.setBase || 0) / 9] ? SETS[(St.setBase || 0) / 9].name : 'NINE') + ' COMPLETE', box);
     var bs = bestStore(), totPar = 0, totYou = 0;
@@ -2236,7 +2236,7 @@
   function editCustom(name) { var o = edStore()[name]; if (o) openEditorWith(edDeserialize(o)); }
   function levelMenu() {
     var ov = ED.dom.lvlmenu;
-    if (!ov) { ov = elt('div', 'position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.addEventListener('click', function (e) { if (e.target === ov) ov.style.display = 'none'; }); ED.dom.lvlmenu = ov; }
+    if (!ov) { ov = elt('div', 'position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.addEventListener('click', function (e) { if (e.target === ov) ov.style.display = 'none'; }); ED.dom.lvlmenu = ov; }
     ov.innerHTML = ''; ov.style.display = 'flex';
     var box = elt('div', 'width:392px;max-height:85%;overflow:auto;background:transparent;border:none;padding:16px;', null, ov);
     elt('div', 'font:800 19px Wantedo,Georgia;color:#ffffff;margin-bottom:8px;', '◎ SELECT LEVEL', box);
@@ -2246,7 +2246,7 @@
       var pb = elt('button', 'flex:1;display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#ffffff;font:700 13px Georgia;cursor:pointer;text-align:left;', null, r);
       elt('span', '', label, pb); if (sub) elt('span', 'font-size:10px;opacity:.6;margin-left:8px;white-space:nowrap;', sub, pb);
       pb.onclick = function () { ov.style.display = 'none'; play(); };
-      if (edit) { var eb = elt('button', 'padding:0 11px;background:#3a2614;color:#cba;font:700 13px Georgia;cursor:pointer;', '', r); eb.title = 'Edit in level editor'; eb.onclick = function () { ov.style.display = 'none'; edit(); }; }
+      if (edit) { var eb = elt('button', 'padding:0 11px;background:#3a2614;color:#cba;font:700 13px Georgia;cursor:pointer;', 'EDIT', r); eb.title = 'Edit in level editor'; eb.onclick = function () { ov.style.display = 'none'; edit(); }; }
     };
     SETS.forEach(function (set) {
       sec(set.name);
@@ -2983,7 +2983,7 @@
     ED.dom.pal = pal;
     // ---- RIGHT INSPECTOR ----
     var panel = elt('div', 'position:absolute;right:8px;top:56px;bottom:8px;width:200px;overflow-y:auto;overflow-x:hidden;background:rgba(30,20,10,.94);padding:10px;color:#f5efdc;font:12px Georgia;pointer-events:auto;', null, root); ED.dom.panel = panel; panel.className = 'edscroll';
-    var modal = elt('div', 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);pointer-events:auto;', null, root); ED.dom.modal = modal;
+    var modal = elt('div', 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);pointer-events:auto;', null, root); ED.dom.modal = modal;
     document.body.appendChild(root);
     window.addEventListener('keydown', edKey);
     St.scene.addEventListener('contextmenu', function (e) { if (ED.on) { e.preventDefault(); var w = edS2W(ptr(e).x, ptr(e).y); var hit = edHit(w.x, w.z); if (hit && hit.arr) { ED.sel = hit; edDelete(); } } });
@@ -3097,7 +3097,7 @@
       elt('div', 'font-size:10px;opacity:.55;margin-right:3px;', cnt + ' items', rd);
       var lb = elt('button', 'padding:6px 10px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#ffffff;font:700 11px Georgia;cursor:pointer;', 'Load', rd);
       lb.onclick = function () { edSnapshot(); ED.draft = edDeserialize(s[n]); ED.sel = null; m.style.display = 'none'; edPanel(); };
-      var rb = elt('button', 'padding:6px 8px;background:#3a2614;color:#cba;font:700 11px Georgia;cursor:pointer;', '', rd);
+      var rb = elt('button', 'padding:6px 8px;background:#3a2614;color:#cba;font:700 11px Georgia;cursor:pointer;', 'EDIT', rd);
       rb.onclick = function () { edModal('RENAME', function (bx, close) { var ri = elt('input', 'width:100%;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, bx); ri.value = n; var ok = elt('button', 'width:100%;padding:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 12px Georgia;cursor:pointer;', 'Rename', bx); ok.onclick = function () { var nn = (ri.value || '').trim(); if (!nn || nn === n) { close(); return; } var st = edStore(); st[nn] = st[n]; st[nn].name = nn; delete st[n]; localStorage.setItem('pg_levels', JSON.stringify(st)); close(); edLevels(); edToast('Renamed '); }; setTimeout(function () { ri.focus(); ri.select(); }, 40); }); };
       var xb = elt('button', 'padding:6px 8px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '×', rd);
       xb.onclick = function () { edConfirm('Delete level "' + n + '"? This cannot be undone.', function () { var st = edStore(); delete st[n]; localStorage.setItem('pg_levels', JSON.stringify(st)); edLevels(); edToast('Deleted'); }); };
@@ -3617,7 +3617,7 @@
   function showDailyCard(rec) {
     var old = document.getElementById('pg-daily'); if (old) old.remove();
     var S = shareStrings(rec);
-    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-daily';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-daily';
     var _cardCss = document.createElement('style'); _cardCss.textContent = '#pg-daily button,#pg-daily a,#pg-daily input{border:none!important;outline:none;}#pg-daily input{background:rgba(0,0,0,.26);text-align:center;}'; ov.appendChild(_cardCss);   // no boxes/strokes — flat controls on the blur
     var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:20px;text-align:center;', null, ov); box.className = 'edscroll';
     // × dismiss — close the card and just play/look around (it auto-pops on revisit; let people get out of it)
@@ -3891,7 +3891,7 @@
     var verdict = n === 1 ? 'HOLE IN ONE! ' : over <= -2 ? 'EAGLE ' : over === -1 ? 'BIRDIE ' : over === 0 ? 'PAR ' : over === 1 ? 'BOGEY ' : '+' + over + ' ';
     var counts = {}; St.tbShots.forEach(function (p) { counts[p] = (counts[p] || 0) + 1; });
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-teamball';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-teamball';
     var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:22px;text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#ffffff;letter-spacing:2px;', 'TEAM BALL', box);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5efdc;margin:2px 0 6px;', hole ? hole.name : '', box);
@@ -3944,7 +3944,7 @@
     var best = rows[0], over = best.s - par;
     var verdict = best.s === 1 ? 'HOLE IN ONE! ' : over <= -2 ? 'EAGLE ' : over === -1 ? 'BIRDIE ' : over === 0 ? 'PAR ' : over === 1 ? 'BOGEY ' : '+' + over + ' ';
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-teamball';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-teamball';
     var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:22px;text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#ffffff;letter-spacing:2px;', 'BEST BALL', box);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5efdc;margin:2px 0 6px;', hole ? hole.name : '', box);
@@ -3971,7 +3971,7 @@
   }
   function showTeamBallSetup() {
     var old = document.getElementById('pg-tbsetup'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-tbsetup';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-tbsetup';
     var _tbCss = document.createElement('style'); _tbCss.textContent = '#pg-tbsetup button,#pg-tbsetup input{border:none!important;outline:none;}#pg-tbsetup input{background:rgba(0,0,0,.26);}'; ov.appendChild(_tbCss);
     var box = elt('div', 'width:390px;max-width:92%;background:transparent;border:none;padding:22px;text-align:center;', null, ov);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#ffffff;', 'PASS & PLAY', box);
@@ -4000,7 +4000,7 @@
   function showChampions() {
     var net = NET(); if (!net) return;
     var old = document.getElementById('pg-champs'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-champs';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-champs';
     ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
     var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:transparent;border:none;padding:20px;text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo,Georgia;color:#ffffff;', 'CHAMPIONS', box);
@@ -4065,7 +4065,7 @@
     var cb = function (id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); fn(); }); };
     cb('rotL', function () { St.camOrbit -= 0.14; }); cb('rotR', function () { St.camOrbit += 0.14; });
     cb('zin', function () { R3.zoom = clamp(R3.zoom * 0.86, 0.55, 1.8); }); cb('zout', function () { R3.zoom = clamp(R3.zoom * 1.16, 0.55, 1.8); }); cb('vreset', function () { R3.zoom = 1; St.camOrbit = 0; });
-    var lookBtn = elt('button', 'position:fixed;right:14px;bottom:64px;z-index:21;width:44px;height:44px;border:none;background:transparent;color:#ffffff;font-size:23px;cursor:pointer;', '', document.body); lookBtn.title = 'Lighting look'; lookBtn.onclick = function () { showLookPicker(); };   // LIGHTING LOOK picker (night / film noir / sunset / daytime / faded / red glow / sin city)
+    var lookBtn = elt('button', 'position:fixed;right:14px;bottom:64px;z-index:21;width:44px;height:44px;border:none;outline:none;background:transparent;color:#ffffff;font:900 15px Wantedo,Georgia;letter-spacing:.5px;cursor:pointer;', 'FX', document.body); lookBtn.title = 'Lighting look'; lookBtn.onclick = function () { showLookPicker(); };   // FX = the lighting-look picker (emoji removed; needs a visible label)   // LIGHTING LOOK picker (night / film noir / sunset / daytime / faded / red glow / sin city)
     St.scene.addEventListener('wheel', function (e) { e.preventDefault(); if (ED.on && ED.view3d) { ED.orb.dist = clamp(ED.orb.dist * (e.deltaY > 0 ? 1.08 : 0.92), 0.5, 4); return; } R3.zoom = clamp(R3.zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.55, 1.8); }, { passive: false });
     audioUI();
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
@@ -4224,7 +4224,7 @@
   }
   function genStudio() {
     document.querySelectorAll('#pg-genstudio,#pg-chooser,#pg-daily,#pg-howto,#pg-over,#pg-scorecard,#pg-champs,#pg-teamball,#pg-tbsetup').forEach(function (e) { e.remove(); });
-    var ov = elt('div', 'position:fixed;inset:0;z-index:9700;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-genstudio';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:9700;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-genstudio';
     var panel = elt('div', 'width:min(94vw,560px);max-height:90vh;overflow:auto;padding:20px 18px;color:#f5efdc;', null, ov);
     var holes = [];
     function gen() { holes = []; var base = (new Date().getTime() ^ (St.frame || 0)) >>> 0; for (var i = 0; i < 3; i++) holes.push(genWacky(base + i * 0x9E3779B1)); }
@@ -4343,7 +4343,7 @@
   PG.__applyMood = function () { applyMood(resolveMood()); };
   function showLookPicker() {
     var ex = document.getElementById('pg-look'); if (ex) { ex.remove(); return; }
-    var ov = elt('div', 'position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-look';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-look';
     ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
     var box = elt('div', 'width:min(340px,90vw);max-height:88vh;overflow:auto;padding:20px;text-align:center;', null, ov);
     elt('div', 'font:900 21px Wantedo,Georgia;color:#ffffff;margin-bottom:2px;', 'LIGHTING LOOK', box);
