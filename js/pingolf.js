@@ -4344,7 +4344,7 @@
   PG.__applyMood = function () { applyMood(resolveMood()); };
   function showLookPicker() {
     var ex = document.getElementById('pg-look'); if (ex) { ex.remove(); return; }
-    var ov = elt('div', 'position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-look';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(5,3,1,.38);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);', null, document.body); ov.id = 'pg-look';   // frosted glass — readable white type on any background
     ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
     var box = elt('div', 'width:min(340px,90vw);max-height:88vh;overflow:auto;padding:20px;text-align:center;', null, ov);
     elt('div', 'font:900 21px Wantedo,Georgia;color:#ffffff;margin-bottom:2px;', 'LIGHTING LOOK', box);
@@ -4352,7 +4352,7 @@
     var saved = 'auto'; try { saved = localStorage.getItem('pg_mood') || 'auto'; } catch (e) { }
     function row(key, label) {
       var active = (key === saved);
-      var b = elt('button', 'display:block;width:100%;padding:11px;border:none;background:transparent;cursor:pointer;font:900 17px Wantedo,Georgia;color:' + (active ? '#ffffff' : '#cbb892') + ';' + (active ? 'text-decoration:underline;text-underline-offset:5px;' : ''), label, box);
+      var b = elt('button', 'display:block;width:100%;padding:11px;border:none;outline:none;background:transparent;cursor:pointer;font:900 17px Wantedo,Georgia;color:' + (active ? '#ffffff' : 'rgba(255,255,255,.82)') + ';' + (active ? 'text-decoration:underline;text-underline-offset:5px;' : ''), label, box);   // all white (active = full white + underline); no pale tan
       b.onclick = function () { try { if (key === 'auto') localStorage.removeItem('pg_mood'); else localStorage.setItem('pg_mood', key); } catch (e) { } applyMood(resolveMood()); ov.remove(); };
       return b;
     }
