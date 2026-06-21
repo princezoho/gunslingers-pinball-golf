@@ -814,7 +814,7 @@
         if (!o.userData.origMat) o.userData.origMat = o.material;
         var src = o.userData.origMat;
         if (isLine) { if (!o.userData.lineMat) o.userData.lineMat = new T.MeshBasicMaterial({ color: 0xc9c4b6 }); o.material = o.userData.lineMat; }   // ink-on-paper: muted paper grey (below the bloom threshold so it never blows out), the outline + feature edges draw the lines
-        else { var key = (mood === 'cel') ? 'celMat' : 'cartMat'; if (!o.userData[key]) { var fc = src.color ? src.color.clone() : new T.Color(0xffffff); var _hsl = {}; fc.getHSL(_hsl); if (mood === 'cartoon') { fc.offsetHSL(0.01, 0.14, -0.1); if (_hsl.s < 0.12) fc.offsetHSL(0, 0, -0.12); } else { fc.offsetHSL(0, 0.16, -0.06); if (_hsl.s < 0.12) fc.offsetHSL(0, 0, -0.08); }   /* cartoon = muted WARM flat cel paint (xerox-era Disney), cel = punchier; near-grey woods darkened so they read as wood, not white */ o.userData[key] = new T.MeshToonMaterial({ color: fc, gradientMap: grad }); } o.material = o.userData[key]; }   // BOTH cartoon + cel drop the texture map → FLAT colour (cartoon = 2 hard bands, cel = 4 smooth bands)
+        else { var key = (mood === 'cel') ? 'celMat' : 'cartMat'; if (!o.userData[key]) { var fc = src.color ? src.color.clone() : new T.Color(0xffffff); var _hsl = {}; fc.getHSL(_hsl); if (mood === 'cartoon') { fc.offsetHSL(0.01, 0.14, -0.1); if (_hsl.s < 0.12) fc.offsetHSL(0, 0, -0.12); } else { fc.offsetHSL(0, 0.16, -0.06); if (_hsl.s < 0.12) fc.offsetHSL(0, 0, -0.08); }   /* cartoon = muted WARM flat cel paint (xerox-era Disney), cel = punchier; near-grey woods darkened so they read as wood, not white */ o.userData[key] = o.userData.keepMap ? new T.MeshToonMaterial({ map: src.map || null, color: new T.Color(0xffffff), gradientMap: grad }) : new T.MeshToonMaterial({ color: fc, gradientMap: grad }); } o.material = o.userData[key]; }   // ART meshes (flag gunslinger, ball) KEEP their texture, toon-shaded; world meshes go flat colour   // BOTH cartoon + cel drop the texture map → FLAT colour (cartoon = 2 hard bands, cel = 4 smooth bands)
       });
       if (R3.toonOutline) { R3.toonOutline.visible = true; R3.group.updateWorldMatrix(false, true); var k = R3.toonOutline.children; for (var i = 0; i < k.length; i++) { var s = k[i].userData.src; if (s && s.visible) { k[i].visible = true; k[i].matrix.copy(s.matrixWorld); } else k[i].visible = false; } }
       if (R3.lineEdgeGroup) { var lev = isLine; R3.lineEdgeGroup.visible = lev; if (lev) { var le = R3.lineEdgeGroup.children; for (var j = 0; j < le.length; j++) { var ls = le[j].userData.src; if (ls && ls.visible) { le[j].visible = true; le[j].matrix.copy(ls.matrixWorld); } else le[j].visible = false; } } }   // internal feature lines show for Line Art only
@@ -1854,6 +1854,7 @@
     var fin = new T.Mesh(new T.SphereGeometry(6.5, 20, 14), goldMat(2.4)); fin.position.set(cu.x, cy - cupD + 235, cu.z); R3.group.add(fin);
     var FL = 92, FH = 46, fgeo = new T.PlaneGeometry(FL, FH, 14, 3); fgeo.translate(FL / 2 + 3, 0, 0);
     R3.flag = new T.Mesh(fgeo, new T.MeshStandardMaterial({ map: flagTex(), side: T.DoubleSide, roughness: .85 }));
+    R3.flag.userData.keepMap = true;   // the flag wears the gunslinger cowboy-face logo — KEEP its texture in toon/flat modes (don't flatten the artwork away)
     R3.flag.position.set(cu.x, cy - cupD + 203, cu.z); R3.flag.castShadow = true; R3.group.add(R3.flag);
     R3.flagWave = { geo: fgeo, base: fgeo.attributes.position.array.slice(0), L: FL };
     // balls
@@ -1865,7 +1866,7 @@
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
-      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; R3.group.add(m); R3.ballMeshes.push(m);
+      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; R3.group.add(m); R3.ballMeshes.push(m);   // ball wears its face/markings — keep the texture in toon/flat modes
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
       var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
