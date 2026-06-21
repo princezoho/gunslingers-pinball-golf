@@ -3904,12 +3904,21 @@
     function rr(a, b) { return a + rnd() * (b - a); }
     function ri(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
     function ch(p) { return rnd() < p; }
-    // winding centerline: 4-6 waypoints, alternating sides → a real snake (tight necks between big arenas)
-    var nWp = ri(4, 6), wp = [[0, 0]], z = 0, sgn = ch(0.5) ? 1 : -1;
-    for (var i = 1; i < nWp; i++) { z += Math.round(rr(480, 700)); wp.push([Math.round(sgn * rr(160, 380)), z]); sgn = -sgn; }
-    // width fn: narrow pinches (~base) <-> wide arenas (base+bulge), like DIAMONDBACK
-    var freq = ri(2, 4), base = rr(170, 210), bulge = rr(420, 600);
-    var width = function (t) { return base + bulge * Math.pow(Math.sin(t * PI * freq), 2); };
+    // winding centerline: 4-7 waypoints. style 0 = zigzag snake, 1 = one big sweeping curve, 2 = wide switchbacks
+    var nWp = ri(4, 7), style = ri(0, 2), wp = [[0, 0]], z = 0, sgn = ch(0.5) ? 1 : -1, drift = sgn * rr(140, 300);
+    for (var i = 1; i < nWp; i++) {
+      z += Math.round(rr(470, 700)); var x;
+      if (style === 1) { drift += sgn * rr(60, 180); x = clamp(drift, -440, 440); }                  // sweeping drift to one side
+      else { x = sgn * (style === 2 ? rr(260, 460) : rr(160, 360)); sgn = -sgn; }                     // zigzag / wide switchbacks
+      wp.push([Math.round(x), z]);
+    }
+    // width fn (3 profiles): rhythmic pinches (DIAMONDBACK), a narrow chute opening to a wide finish, or one big central arena
+    var freq = ri(2, 4), base = rr(165, 205), bulge = rr(420, 620), profile = ri(0, 2);
+    var width = profile === 1
+      ? function (t) { return base + bulge * (0.25 + 0.75 * t); }
+      : profile === 2
+        ? function (t) { return base + bulge * Math.pow(Math.sin(t * PI), 1.4); }
+        : function (t) { return base + bulge * Math.pow(Math.sin(t * PI * freq), 2); };
     // obstacle plan — a "bunch of structures", but pinch-aware so a neck is never fully blocked
     function obs(b, tee, cup) {
       for (var k = 1; k < nWp - 1; k++) {
