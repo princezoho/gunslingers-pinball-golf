@@ -2000,18 +2000,18 @@
     ['HOLE', 'PAR', 'YOU', 'BEST'].forEach(function (t, i) { elt('div', i === 0 ? 'flex:1;' : 'width:46px;text-align:right;', t, hdr); });
     var base = St.setBase || 0;
     for (var hidx = base; hidx < base + 9; hidx++) { var sc = St.scores[hidx]; if (sc == null) continue; var h = HOLES[hidx](), par = h.par; totPar += par; totYou += sc; var over = sc - par;
-      var r = elt('div', 'display:flex;align-items:center;padding:5px 6px;margin:2px 0;background:rgba(245,197,66,.06);font:13px Georgia;color:#f5efdc;', null, box);
+      var r = elt('div', 'display:flex;align-items:center;padding:5px 6px;margin:1px 0;font:13px Georgia;color:#f5efdc;', null, box);
       elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', (hidx - base + 1) + '. ' + h.name, r);
       elt('div', 'width:46px;text-align:right;opacity:.7;', String(par), r);
       var yc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a'; elt('div', 'width:46px;text-align:right;font-weight:700;color:' + yc + ';', sc + (over === 0 ? '' : (over > 0 ? ' +' + over : ' ' + over)), r);
       elt('div', 'width:46px;text-align:right;color:#f5c542;', bs['h' + hidx] != null ? ('★' + bs['h' + hidx]) : '–', r);
     }
     var tp = totYou - totPar, tpStr = tp > 0 ? '+' + tp : tp === 0 ? 'EVEN' : String(tp);
-    var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:2px solid #5a3a1a;font:900 15px Georgia;color:#f5c542;', null, box);
+    var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:1px solid rgba(245,197,66,.22);font:900 15px Georgia;color:#f5c542;', null, box);
     elt('div', 'flex:1;', 'TOTAL', tr); elt('div', 'width:46px;text-align:right;opacity:.7;', String(totPar), tr); elt('div', 'width:92px;text-align:right;', totYou + ' (' + tpStr + ')', tr);
     var act = elt('div', 'display:flex;gap:8px;margin-top:14px;', null, box);
-    var pa = elt('button', 'flex:1;padding:11px;background:#2e7a26;color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', '▶ CHANGE NINE', act); pa.onclick = function () { ov.remove(); chooseSet(); };
-    var ls = elt('button', 'flex:1;padding:11px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '📋 LEVEL SELECT', act); ls.onclick = function () { ov.remove(); levelMenu(); };
+    var pa = elt('button', 'flex:1;padding:11px;background:transparent;border:none;color:#86d85f;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ CHANGE NINE', act); pa.onclick = function () { ov.remove(); chooseSet(); };
+    var ls = elt('button', 'flex:1;padding:11px;background:transparent;border:none;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;', '📋 LEVEL SELECT', act); ls.onclick = function () { ov.remove(); levelMenu(); };
   }
   // saved edits to the built-in campaign holes (persist across reloads) — keyed by hole index
   function overStore() { try { return JSON.parse(localStorage.getItem('pg_over') || '{}'); } catch (e) { return {}; } }
@@ -3264,10 +3264,10 @@
   function showHowTo() {
     try { if (localStorage.getItem('pg_seen_howto')) return; } catch (e) { }
     if (document.getElementById('pg-howto') || St.dailyPractice || St.archive) return;
-    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:transparent;border:none;padding:18px;text-align:center;', null, document.body); ov.id = 'pg-howto';
+    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:rgba(12,8,4,.32);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:none;padding:18px;text-align:center;', null, document.body); ov.id = 'pg-howto';
     elt('div', 'font:900 18px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '🤠 HOW TO PLAY', ov);
     elt('div', 'font:600 14px Georgia;color:#f3eedd;line-height:1.55;margin-bottom:12px;', 'Pull BACK from the ball and let go — like a slingshot. Aim any direction; pull farther for more power. Sink today’s hole in as few shots as you can!', ov);
-    var b = elt('button', 'padding:11px 26px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY', ov);
+    var b = elt('button', 'padding:11px 26px;background:transparent;border:none;color:#86d85f;font:900 16px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY ▶', ov);
     b.onclick = function () { dismissHowTo(); };
   }
   function dismissHowTo() { try { localStorage.setItem('pg_seen_howto', '1'); } catch (e) { } var h = document.getElementById('pg-howto'); if (h) h.remove(); }
@@ -3782,7 +3782,7 @@
     inp.placeholder = 'Names, comma-separated (2–4)'; inp.value = (playerName() || 'Tex') + ', Annie';
     var start = elt('button', 'width:100%;padding:13px;margin-top:12px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ START', box);
     start.onclick = function () { var names = (inp.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); if (names.length < 2) { socialToast('Add at least 2 players'); return; } ov.remove(); if (mode === 'best') enterBestBall(names, TEAM_BALL_HOLE); else enterTeamBall(names, TEAM_BALL_HOLE); };
-    var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
+    var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;background:transparent;border:none;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     cancel.onclick = function () { ov.remove(); chooseSet(); };
   }
   // ALL-TIME CHAMPIONS — the persistent competitive ladder (daily wins, then scoring average)
@@ -3803,10 +3803,10 @@
     var pA = elt('button', '', '⭐ ALL-TIME', perRow);
     var listBox = elt('div', 'min-height:60px;', null, box);
     var me = playerName(), myTeam = getTeam();
-    var shareRank = elt('button', 'width:100%;padding:11px;margin-top:10px;background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;font:900 13px Wantedo,Georgia;cursor:pointer;display:none;', '📤 SHARE MY RANK', box);   // viral flex: brag your standing
+    var shareRank = elt('button', 'width:100%;padding:11px;margin-top:10px;background:transparent;border:none;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;display:none;', '📤 SHARE MY RANK', box);   // viral flex: brag your standing
     function paintTabs() {
-      var on = 'flex:1;padding:9px;border:none;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
-      var off = 'flex:1;padding:9px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
+      var on = 'flex:1;padding:9px;border:none;background:transparent;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;text-decoration:underline;text-underline-offset:5px;';
+      var off = 'flex:1;padding:9px;border:none;background:transparent;color:#8a7250;font:900 13px Wantedo,Georgia;cursor:pointer;';
       tP.style.cssText = (mode === 'players' ? on : off); tT.style.cssText = (mode === 'teams' ? on : off);
       pW.style.cssText = (period === 'week' ? on : off); pA.style.cssText = (period === 'all' ? on : off);
     }
@@ -3820,7 +3820,7 @@
         if (!rows || !rows.length) { elt('div', 'font:600 13px Georgia;color:#9c8a6a;', mode === 'players' ? 'No champions yet — win a daily to claim the top spot!' : 'No team champions yet — form a posse and win a daily!', listBox); return; }
         rows.forEach(function (r, i) {
           var mine = mode === 'players' ? (me && r.name === me) : (myTeam && myTeam.name === r.name);
-          var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:3px 0;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);' : 'background:rgba(245,197,66,.06);'), null, listBox);
+          var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:5px 10px;margin:2px 0;font:13px Georgia;color:' + (mine ? '#f5c542' : '#f5efdc') + ';', null, listBox);
           elt('div', 'width:28px;color:#f5c542;font-weight:700;text-align:center;', i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.', row);
           elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
           elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', r.wins + '🏆', row);
@@ -3841,7 +3841,7 @@
     pW.onclick = function () { period = 'week'; render(); };
     pA.onclick = function () { period = 'all'; render(); };
     render();
-    var close = elt('button', 'width:100%;padding:12px;margin-top:12px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
+    var close = elt('button', 'width:100%;padding:12px;margin-top:12px;background:transparent;border:none;color:#f5c542;font:900 15px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     close.onclick = function () { ov.remove(); };
   }
   function boot() {
