@@ -73,7 +73,8 @@
       <div class="row" style="margin-bottom:6px">
         <button class="btn btn-gold" onclick="propose()">🎲 Generate 3 new wacky holes</button>
         <button class="btn btn-wood" onclick="propose()">↻ Reroll</button>
-        <span class="hint">Every click builds three fresh, weird-shaped holes packed with structures — never the same set twice. Preview opens the actual hole; edit the name/par, then Publish for the chosen date or Bank for later.</span>
+        <button class="btn btn-green" onclick="autoFill(7)">🗓 Auto-fill the next 7 days</button>
+        <span class="hint">Every click builds three fresh, weird-shaped holes packed with structures — never the same set twice. Preview opens the actual hole; edit the name/par, then Publish for the chosen date or Bank for later. <b>Auto-fill</b> publishes a fresh generated hole for each of the next 7 days from the chosen date — set a whole week in one click.</span>
       </div>
       <div id="props"></div>
     </div>
@@ -215,6 +216,24 @@
     }
     function doBankJson(json, title){
       PGNet.saveBank(pass, title, null, json, null).then(function(){ toast('🏦 Banked “'+title+'”'); loadBank(); }).catch(function(e){ toast('Bank failed: '+e.message); });
+    }
+    // one click → a fresh generated daily for each of the next N days, starting from the chosen date
+    function autoFill(days){
+      days=days||7;
+      var startStr=$('day').value || ymd(new Date());
+      if(!confirm('Generate and PUBLISH a brand-new wacky hole for each of the next '+days+' days, starting '+startStr+'? (Overwrites anything already published on those days.)')) return;
+      var c=$('props'); c.innerHTML='<p class="hint">🎲 Generating + publishing '+days+' fresh dailies…</p>';
+      ensureGen(function(PG){
+        var holes; try{ holes=PG.__proposeWacky(days); }catch(e){ toast('Generate failed: '+(e.message||e)); return; }
+        var i=0;
+        (function next(){
+          if(i>=days){ c.innerHTML='<p class="hint">✓ Published '+days+' fresh dailies from '+startStr+'.</p>'; toast('✓ Filled '+days+' days'); refreshDayStatus(); loadSched(); return; }
+          var d=new Date(startStr+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+i);
+          var day=ymd(d), h=holes[i];
+          c.innerHTML='<p class="hint">Publishing '+day+' — “'+h.name+'” ('+(i+1)+'/'+days+')…</p>';
+          PGNet.publishDaily(pass, day, h.name, null, h.json).then(function(){ i++; next(); }, function(e){ c.innerHTML='<p class="hint">Stopped on '+day+': '+e.message+'</p>'; toast('Auto-fill failed: '+e.message); });
+        })();
+      });
     }
     function doPublish(idx, title){
       var day=$('day').value; if(!day){ toast('Pick a date first'); return; }
