@@ -665,16 +665,45 @@
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap; R3.r.shadowMap.autoUpdate = false;   // we drive shadow updates manually (every few frames) instead of a full shadow re-render EVERY frame — big CPU + GC win, the soft shadows lag imperceptibly
       R3.scene = new T.Scene(); R3.scene.fog = new T.Fog(0xc9a06a, 2200, 5600);
       R3.cam = new T.PerspectiveCamera(58, 1, 1, 14000);
-      R3.scene.add(new T.AmbientLight(0xffdcb0, 0.2));
-      R3.scene.add(new T.HemisphereLight(0xffe0ae, 0x4a3320, 0.42));
+      var amb0 = new T.AmbientLight(0xffdcb0, 0.2); R3.scene.add(amb0); R3.amb = amb0;
+      var hemi0 = new T.HemisphereLight(0xffe0ae, 0x4a3320, 0.42); R3.scene.add(hemi0); R3.hemi = hemi0;
       var sun = new T.DirectionalLight(0xffbf52, 1.6); sun.position.set(-820, 1250, -360); sun.castShadow = true;   // low, warm golden-hour sun
       sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
       var sc = sun.shadow.camera; sc.near = 100; sc.far = 4400; sc.left = -1150; sc.right = 1150; sc.top = 1150; sc.bottom = -1150;   // tight frustum around the table = much crisper shadows from the same 2048 map
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
-      var rim = new T.DirectionalLight(0xbfe0ff, 0.6); rim.position.set(650, 760, 1050); R3.scene.add(rim); var fill = new T.DirectionalLight(0xffcf8a, 0.28); fill.position.set(700, 380, -200); R3.scene.add(fill); R3.sunOff = { x: -1020, y: 760, z: -560 };   // cool back-rim + warm low fill = cinematic golden-hour separation
+      var rim = new T.DirectionalLight(0xbfe0ff, 0.6); rim.position.set(650, 760, 1050); R3.scene.add(rim); R3.rim = rim; var fill = new T.DirectionalLight(0xffcf8a, 0.28); fill.position.set(700, 380, -200); R3.scene.add(fill); R3.fill = fill; R3.sunOff = { x: -1020, y: 760, z: -560 };   // cool back-rim + warm low fill = cinematic golden-hour separation
       initEnv(); initPost(); R3.zoom = 1; R3.ready = true; return true;
     } catch (e) { R3.ready = false; return false; }
+  }
+  // ===== LIGHTING MOODS — distinct cinematic looks (lights + tone-map exposure + fog + post-FX color grade) =====
+  var MOODS = {
+    daytime: { name: '☀ Daylight', exp: 1.42, sun: { c: 0xfff4d8, i: 1.75 }, amb: { c: 0xeaf0ff, i: 0.44 }, hemi: { s: 0xcfe6ff, g: 0x6a5a3a, i: 0.72 }, rim: { c: 0xeaf4ff, i: 0.4 }, fill: { c: 0xfff0d0, i: 0.42 }, fog: 0xd8c6a0, grade: { sat: 1.06, sep: 0, tint: [1, 1, 1], con: 1.08, bright: 1.02, lift: 0.7, split: 0.35 }, ca: 0.0014, grain: 0.06, vig: 0.26 },
+    sunset: { name: '🌅 Sunset', exp: 1.14, sun: { c: 0xffbf52, i: 1.6 }, amb: { c: 0xffdcb0, i: 0.2 }, hemi: { s: 0xffe0ae, g: 0x4a3320, i: 0.42 }, rim: { c: 0xbfe0ff, i: 0.6 }, fill: { c: 0xffcf8a, i: 0.28 }, fog: 0xc9a06a, grade: { sat: 1.12, sep: 0, tint: [1, 1, 1], con: 1.16, bright: 0.93, lift: 1, split: 1 }, ca: 0.0026, grain: 0.13, vig: 0.4 },
+    night: { name: '🌙 Moody Night', exp: 0.7, sun: { c: 0x7d93d6, i: 0.9 }, amb: { c: 0x26365e, i: 0.22 }, hemi: { s: 0x2c3e6e, g: 0x080c18, i: 0.4 }, rim: { c: 0x9fc0ff, i: 0.8 }, fill: { c: 0x36406e, i: 0.18 }, fog: 0x0e1530, grade: { sat: 0.8, sep: 0, tint: [0.6, 0.73, 1.1], con: 1.24, bright: 0.7, lift: 1.4, split: 0.6 }, ca: 0.003, grain: 0.18, vig: 0.62 },
+    noir: { name: '🎬 Film Noir', exp: 1.0, sun: { c: 0xffffff, i: 2.1 }, amb: { c: 0x222222, i: 0.13 }, hemi: { s: 0x484848, g: 0x101010, i: 0.26 }, rim: { c: 0xffffff, i: 0.6 }, fill: { c: 0x303030, i: 0.1 }, fog: 0x202327, grade: { sat: 0, sep: 0, tint: [1, 1, 1], con: 1.62, bright: 0.98, lift: 1.1, split: 0 }, ca: 0.0016, grain: 0.24, vig: 0.68 },
+    faded: { name: '🎞 Dusty Faded', exp: 1.2, sun: { c: 0xffe8c0, i: 1.4 }, amb: { c: 0xe8d8b8, i: 0.3 }, hemi: { s: 0xe6d4b0, g: 0x5a4a30, i: 0.5 }, rim: { c: 0xfff0d8, i: 0.4 }, fill: { c: 0xffe0b0, i: 0.3 }, fog: 0xd6c4a4, grade: { sat: 0.5, sep: 0.45, tint: [1.06, 0.99, 0.85], con: 0.84, bright: 1.06, lift: 2.0, split: 0.3 }, ca: 0.0022, grain: 0.36, vig: 0.46 },
+    redglow: { name: '🔴 Red Glow', exp: 0.86, sun: { c: 0xff5a3a, i: 1.5 }, amb: { c: 0x5a1a1a, i: 0.24 }, hemi: { s: 0x6a1e1e, g: 0x120505, i: 0.4 }, rim: { c: 0xff8a6a, i: 0.6 }, fill: { c: 0x8a2a2a, i: 0.22 }, fog: 0x280808, grade: { sat: 0.74, sep: 0, tint: [1.34, 0.44, 0.38], con: 1.3, bright: 0.82, lift: 1.2, split: 0.4 }, ca: 0.0038, grain: 0.2, vig: 0.62 },
+    sincity: { name: '🖤 Sin City', exp: 1.05, sun: { c: 0xffffff, i: 2.2 }, amb: { c: 0x1a1a1a, i: 0.11 }, hemi: { s: 0x3a3a3a, g: 0x080808, i: 0.22 }, rim: { c: 0xffffff, i: 0.6 }, fill: { c: 0x282828, i: 0.09 }, fog: 0x121212, grade: { sat: 0.07, sep: 0, tint: [1.14, 0.95, 0.95], con: 1.78, bright: 1.0, lift: 0.9, split: 0 }, ca: 0.0018, grain: 0.28, vig: 0.74 }
+  };
+  var MOOD_ORDER = ['daytime', 'sunset', 'night', 'noir', 'faded', 'redglow', 'sincity'];
+  function resolveMood() {
+    var um = null; try { um = localStorage.getItem('pg_mood'); } catch (e) { }
+    if (um && MOODS[um]) return um;                                            // player's chosen look (settings override)
+    if (St.hole && St.hole.mood && MOODS[St.hole.mood]) return St.hole.mood;   // hole's own default mood (night/noir holes)
+    return 'sunset';
+  }
+  function applyMood(name) {
+    var m = MOODS[name] || MOODS.sunset; St.mood = MOODS[name] ? name : 'sunset';
+    if (!R3.ready) return m;
+    if (R3.r.toneMapping) R3.r.toneMappingExposure = m.exp;
+    function L(o, c, i) { if (!o) return; o.color.setHex(c); o.intensity = i; }
+    L(R3.sun, m.sun.c, m.sun.i); L(R3.amb, m.amb.c, m.amb.i); L(R3.rim, m.rim.c, m.rim.i); L(R3.fill, m.fill.c, m.fill.i);
+    if (R3.hemi) { R3.hemi.color.setHex(m.hemi.s); R3.hemi.groundColor.setHex(m.hemi.g); R3.hemi.intensity = m.hemi.i; }
+    if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
+    if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uTint.value.set(g.tint[0], g.tint[1], g.tint[2]); u.uCon.value = g.con; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uSplit.value = g.split; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca; }
+    if (R3.r.shadowMap) R3.r.shadowMap.needsUpdate = true;
+    return m;
   }
   function tex(key, w, h, paint, rep) { if (R3['_' + key]) return R3['_' + key]; var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; R3['_' + key] = t; return t; }
   function photoTex(file, srgb, rp) {   // real photographic PBR maps (CC0, Poly Haven) — diffuse in sRGB, normal maps LINEAR or lighting breaks
@@ -993,6 +1022,7 @@
       var fsh = [
         'precision highp float; varying vec2 vUv;',
         'uniform sampler2D tD; uniform sampler2D tB; uniform float uT; uniform float uCA; uniform float uGrain; uniform float uVig; uniform float uDof; uniform float uFocus; uniform float uBloom; uniform vec2 uRes;',
+        'uniform float uSat; uniform float uSep; uniform vec3 uTint; uniform float uCon; uniform float uBright; uniform float uLift; uniform float uSplit;',
         'float hash(vec2 p){ vec3 q = fract(vec3(p.xyx) * 443.8975); q += dot(q, q.yzx + 19.19); return fract((q.x + q.y) * q.z); }',
         'void main(){',
         '  vec2 d = vUv - 0.5; float r2 = dot(d, d);',
@@ -1008,13 +1038,16 @@
         '  col += max(ring - 0.78, 0.0) * 0.35;',
         '  col += texture2D(tB, vUv).rgb * uBloom;',                                       // BLOOM: lights actually glow
         '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
-        '  col = mix(col * vec3(0.92, 0.97, 1.05), col * vec3(1.09, 1.01, 0.85), smoothstep(0.18, 0.75, lum));',   // spaghetti-western split-tone: olive-cool shadows, hot golden highlights
+        '  col = mix(col, mix(col * vec3(0.92, 0.97, 1.05), col * vec3(1.09, 1.01, 0.85), smoothstep(0.18, 0.75, lum)), uSplit);',   // western split-tone, scaled by uSplit (0 = neutral for noir)
         '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
-        '  col = mix(vec3(lum), col, 1.12);',
-        '  col = clamp((col - 0.5) * 1.16 + 0.5, 0.0, 1.0);',
-        '  col = col * 0.93 + vec3(0.055, 0.050, 0.044);',
+        '  col = mix(vec3(dot(col, vec3(0.299,0.587,0.114))), col, uSat);',                                       // saturation (0 = B&W for noir/sin city)
+        '  vec3 sep = vec3(dot(col, vec3(0.393,0.769,0.189)), dot(col, vec3(0.349,0.686,0.168)), dot(col, vec3(0.272,0.534,0.131)));',
+        '  col = mix(col, sep, uSep);',                                                                            // sepia (dusty faded film)
+        '  col *= uTint;',                                                                                         // mood tint (night blue / red glow)
+        '  col = clamp((col - 0.5) * uCon + 0.5, 0.0, 1.0);',                                                      // contrast
+        '  col = col * uBright + vec3(0.055, 0.050, 0.044) * uLift;',                                              // brightness + black lift
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       // FXAA — edge smoothing on the final image: kills the jaggies on rounded silhouettes and the painted horizon line
@@ -1048,13 +1081,14 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.12 }, uSep: { value: 0 }, uTint: { value: new T.Vector3(1, 1, 1) }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 }, uSplit: { value: 1 } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
+    var _rm = resolveMood(); if (_rm !== St.mood) applyMood(_rm);   // keep the active lighting mood in sync (hole default or player's setting)
     R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
     var p = R3.post;
     if (p && p.on) {
@@ -2972,8 +3006,8 @@
     });
     var cl = elt('button', 'margin-top:8px;width:100%;padding:8px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Cancel', box); cl.onclick = function () { m.style.display = 'none'; };
   }
-  function edSerialize() { var d = ED.draft; return { name: d.name, par: d.par, bounds: d.bounds, tee: d.tee, cup: d.cup, walls: d.walls.filter(function (w) { return !w._bnd; }).map(function (w) { return { ax: w.ax, az: w.az, bx: w.bx, bz: w.bz, e: w.e, h: w.h }; }), bumpers: d.bumpers.map(function (b) { return { x: b.x, z: b.z, r: b.r, kick: b.kick }; }), bouncers: (d.bouncers || []).map(function (b) { return { x: b.x, z: b.z, r: b.r }; }), boosters: d.boosters.map(function (b) { return { x: b.x, z: b.z, ang: Math.atan2(b.dz, b.dx), r: b.r, spd: b.spd }; }), flippers: d.flippers.map(function (f) { return { side: f.side, px: f.px, pz: f.pz, len: f.len, rot: f.rot, speed: f.speed, power: f.power }; }), windmills: d.windmills.map(function (w) { return { x: w.x, z: w.z, r: w.r, n: w.n, speed: w.speed }; }), lasers: d.lasers.map(function (l) { return { ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase }; }), gates: (d.gates || []).map(function (g) { return { ax: g.ax, az: g.az, bx: g.bx, bz: g.bz, barFrac: g.barFrac, speed: g.speed, h: g.h }; }), conveyors: (d.conveyors || []).map(function (cv) { return { x: cv.x, z: cv.z, w: cv.w, len: cv.len, ang: cv.ang, force: cv.force }; }), pendulums: (d.pendulums || []).map(function (pd) { return { x: pd.x, z: pd.z, len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }; }), turntables: (d.turntables || []).map(function (tt) { return { x: tt.x, z: tt.z, r: tt.r, spin: tt.spin }; }), loops: d.loops.map(function (l) { return { x: l.x, z: l.z, r: l.r, ang: l.ang }; }), warps: d.warps.map(function (w) { return { x: w.x, z: w.z, ex: w.ex, ez: w.ez, r: w.r, tube: !!w.tube }; }), portals: d.portals.map(function (w) { return { x: w.x, z: w.z, exits: (w.exits || [{ x: w.ex, z: w.ez }]).map(function (e) { return { x: e.x, z: e.z }; }), r: w.r }; }), firerings: d.firerings.map(function (f) { return { x: f.x, z: f.z, r: f.r, h: f.h, points: f.points }; }), enemies: d.enemies.map(function (e) { return { x: e.x, z: e.z, ex: e.ex, ez: e.ez, r: e.r, speed: e.speed, type: e.type, behavior: e.behavior, effect: e.effect }; }), coins: d.coins.map(function (c) { return { x: c.x, z: c.z, value: c.value }; }), powerups: (d.powerups || []).map(function (p) { return { x: p.x, z: p.z, kind: p.kind }; }), terrain: d.terrainFeatures, noBox: d.noBox, wallH: d.wallH || 52, theme: d.theme || 'grass', phys: d.phys || themePhys(d.theme || 'grass'), turf: d.turf, shape: (Array.isArray(d.shape) ? d.shape.map(function (p) { return { x: p.x, z: p.z }; }) : null), islands: (Array.isArray(d.islands) ? d.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }) : null), multiball: d.multiball ? { x: d.multiball.x, z: d.multiball.z, r: d.multiball.r } : null }; }
-  function edDeserialize(o) { var d = builder(); d.name = o.name || 'LEVEL'; d.par = o.par || 3; d.bounds = o.bounds; d.tee = o.tee; d.cup = o.cup; d.noBox = !!o.noBox; d.wallH = o.wallH || 52; d.theme = o.theme || 'grass'; d.phys = o.phys || themePhys(d.theme); d.turf = o.turf != null ? o.turf : (THEMES[d.theme] || THEMES.grass).turf; rebuildBox(d); (o.loops || []).forEach(function (l) { d.loopde(l.x, l.z, l.r, l.ang); }); (o.warps || []).forEach(function (w) { if (w.tube) d.tube(w.x, w.z, w.ex, w.ez, w.r); else d.warp(w.x, w.z, w.ex, w.ez, w.r); }); (o.portals || []).forEach(function (w) { d.portal(w.x, w.z, w.exits || (w.ex != null ? [{ x: w.ex, z: w.ez }] : null), w.r); }); (o.firerings || []).forEach(function (f) { d.firering(f.x, f.z, f.r, f.h, f.points); }); (o.enemies || []).forEach(function (e) { d.enemy(e.x, e.z, e.ex, e.ez, e.r, e.speed, e.type, e.behavior, e.effect); }); (o.coins || []).forEach(function (c) { d.coin(c.x, c.z, c.value); }); (o.powerups || []).forEach(function (p) { d.powerup(p.x, p.z, p.kind); }); (o.walls || []).forEach(function (w) { d.wall(w.ax, w.az, w.bx, w.bz, { e: w.e, h: w.h }); }); (o.bumpers || []).forEach(function (b) { d.bumper(b.x, b.z, b.r); if (b.kick != null) last(d.bumpers).kick = b.kick; }); (o.bouncers || []).forEach(function (b) { d.bouncer(b.x, b.z, b.r); }); (o.boosters || []).forEach(function (b) { d.booster(b.x, b.z, b.ang, b.r, b.spd); }); (o.flippers || []).forEach(function (f) { d.flip(f.side, f.px, f.pz, f.len, f.rot, f.speed); if (f.power != null) last(d.flippers).power = f.power; }); (o.windmills || []).forEach(function (w) { d.windmill(w.x, w.z, w.r, w.n, w.speed); }); (o.lasers || []).forEach(function (l) { d.lasers.push({ ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase, on: false }); }); (o.gates || []).forEach(function (g) { d.gate(g.ax, g.az, g.bx, g.bz, { barFrac: g.barFrac, speed: g.speed, h: g.h }); }); (o.conveyors || []).forEach(function (cv) { d.conveyor(cv.x, cv.z, cv.w, cv.len, cv.ang, cv.force); }); (o.pendulums || []).forEach(function (pd) { d.pendulum(pd.x, pd.z, { len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }); }); (o.turntables || []).forEach(function (tt) { d.turntable(tt.x, tt.z, tt.r, tt.spin); }); (o.terrain || []).forEach(function (t) { d.terrainFeatures.push(t); }); if (o.multiball) d.mball(o.multiball.x, o.multiball.z, o.multiball.r); if (Array.isArray(o.shape) && o.shape.length >= 3) d.shape = o.shape.map(function (p) { return { x: p.x, z: p.z }; }); if (Array.isArray(o.islands) && o.islands.length) { d.islands = o.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }); d.noBox = true; } return d; }
+  function edSerialize() { var d = ED.draft; return { name: d.name, par: d.par, bounds: d.bounds, tee: d.tee, cup: d.cup, walls: d.walls.filter(function (w) { return !w._bnd; }).map(function (w) { return { ax: w.ax, az: w.az, bx: w.bx, bz: w.bz, e: w.e, h: w.h }; }), bumpers: d.bumpers.map(function (b) { return { x: b.x, z: b.z, r: b.r, kick: b.kick }; }), bouncers: (d.bouncers || []).map(function (b) { return { x: b.x, z: b.z, r: b.r }; }), boosters: d.boosters.map(function (b) { return { x: b.x, z: b.z, ang: Math.atan2(b.dz, b.dx), r: b.r, spd: b.spd }; }), flippers: d.flippers.map(function (f) { return { side: f.side, px: f.px, pz: f.pz, len: f.len, rot: f.rot, speed: f.speed, power: f.power }; }), windmills: d.windmills.map(function (w) { return { x: w.x, z: w.z, r: w.r, n: w.n, speed: w.speed }; }), lasers: d.lasers.map(function (l) { return { ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase }; }), gates: (d.gates || []).map(function (g) { return { ax: g.ax, az: g.az, bx: g.bx, bz: g.bz, barFrac: g.barFrac, speed: g.speed, h: g.h }; }), conveyors: (d.conveyors || []).map(function (cv) { return { x: cv.x, z: cv.z, w: cv.w, len: cv.len, ang: cv.ang, force: cv.force }; }), pendulums: (d.pendulums || []).map(function (pd) { return { x: pd.x, z: pd.z, len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }; }), turntables: (d.turntables || []).map(function (tt) { return { x: tt.x, z: tt.z, r: tt.r, spin: tt.spin }; }), loops: d.loops.map(function (l) { return { x: l.x, z: l.z, r: l.r, ang: l.ang }; }), warps: d.warps.map(function (w) { return { x: w.x, z: w.z, ex: w.ex, ez: w.ez, r: w.r, tube: !!w.tube }; }), portals: d.portals.map(function (w) { return { x: w.x, z: w.z, exits: (w.exits || [{ x: w.ex, z: w.ez }]).map(function (e) { return { x: e.x, z: e.z }; }), r: w.r }; }), firerings: d.firerings.map(function (f) { return { x: f.x, z: f.z, r: f.r, h: f.h, points: f.points }; }), enemies: d.enemies.map(function (e) { return { x: e.x, z: e.z, ex: e.ex, ez: e.ez, r: e.r, speed: e.speed, type: e.type, behavior: e.behavior, effect: e.effect }; }), coins: d.coins.map(function (c) { return { x: c.x, z: c.z, value: c.value }; }), powerups: (d.powerups || []).map(function (p) { return { x: p.x, z: p.z, kind: p.kind }; }), terrain: d.terrainFeatures, noBox: d.noBox, wallH: d.wallH || 52, theme: d.theme || 'grass', phys: d.phys || themePhys(d.theme || 'grass'), turf: d.turf, shape: (Array.isArray(d.shape) ? d.shape.map(function (p) { return { x: p.x, z: p.z }; }) : null), islands: (Array.isArray(d.islands) ? d.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }) : null), mood: d.mood || null, multiball: d.multiball ? { x: d.multiball.x, z: d.multiball.z, r: d.multiball.r } : null }; }
+  function edDeserialize(o) { var d = builder(); d.name = o.name || 'LEVEL'; d.par = o.par || 3; d.bounds = o.bounds; d.tee = o.tee; d.cup = o.cup; d.noBox = !!o.noBox; d.wallH = o.wallH || 52; d.theme = o.theme || 'grass'; d.phys = o.phys || themePhys(d.theme); d.turf = o.turf != null ? o.turf : (THEMES[d.theme] || THEMES.grass).turf; rebuildBox(d); (o.loops || []).forEach(function (l) { d.loopde(l.x, l.z, l.r, l.ang); }); (o.warps || []).forEach(function (w) { if (w.tube) d.tube(w.x, w.z, w.ex, w.ez, w.r); else d.warp(w.x, w.z, w.ex, w.ez, w.r); }); (o.portals || []).forEach(function (w) { d.portal(w.x, w.z, w.exits || (w.ex != null ? [{ x: w.ex, z: w.ez }] : null), w.r); }); (o.firerings || []).forEach(function (f) { d.firering(f.x, f.z, f.r, f.h, f.points); }); (o.enemies || []).forEach(function (e) { d.enemy(e.x, e.z, e.ex, e.ez, e.r, e.speed, e.type, e.behavior, e.effect); }); (o.coins || []).forEach(function (c) { d.coin(c.x, c.z, c.value); }); (o.powerups || []).forEach(function (p) { d.powerup(p.x, p.z, p.kind); }); (o.walls || []).forEach(function (w) { d.wall(w.ax, w.az, w.bx, w.bz, { e: w.e, h: w.h }); }); (o.bumpers || []).forEach(function (b) { d.bumper(b.x, b.z, b.r); if (b.kick != null) last(d.bumpers).kick = b.kick; }); (o.bouncers || []).forEach(function (b) { d.bouncer(b.x, b.z, b.r); }); (o.boosters || []).forEach(function (b) { d.booster(b.x, b.z, b.ang, b.r, b.spd); }); (o.flippers || []).forEach(function (f) { d.flip(f.side, f.px, f.pz, f.len, f.rot, f.speed); if (f.power != null) last(d.flippers).power = f.power; }); (o.windmills || []).forEach(function (w) { d.windmill(w.x, w.z, w.r, w.n, w.speed); }); (o.lasers || []).forEach(function (l) { d.lasers.push({ ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase, on: false }); }); (o.gates || []).forEach(function (g) { d.gate(g.ax, g.az, g.bx, g.bz, { barFrac: g.barFrac, speed: g.speed, h: g.h }); }); (o.conveyors || []).forEach(function (cv) { d.conveyor(cv.x, cv.z, cv.w, cv.len, cv.ang, cv.force); }); (o.pendulums || []).forEach(function (pd) { d.pendulum(pd.x, pd.z, { len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }); }); (o.turntables || []).forEach(function (tt) { d.turntable(tt.x, tt.z, tt.r, tt.spin); }); (o.terrain || []).forEach(function (t) { d.terrainFeatures.push(t); }); if (o.multiball) d.mball(o.multiball.x, o.multiball.z, o.multiball.r); if (Array.isArray(o.shape) && o.shape.length >= 3) d.shape = o.shape.map(function (p) { return { x: p.x, z: p.z }; }); if (Array.isArray(o.islands) && o.islands.length) { d.islands = o.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }); d.noBox = true; } if (o.mood) d.mood = o.mood; return d; }
   function edStore() { try { return JSON.parse(localStorage.getItem('pg_levels') || '{}'); } catch (e) { return {}; } }
   // headless: can the auto-bot sink this draft? (used to gate owner publishing) — restores all state, silences audio
   function testDraftBeatable(d, tries, maxStrokes) {
@@ -3877,6 +3911,7 @@
     var cb = function (id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); fn(); }); };
     cb('rotL', function () { St.camOrbit -= 0.14; }); cb('rotR', function () { St.camOrbit += 0.14; });
     cb('zin', function () { R3.zoom = clamp(R3.zoom * 0.86, 0.55, 1.8); }); cb('zout', function () { R3.zoom = clamp(R3.zoom * 1.16, 0.55, 1.8); }); cb('vreset', function () { R3.zoom = 1; St.camOrbit = 0; });
+    var lookBtn = elt('button', 'position:fixed;right:14px;bottom:64px;z-index:21;width:44px;height:44px;border:none;background:transparent;color:#f5c542;font-size:23px;cursor:pointer;', '🎨', document.body); lookBtn.title = 'Lighting look'; lookBtn.onclick = function () { showLookPicker(); };   // 🎨 LIGHTING LOOK picker (night / film noir / sunset / daytime / faded / red glow / sin city)
     St.scene.addEventListener('wheel', function (e) { e.preventDefault(); if (ED.on && ED.view3d) { ED.orb.dist = clamp(ED.orb.dist * (e.deltaY > 0 ? 1.08 : 0.92), 0.5, 4); return; } R3.zoom = clamp(R3.zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.55, 1.8); }, { passive: false });
     audioUI();
     try { if (document.fonts) document.fonts.load('40px Wantedo'); } catch (e) {}
@@ -4012,7 +4047,9 @@
       b.coin(wp[1][0], wp[1][1], 1).coin(wp[nWp - 1][0], wp[nWp - 1][1], 2);
     }
     var par = wp[nWp - 1][1] > 2600 ? 4 : 3;   // longer hole → higher par (isl caps at 4)
-    return isl(genName(rnd), par, wp, width, obs);
+    var h = isl(genName(rnd), par, wp, width, obs);
+    h.mood = ['sunset', 'sunset', 'daytime', 'night', 'night', 'noir', 'faded', 'redglow', 'sincity'][Math.floor(rnd() * 9)];   // varied cinematic look per generated hole (night/noir/etc.)
+    return h;
   }
   // serialize any built hole object to the editor/daily JSON (so a generated hole can be published as the daily)
   function serializeHole(h) { var sv = ED.draft; ED.draft = h; try { return edSerialize(); } finally { ED.draft = sv; } }
@@ -4146,6 +4183,27 @@
   // film-look hooks: toggle the post pass / live-tune aberration, grain, vignette
   PG.__fx = function (on) { if (R3.post) R3.post.on = on !== false; return R3.post ? R3.post.on : null; };
   PG.__fxSet = function (ca, grain, vig, dof) { if (!R3.post) return null; var u = R3.post.mat.uniforms; if (ca != null) R3.post.ca = ca; if (grain != null) u.uGrain.value = grain; if (vig != null) u.uVig.value = vig; if (dof != null) u.uDof.value = dof; return { ca: R3.post.ca, grain: u.uGrain.value, vig: u.uVig.value, dof: u.uDof.value, on: R3.post.on }; };
+  PG.__mood = function (name) { if (name != null) { try { if (name === 'auto') localStorage.removeItem('pg_mood'); else localStorage.setItem('pg_mood', name); } catch (e) { } applyMood(resolveMood()); } return St.mood; };
+  PG.__moods = function () { return MOOD_ORDER.map(function (k) { return { key: k, name: MOODS[k].name }; }); };
+  PG.__applyMood = function () { applyMood(resolveMood()); };
+  function showLookPicker() {
+    var ex = document.getElementById('pg-look'); if (ex) { ex.remove(); return; }
+    var ov = elt('div', 'position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-look';
+    ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
+    var box = elt('div', 'width:min(340px,90vw);max-height:88vh;overflow:auto;padding:20px;text-align:center;', null, ov);
+    elt('div', 'font:900 21px Wantedo,Georgia;color:#f5c542;margin-bottom:2px;', '🎨 LIGHTING LOOK', box);
+    elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin-bottom:10px;', 'Pick the mood — changes the whole game instantly.', box);
+    var saved = 'auto'; try { saved = localStorage.getItem('pg_mood') || 'auto'; } catch (e) { }
+    function row(key, label) {
+      var active = (key === saved);
+      var b = elt('button', 'display:block;width:100%;padding:11px;border:none;background:transparent;cursor:pointer;font:900 17px Wantedo,Georgia;color:' + (active ? '#f5c542' : '#cbb892') + ';' + (active ? 'text-decoration:underline;text-underline-offset:5px;' : ''), label, box);
+      b.onclick = function () { try { if (key === 'auto') localStorage.removeItem('pg_mood'); else localStorage.setItem('pg_mood', key); } catch (e) { } applyMood(resolveMood()); ov.remove(); };
+      return b;
+    }
+    row('auto', '✨ Auto (this hole’s look)');
+    MOOD_ORDER.forEach(function (k) { row(k, MOODS[k].name); });
+  }
+  PG.__showLook = function () { showLookPicker(); };
   // daily / social hooks (testing + owner tooling)
   PG.__dailyNum = dailyNum; PG.__dailyIndex = dailyIndex; PG.__loadDaily = function (idx, ghost) { loadDaily(idx == null ? dailyIndex() : idx, ghost || null); return { hi: St.hi, name: St.hole.name, daily: St.daily, dailyN: St.dailyN }; };
   PG.__dailyState = function () { return { daily: !!St.daily, dailyN: St.dailyN, recShots: St.rec ? St.rec.shots.length : 0, recPath: St.rec ? St.rec.path.length : 0, ghost: !!St.ghost, ghostPlaying: St.ghost ? St.ghost.playing : false }; };
