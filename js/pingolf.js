@@ -3836,7 +3836,8 @@
     function ownRow(label, fn) { var r = elt('button', 'padding:10px 11px;border:none;background:rgba(245,197,66,.09);color:#f5efdc;font:800 13px Georgia;cursor:pointer;text-align:left;', label, ownMenu); r.onclick = function () { ownMenu.style.display = 'none'; fn(); }; return r; }
     ownBtn.onclick = function () { ownMenu.style.display = ownMenu.style.display === 'none' ? 'flex' : 'none'; };
     function clearOverlays() { document.querySelectorAll('#pg-chooser,#pg-daily,#pg-howto,#pg-over,#pg-scorecard,#pg-champs,#pg-teamball,#pg-tbsetup').forEach(function (e) { e.remove(); }); }
-    ownRow('🎯 Daily Studio (set the daily)', function () { location.href = 'owner.html'; });
+    ownRow('🎲 Generate the daily — 3 new wacky holes', function () { clearOverlays(); genStudio(); });
+    ownRow('🎯 Daily Studio (dates / bank)', function () { location.href = 'owner.html'; });
     ownRow('✎ Level Editor', function () { clearOverlays(); if (St.testing && ED.draft) edEnter(); else if (St.hole && St.hi >= 0) editBuiltin(St.hi); else edEnter(); });
     ownRow('⛳ Jump to any hole (0–35)', function () { var v = prompt('Load hole # (0–35):', String(St.hi >= 0 ? St.hi : 0)); var n = parseInt(v, 10); if (n >= 0 && n < 36) { clearOverlays(); St.daily = false; St.dailyPractice = false; St.archive = false; loadHole(n); } });
     ownRow('♻ Reset today’s daily (replay)', function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } location.reload(); });
@@ -3932,6 +3933,65 @@
   // serialize any built hole object to the editor/daily JSON (so a generated hole can be published as the daily)
   function serializeHole(h) { var sv = ED.draft; ED.draft = h; try { return edSerialize(); } finally { ED.draft = sv; } }
   PG.__genWacky = function (seed) { return genWacky(seed); };
+  // ---- in-game GENERATOR STUDIO: generate 3 fresh wacky holes, preview / edit / publish one as today's daily ----
+  function gsBtn(a, b) { return 'flex:1;min-width:118px;padding:10px;border:none;background:linear-gradient(180deg,' + a + ',' + b + ');color:#fff;font:800 12px Georgia;cursor:pointer;'; }
+  function gsToast(msg) { var t = elt('div', 'position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:9800;max-width:84vw;text-align:center;padding:11px 18px;background:rgba(18,12,5,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#f5efdc;font:800 13px Georgia;', msg, document.body); setTimeout(function () { t.remove(); }, 3400); }
+  function gsSummary(h) {
+    var t = [], a = function (n, k) { if (n) t.push(n + ' ' + k); };
+    a((h.terrainFeatures || []).filter(function (f) { return f.kind === 'hill'; }).length, 'hills');
+    a((h.bumpers || []).length, 'bumpers'); a((h.windmills || []).length, 'windmills');
+    a((h.gates || []).length, 'gates'); a((h.conveyors || []).length, 'belts');
+    a((h.pendulums || []).length, 'pendulums'); a((h.turntables || []).length, 'turntables');
+    a((h.warps || []).filter(function (w) { return w.tube; }).length, 'slide tubes');
+    a((h.loops || []).length, 'loops'); a((h.firerings || []).length, 'fire hoops');
+    return t.length ? t.join(' · ') : 'open green';
+  }
+  function genStudio() {
+    document.querySelectorAll('#pg-genstudio,#pg-chooser,#pg-daily,#pg-howto,#pg-over,#pg-scorecard,#pg-champs,#pg-teamball,#pg-tbsetup').forEach(function (e) { e.remove(); });
+    var ov = elt('div', 'position:fixed;inset:0;z-index:9700;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-genstudio';
+    var panel = elt('div', 'width:min(94vw,560px);max-height:90vh;overflow:auto;padding:20px 18px;color:#f5efdc;', null, ov);
+    var holes = [];
+    function gen() { holes = []; var base = (new Date().getTime() ^ (St.frame || 0)) >>> 0; for (var i = 0; i < 3; i++) holes.push(genWacky(base + i * 0x9E3779B1)); }
+    function publishGen(h, btn) {
+      if (!NET()) { gsToast('No backend connection — can’t publish'); return; }
+      var pass = ''; try { pass = sessionStorage.getItem('pg_owner_pass') || ''; } catch (e) { }
+      if (!pass) pass = (prompt('Owner passcode:') || '').trim();
+      if (!pass) return; try { sessionStorage.setItem('pg_owner_pass', pass); } catch (e) { }
+      var day = NET().todayKey(), ser = serializeHole(h);
+      btn.disabled = true; btn.textContent = '⏳ Testing it’s beatable…';
+      setTimeout(function () {
+        var res = testDraftBeatable(h, 12, 12);
+        btn.disabled = false; btn.textContent = '📤 Publish as today’s daily';
+        var go = function () { NET().publishDaily(pass, day, h.name, null, ser).then(function () { ov.remove(); gsToast('📤 “' + h.name + '” is live as today’s daily ✓'); }, function (e) { gsToast(/unauth/i.test(e.message || '') ? 'Wrong passcode' : ('Publish failed: ' + e.message)); }); };
+        if (res.beatable) { gsToast('✓ Auto-tester sank it in ' + res.strokes + ' — publishing'); go(); }
+        else if (confirm('⚠ The auto-tester could not sink “' + h.name + '” in 12 tries — players may find it unbeatable. Publish anyway?')) go();
+      }, 40);
+    }
+    function render() {
+      panel.innerHTML = '';
+      elt('div', 'font:900 21px Wantedo,Georgia;color:#f5c542;margin-bottom:3px;', '🎲 GENERATE THE DAILY', panel);
+      elt('div', 'font:600 12px Georgia;opacity:.82;margin-bottom:6px;line-height:1.45;', 'Three brand-new wacky holes, generated fresh every time. Preview one, tweak it in the editor, or publish it as today’s daily for everyone.', panel);
+      holes.forEach(function (h, i) {
+        var card = elt('div', 'padding:12px 0;border-top:1px solid rgba(245,197,66,.18);', null, panel);
+        elt('div', 'font:800 16px Georgia;color:#f5efdc;', (i + 1) + ')  ' + h.name + '   ·  par ' + h.par, card);
+        elt('div', 'font:600 12px Georgia;opacity:.74;margin:3px 0 9px;line-height:1.4;', gsSummary(h), card);
+        var row = elt('div', 'display:flex;gap:7px;flex-wrap:wrap;', null, card);
+        var pv = elt('button', gsBtn('#3a8a30', '#1f5018'), '▶ Preview', row);
+        var ed = elt('button', gsBtn('#6a4628', '#3a2614'), '✎ Edit', row);
+        var pb = elt('button', gsBtn('#1d9bf0', '#0d6fb8'), '📤 Publish as today’s daily', row);
+        pv.onclick = function () { ov.remove(); St.daily = false; St.dailyPractice = false; St.archive = false; PG.__loadHoleObj(h); };
+        ed.onclick = function () { ov.remove(); h.theme = h.theme || 'grass'; h.phys = h.phys || themePhys('grass'); openEditorWith(h); };
+        pb.onclick = function () { publishGen(h, pb); };
+      });
+      var bar = elt('div', 'display:flex;gap:8px;margin-top:18px;', null, panel);
+      var rg = elt('button', gsBtn('#b8862a', '#6a4a10'), '🎲 Regenerate 3', bar);
+      var cl = elt('button', gsBtn('#5a3a22', '#2a1c10'), '✕ Close', bar);
+      rg.onclick = function () { gen(); render(); };
+      cl.onclick = function () { ov.remove(); };
+    }
+    gen(); render();
+  }
+  PG.__genStudio = function () { genStudio(); };
   // propose N fresh wacky holes — returns [{name, par, json}] ready to preview/publish
   PG.__proposeWacky = function (n, baseSeed) {
     n = n || 3; var out = [], seed = (baseSeed >>> 0) || ((new Date().getTime() ^ (St.frame || 0)) >>> 0);
