@@ -691,7 +691,7 @@
     prismatic: { name: 'Prismatic', exp: 0.66, sun: { c: 0x161d33, i: 0.14 }, amb: { c: 0x0a0f22, i: 0.07 }, hemi: { s: 0x101733, g: 0x04030c, i: 0.12 }, rim: { c: 0x7a40ff, i: 0.25 }, fill: { c: 0x12193a, i: 0.08 }, fog: 0x03020a, grade: { sat: 1.42, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.18, hi: 0.82, con: 1.26, bright: 0.5, lift: 0.45 }, ca: 0.0115, grain: 0.05, vig: 0.64, lights: 'prism', prismI: 15.0 },   // dark base (low exp) so the orbiting coloured POINT LIGHTS become the dominant light → distinct magenta/cyan/amber pools that mix additively on the real geometry; heavy chromatic aberration
     cartoon: { name: 'Cartoon', exp: 0.92, sun: { c: 0xfff4e2, i: 1.15 }, amb: { c: 0xe6dcc8, i: 0.36 }, hemi: { s: 0xe0d4bc, g: 0x8a7a62, i: 0.38 }, rim: { c: 0xfff0dc, i: 0.28 }, fill: { c: 0xffe8cc, i: 0.22 }, fog: 0xcab089, grade: { sat: 1.18, sep: 0.07, shad: [0.99, 0.97, 0.92], high: [1.05, 1.0, 0.9], lo: 0.2, hi: 0.84, con: 1.18, bright: 0.92, lift: 0.55 }, ca: 0.0011, grain: 0.16, vig: 0.4, xerox: true },   // XEROX-ERA DISNEY: flat warm-muted cel paint + bold black ink lines + film grain + scratch overlay; warm aged sepia, almost no chromatic aberration (it's hand-drawn, not a digital glitch)
     cel: { name: 'Cel Shaded', exp: 0.95, sun: { c: 0xfff0d0, i: 1.45 }, amb: { c: 0xc8d4ee, i: 0.4 }, hemi: { s: 0xc6d4ee, g: 0x6a5a3a, i: 0.5 }, rim: { c: 0xffffff, i: 0.42 }, fill: { c: 0xffe8c0, i: 0.3 }, fog: 0xccb89a, grade: { sat: 1.32, sep: 0, shad: [0.9, 0.96, 1.06], high: [1.04, 1.02, 0.94], lo: 0.18, hi: 0.82, con: 1.24, bright: 0.92, lift: 0.55 }, ca: 0.004, grain: 0.0, vig: 0.34 },   // FLAT-colour anime cel: smooth 4-band toon on flat colours, low exposure so they stay rich; more CA
-    tron: { name: 'Tron', exp: 1.0, sun: { c: 0x2aa0ff, i: 1.2 }, amb: { c: 0x041018, i: 0.2 }, hemi: { s: 0x0a2030, g: 0x000408, i: 0.3 }, rim: { c: 0x46e0ff, i: 1.2 }, fill: { c: 0x103040, i: 0.2 }, fog: 0x020608, grade: { sat: 0.6, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.3, bright: 1.0, lift: 0.6, gmAmt: 0.72, gm: [[0.0, 0.03, 0.07], [0.05, 0.3, 0.7], [0.4, 0.95, 1.0]], edge: 1.25, style: 2.0 }, ca: 0.003, grain: 0.06, vig: 0.6 },
+    tron: { name: 'Tron', exp: 0.82, sun: { c: 0x1a6acc, i: 0.45 }, amb: { c: 0x020a14, i: 0.08 }, hemi: { s: 0x06151f, g: 0x000206, i: 0.16 }, rim: { c: 0x3ad2ff, i: 0.9 }, fill: { c: 0x07182a, i: 0.14 }, fog: 0x01040a, grade: { sat: 0.75, sep: 0, shad: [0.66, 0.96, 1.12], high: [0.78, 1.0, 1.16], lo: 0.12, hi: 0.86, con: 1.42, bright: 0.7, lift: 0.38 }, ca: 0.0026, grain: 0.05, vig: 0.64, tron: true },   // REAL TRON: dark near-black surfaces + GLOWING cyan geometry EDGE lines (EdgesGeometry, bloom) — not a posterize/edge filter
     line: { name: 'Line Art', exp: 1.05, sun: { c: 0xffffff, i: 1.4 }, amb: { c: 0xffffff, i: 0.7 }, hemi: { s: 0xffffff, g: 0xcccccc, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xd6d2c6, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.85, con: 1.42, bright: 0.84, lift: 0.18 }, ca: 0.0, grain: 0.05, vig: 0.34, lineEdges: true },   // ink-on-PAPER: muted paper tone kept below bloom so it never blows out; feature-edge lines + bold silhouette do the drawing
     wireframe: { name: 'Wireframe', exp: 1.0, sun: { c: 0xffffff, i: 1.5 }, amb: { c: 0x111111, i: 0.3 }, hemi: { s: 0x222222, g: 0x000000, i: 0.3 }, rim: { c: 0xffffff, i: 0.5 }, fill: { c: 0x222222, i: 0.2 }, fog: 0x000000, grade: { sat: 0.4, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.0, lift: 0.6 }, ca: 0.002, grain: 0.03, vig: 0.52, wire: true }
   };
@@ -766,13 +766,14 @@
   }
   function wireSync() {
     if (!R3.scene || !R3.group) return;
-    if (St.mood === 'wireframe') {
+    var _wf = St.mood === 'wireframe', _tron = St.mood === 'tron';
+    if (_wf || _tron) {
       if (!R3.wireBg) R3.wireBg = new T.Color(0x02040b);
       if (R3.wireDirty || !R3.wireGroup) buildWireframe();
-      R3.group.visible = false;                                  // hide the textured fills; the edge overlay renders instead
+      R3.group.visible = _tron;                                  // WIREFRAME hides the fills (pure edges); TRON keeps the dark surfaces under the glowing edges
       if (R3.wireGroup) {
         R3.wireGroup.visible = true;
-        R3.group.updateWorldMatrix(false, true);                 // refresh world matrices even though the group is hidden (so overlays track the ball / moving parts)
+        R3.group.updateWorldMatrix(false, true);                 // refresh world matrices (so overlays track the ball / moving parts)
         var kids = R3.wireGroup.children;
         for (var i = 0; i < kids.length; i++) { var s = kids[i].userData.src; if (s && s.visible) { kids[i].visible = true; kids[i].matrix.copy(s.matrixWorld); } else kids[i].visible = false; }
       }
