@@ -1942,7 +1942,7 @@
     var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-chooser';
     elt('div', 'font:900 clamp(30px,7vw,54px) Wantedo,Georgia;color:#f5c542;text-align:center;', 'CHOOSE YOUR NINE', ov);
     elt('div', 'font:600 15px Georgia;color:#d8c4a2;margin-top:-12px;', 'No hole over par 4 — pick a run and play through.', ov);
-    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:none;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
+    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:none;background:transparent;color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
     var dl = elt('div', 'text-align:left;', null, daily);
     elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '⭐ DAILY HOLE #' + dailyNum(), dl);
     elt('div', 'font:600 12px Georgia;color:#d8c4a2;', 'One shot at today’s hole. Beat the par, share your score, challenge your friends.', dl);
@@ -1962,7 +1962,7 @@
       var champ = elt('button', 'background:transparent;border:none;color:#f5c542;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '🏆 All-time champions', lnks); champ.onclick = function () { showChampions(); };
       var own = elt('button', 'background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '⚙ Owner Studio', lnks); own.title = 'Set & edit the daily hole (passcode)'; own.onclick = function () { location.href = 'owner.html'; };
     }
-    var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;background:linear-gradient(180deg,#2a1e10,#1a1109);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
+    var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;border:none;background:transparent;color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
     var tbl = elt('div', 'text-align:left;', null, tb);
     elt('div', 'font:900 17px Wantedo,Georgia;color:#f5c542;', '👥 PASS & PLAY', tbl);
     elt('div', 'font:600 11px Georgia;color:#d8c4a2;', 'Team Ball (alternate shot) or Best Ball — with friends on one device.', tbl);
