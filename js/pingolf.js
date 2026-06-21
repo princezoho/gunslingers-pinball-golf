@@ -3690,19 +3690,19 @@
     elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:12px;', verdict + ' (par ' + par + ')', box);
     elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:6px;', 'WHO HIT WHAT', box);
     St.tbPlayers.forEach(function (p) {
-      var rw = elt('div', 'display:flex;justify-content:space-between;padding:5px 10px;margin:2px 0;background:rgba(245,197,66,.06);font:13px Georgia;color:#f5efdc;', null, box);
+      var rw = elt('div', 'display:flex;justify-content:space-between;padding:4px 10px;margin:1px 0;font:13px Georgia;color:#f5efdc;', null, box);
       elt('div', 'font-weight:700;', p, rw);
       elt('div', 'font-weight:800;color:#f5c542;', (counts[p] || 0) + ' shot' + ((counts[p] || 0) === 1 ? '' : 's'), rw);
     });
-    var prim = 'width:100%;padding:13px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var prim = 'width:100%;padding:12px;font:900 16px Wantedo,Georgia;cursor:pointer;margin-top:11px;background:transparent;border:none;';
     var tbText = '👥 Team Ball — ' + St.tbPlayers.join(', ') + ' sank ' + (hole ? hole.name : 'the hole') + ' in ' + n + ' shots (' + verdict.replace(/[🎯🦅🐦✅😬💀]/g, '').trim() + ')! 🤠 Play Gunslingers Pinball Golf 👉 ' + shareBase() + '?daily';
-    var sh = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤 SHARE RESULT', box);
+    var sh = elt('button', prim + 'color:#f5c542;', '📤 SHARE RESULT', box);
     sh.onclick = function () { shareLocalResult(tbText); };
-    var again = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔁 NEXT HOLE, SAME TEAM', box);
+    var again = elt('button', prim + 'color:#86d85f;', '🔁 NEXT HOLE, SAME TEAM', box);
     again.onclick = function () { ov.remove(); enterTeamBall(St.tbPlayers, tbNextHole()); };
-    var nt = elt('button', prim + 'background:linear-gradient(180deg,#8a6a1e,#5a3a10);', '👥 NEW TEAM', box);
+    var nt = elt('button', prim + 'color:#e0b94e;', '👥 NEW TEAM', box);
     nt.onclick = function () { ov.remove(); St.teamBall = false; showTeamBallSetup(); };
-    var ex = elt('button', prim + 'background:#3a2614;color:#f5c542;', '🎮 BACK TO MENU', box);
+    var ex = elt('button', prim + 'color:#f5c542;', '🎮 BACK TO MENU', box);
     ex.onclick = function () { ov.remove(); St.teamBall = false; chooseSet(); };
   }
   // ===== BEST BALL — local pass & play: each partner plays the SAME hole solo; the team's lowest score wins =====
@@ -3743,25 +3743,26 @@
     elt('div', 'font:900 17px Wantedo,Georgia;color:' + sc + ';margin-bottom:12px;', verdict + ' is the team’s best (par ' + par + ')', box);
     elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:6px;', 'EVERYONE’S SCORE', box);
     rows.forEach(function (r, i) {
-      var rw = elt('div', 'display:flex;justify-content:space-between;align-items:center;padding:5px 10px;margin:2px 0;background:' + (i === 0 ? 'rgba(245,197,66,.2);' : 'rgba(245,197,66,.06);') + 'font:13px Georgia;color:#f5efdc;', null, box);
+      var rw = elt('div', 'display:flex;justify-content:space-between;align-items:center;padding:4px 10px;margin:1px 0;font:13px Georgia;color:' + (i === 0 ? '#f5c542' : '#f5efdc') + ';', null, box);
       elt('div', 'font-weight:' + (i === 0 ? '800' : '600') + ';', (i === 0 ? '🏆 ' : (i + 1) + '. ') + r.name, rw);
       var ro = r.s - par, roc = ro < 0 ? '#86d85f' : ro === 0 ? '#f5efdc' : '#df8a6a';
       elt('div', 'font-weight:800;color:' + roc + ';', r.s + (ro !== 0 ? (ro > 0 ? ' +' + ro : ' ' + ro) : ''), rw);
     });
-    var prim = 'width:100%;padding:13px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var prim = 'width:100%;padding:12px;font:900 16px Wantedo,Georgia;cursor:pointer;margin-top:11px;background:transparent;border:none;';
     var bbText = '🎯 Best Ball — ' + best.name + ' led the crew with ' + best.s + ' on ' + (hole ? hole.name : 'the hole') + ' (' + St.bbPlayers.join(', ') + ')! 🤠 Play Gunslingers Pinball Golf 👉 ' + shareBase() + '?daily';
-    var sh = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤 SHARE RESULT', box);
+    var sh = elt('button', prim + 'color:#f5c542;', '📤 SHARE RESULT', box);
     sh.onclick = function () { shareLocalResult(bbText); };
-    var again = elt('button', prim + 'background:linear-gradient(180deg,#3a8a30,#1f5018);', '🔁 NEXT HOLE, SAME TEAM', box);
+    var again = elt('button', prim + 'color:#86d85f;', '🔁 NEXT HOLE, SAME TEAM', box);
     again.onclick = function () { ov.remove(); enterBestBall(St.bbPlayers, tbNextHole()); };
-    var nt = elt('button', prim + 'background:linear-gradient(180deg,#8a6a1e,#5a3a10);', '👥 NEW TEAM', box);
+    var nt = elt('button', prim + 'color:#e0b94e;', '👥 NEW TEAM', box);
     nt.onclick = function () { ov.remove(); St.bestBall = false; showTeamBallSetup(); };
-    var ex = elt('button', prim + 'background:#3a2614;color:#f5c542;', '🎮 BACK TO MENU', box);
+    var ex = elt('button', prim + 'color:#f5c542;', '🎮 BACK TO MENU', box);
     ex.onclick = function () { ov.remove(); St.bestBall = false; chooseSet(); };
   }
   function showTeamBallSetup() {
     var old = document.getElementById('pg-tbsetup'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-tbsetup';
+    var _tbCss = document.createElement('style'); _tbCss.textContent = '#pg-tbsetup button,#pg-tbsetup input{border:none!important;outline:none;}#pg-tbsetup input{background:rgba(0,0,0,.26);}'; ov.appendChild(_tbCss);
     var box = elt('div', 'width:390px;max-width:92%;background:transparent;border:none;padding:22px;text-align:center;', null, ov);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;', '👥 PASS & PLAY', box);
     var blurb = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:6px 0 12px;line-height:1.5;min-height:34px;', '', box);
@@ -3770,8 +3771,8 @@
     var mTeam = elt('button', '', '🔄 Team Ball', modeRow);
     var mBest = elt('button', '', '🎯 Best Ball', modeRow);
     function paintMode() {
-      var on = 'flex:1;padding:10px;border:none;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;';
-      var off = 'flex:1;padding:10px;background:#1a1109;color:#caa06a;font:900 13px Wantedo,Georgia;cursor:pointer;';
+      var on = 'flex:1;padding:10px;background:transparent;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;text-decoration:underline;text-underline-offset:5px;';
+      var off = 'flex:1;padding:10px;background:transparent;color:#8a7250;font:900 14px Wantedo,Georgia;cursor:pointer;';
       mTeam.style.cssText = (mode === 'team' ? on : off); mBest.style.cssText = (mode === 'best' ? on : off);
       blurb.textContent = mode === 'team'
         ? 'Take turns hitting the SAME ball — fewest shots as a team wins.'
@@ -3780,7 +3781,7 @@
     mTeam.onclick = function () { mode = 'team'; paintMode(); }; mBest.onclick = function () { mode = 'best'; paintMode(); }; paintMode();
     var inp = elt('input', 'width:100%;padding:11px;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, box);
     inp.placeholder = 'Names, comma-separated (2–4)'; inp.value = (playerName() || 'Tex') + ', Annie';
-    var start = elt('button', 'width:100%;padding:13px;margin-top:12px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ START', box);
+    var start = elt('button', 'width:100%;padding:13px;margin-top:12px;background:transparent;color:#86d85f;font:900 18px Wantedo,Georgia;cursor:pointer;', '▶ START', box);
     start.onclick = function () { var names = (inp.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); if (names.length < 2) { socialToast('Add at least 2 players'); return; } ov.remove(); if (mode === 'best') enterBestBall(names, TEAM_BALL_HOLE); else enterTeamBall(names, TEAM_BALL_HOLE); };
     var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;background:transparent;border:none;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     cancel.onclick = function () { ov.remove(); chooseSet(); };
