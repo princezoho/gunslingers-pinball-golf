@@ -15,11 +15,11 @@
   .wrap{ max-width:760px; margin:0 auto; }
   h1{ color:var(--gold); font-size:30px; letter-spacing:1px; }
   .sub{ color:#c9a06a; font-size:14px; margin:4px 0 18px; }
-  .panel{ background:#241a0e; border:2px solid #5a3a1a; border-radius:14px; padding:16px; margin-bottom:16px; }
+  .panel{ background:#241a0e;   padding:16px; margin-bottom:16px; }
   .panel h2{ color:var(--gold); font-size:16px; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase; }
   label{ display:block; font-size:12px; color:#c9a06a; margin:8px 0 4px; }
-  input, select{ width:100%; padding:10px; border-radius:8px; border:1px solid #5a3a1a; background:#1a1109; color:var(--cream); font:14px Georgia; }
-  .btn{ display:inline-block; padding:11px 16px; border:2px solid var(--ink); border-radius:8px; font:900 13px Georgia; cursor:pointer; color:#fff; text-decoration:none; text-align:center; }
+  input, select{ width:100%; padding:10px;   background:#1a1109; color:var(--cream); font:14px Georgia; }
+  .btn{ display:inline-block; padding:11px 16px;   font:900 13px Georgia; cursor:pointer; color:#fff; text-decoration:none; text-align:center; }
   .btn-gold{ background:linear-gradient(180deg,#f5c542,#e0a92e); color:#241a0e; }
   .btn-green{ background:linear-gradient(180deg,#3a8a30,#1f5018); }
   .btn-wood{ background:var(--wood); color:var(--gold); }
@@ -27,15 +27,15 @@
   .btn-red{ background:linear-gradient(180deg,#c0392b,#8e2a20); }
   .btn:disabled{ opacity:.55; cursor:default; }
   .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .prop{ border:1px solid #5a3a1a; border-radius:10px; padding:12px; margin:10px 0; background:#1d1409; }
+  .prop{   padding:12px; margin:10px 0; background:#1d1409; }
   .prop .nm{ display:flex; gap:8px; }
   .prop .nm input.t{ flex:1; }
   .prop .nm input.p{ width:64px; text-align:center; }
   .meta{ font-size:12px; color:#9c8a6a; margin:6px 0 8px; }
   .gate{ max-width:380px; margin:12vh auto 0; text-align:center; }
-  .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:linear-gradient(180deg,#3a8a30,#1f5018); color:#fff; padding:11px 20px; border-radius:10px; border:2px solid var(--ink); font:800 14px Georgia; opacity:0; transition:opacity .2s; z-index:99; }
-  .lb-row{ display:flex; justify-content:space-between; padding:6px 8px; border-radius:6px; background:rgba(245,197,66,.06); margin:3px 0; font-size:13px; }
-  .pill{ display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; background:#3a2614; color:var(--gold); margin-left:6px; }
+  .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:linear-gradient(180deg,#3a8a30,#1f5018); color:#fff; padding:11px 20px;   font:800 14px Georgia; opacity:0; transition:opacity .2s; z-index:99; }
+  .lb-row{ display:flex; justify-content:space-between; padding:6px 8px;  background:rgba(245,197,66,.06); margin:3px 0; font-size:13px; }
+  .pill{ display:inline-block; font-size:11px; padding:2px 8px;  background:#3a2614; color:var(--gold); margin-left:6px; }
   a.link{ color:#86c8ff; }
   .hint{ font-size:11px; color:#7c6a4a; margin-top:6px; }
 </style>
@@ -69,11 +69,11 @@
     </div>
 
     <div class="panel">
-      <h2>② Today’s three candidates</h2>
+      <h2>② Generate three brand-new holes</h2>
       <div class="row" style="margin-bottom:6px">
-        <button class="btn btn-gold" onclick="propose()">🎲 Propose 3 holes</button>
+        <button class="btn btn-gold" onclick="propose()">🎲 Generate 3 new wacky holes</button>
         <button class="btn btn-wood" onclick="propose()">↻ Reroll</button>
-        <span class="hint">Preview opens the live hole. Edit name/par here, then Publish/Bank. To change the LAYOUT, hit “✎ Edit layout” → tweak → 💾 Save → “📤 Publish as the daily”.</span>
+        <span class="hint">Every click builds three fresh, weird-shaped holes packed with structures — never the same set twice. Preview opens the actual hole; edit the name/par, then Publish for the chosen date or Bank for later.</span>
       </div>
       <div id="props"></div>
     </div>
@@ -160,35 +160,61 @@
         el.appendChild(ub);
       });
     }
-    function pick3(){
-      // propose the WILD, weird-shaped holes (27-35) — organic snakes, branching forks, floating islands, the contraption gauntlet — NOT the plain box fairways. Prefer not-recently-used.
-      var avail=[], i;
-      for(i=27;i<=35;i++){ if(!recentIdx[i]) avail.push(i); }
-      if(avail.length<3){ for(i=27;i<=35;i++){ if(avail.indexOf(i)<0) avail.push(i); } }   // relax if most were recent
-      for(var k=avail.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var t=avail[k];avail[k]=avail[j];avail[j]=t; }   // shuffle
-      return avail.slice(0,3);
+    // ---- PROCEDURAL GENERATOR: a hidden game iframe hosts the engine; we ask it for brand-new wacky holes ----
+    var genHoles = [];   // [{name, par, json}]
+    var genFrame = null;
+    function ensureGen(cb){
+      var rdy=function(){ var cw=genFrame&&genFrame.contentWindow; return cw&&cw.PG&&cw.PG.__proposeWacky?cw.PG:null; };
+      var p=rdy(); if(p){ cb(p); return; }
+      if(!genFrame){ genFrame=document.createElement('iframe'); genFrame.style.cssText='position:absolute;left:-9999px;top:-9999px;width:2px;height:2px;border:0;opacity:0;'; genFrame.src='game.html?gen=1'; document.body.appendChild(genFrame); }
+      var n=0; (function w(){ var p=rdy(); if(p){ cb(p); return; } if(n++>160){ toast('Generator engine didn’t load — hit Reroll'); return; } setTimeout(w,120); })();
     }
+    function summarize(j){
+      var t=[], a=function(n,k){ if(n) t.push(n+' '+k); };
+      a((j.terrain||[]).filter(function(f){return f.kind==='hill';}).length,'hills');
+      a((j.bumpers||[]).length,'bumpers'); a((j.windmills||[]).length,'windmills');
+      a((j.gates||[]).length,'gates'); a((j.conveyors||[]).length,'belts');
+      a((j.pendulums||[]).length,'pendulums'); a((j.turntables||[]).length,'turntables');
+      a((j.warps||[]).filter(function(w){return w.tube;}).length,'slide tubes');
+      a((j.loops||[]).length,'loops'); a((j.firerings||[]).length,'fire hoops');
+      return t.length?t.join(' · '):'open green';
+    }
+    function previewJson(j){ try{ localStorage.setItem('pg_preview', JSON.stringify(j)); }catch(e){} window.open('game.html?preview=1','_blank'); }
     function propose(){
-      var ids=pick3(), c=$('props'); c.innerHTML='';
-      ids.forEach(function(idx){
-        var h=HOLES[idx];
+      var c=$('props'); c.innerHTML='<p class="hint">🎲 Generating 3 brand-new wacky holes…</p>';
+      ensureGen(function(PG){
+        try{ genHoles = PG.__proposeWacky(3); }catch(e){ c.innerHTML='<p class="hint">Generate failed: '+(e.message||e)+'</p>'; return; }
+        renderProps();
+      });
+    }
+    function renderProps(){
+      var c=$('props'); c.innerHTML='';
+      genHoles.forEach(function(h){
         var d=document.createElement('div'); d.className='prop';
         d.innerHTML =
-          '<div class="nm"><input class="t" value="'+h.name.replace(/"/g,'&quot;')+'"><input class="p" type="number" min="2" max="5" value="'+h.par+'"></div>'+
-          '<div class="meta">Hole #'+idx+' · theme: '+h.theme+'</div>'+
+          '<div class="nm"><input class="t" value="'+(h.name||'WACKY HOLE').replace(/"/g,'&quot;')+'"><input class="p" type="number" min="2" max="5" value="'+(h.par||4)+'"></div>'+
+          '<div class="meta">🎲 generated · '+summarize(h.json)+'</div>'+
           '<div class="row">'+
-            '<a class="btn btn-blue" target="_blank" href="game.html?daily='+idx+'">▶ Preview</a>'+
-            '<a class="btn btn-wood" target="_blank" href="game.html?edit='+idx+'">✎ Edit layout</a>'+
-            '<button class="btn btn-green" data-i="'+idx+'">📤 Publish</button>'+
-            '<button class="btn btn-gold" data-i="'+idx+'">🏦 Bank</button>'+
+            '<button class="btn btn-blue" data-a="prev">▶ Preview</button>'+
+            '<button class="btn btn-green" data-a="pub">📤 Publish</button>'+
+            '<button class="btn btn-gold" data-a="bank">🏦 Bank</button>'+
           '</div>';
+        var title=function(){ return (d.querySelector('.t').value||h.name||'Daily Hole').trim(); };
+        var par=function(){ return parseInt(d.querySelector('.p').value,10)||h.par||4; };
+        var prep=function(){ var j=h.json; j.name=title(); j.par=par(); return j; };
         var btns=d.querySelectorAll('button');
-        var title=function(){ return (d.querySelector('.t').value||h.name).trim(); };
-        var par=function(){ return parseInt(d.querySelector('.p').value,10)||h.par; };
-        btns[0].onclick=function(){ doPublish(idx, title()); };
-        btns[1].onclick=function(){ doBank(idx, title()); };
+        btns[0].onclick=function(){ previewJson(prep()); };
+        btns[1].onclick=function(){ doPublishJson(prep(), title()); };
+        btns[2].onclick=function(){ doBankJson(prep(), title()); };
         c.appendChild(d);
       });
+    }
+    function doPublishJson(json, title){
+      var day=$('day').value; if(!day){ toast('Pick a date first'); return; }
+      PGNet.publishDaily(pass, day, title, null, json).then(function(){ toast('✓ Published “'+title+'” for '+day); refreshDayStatus(); loadSched(); }).catch(function(e){ toast('Publish failed: '+e.message); });
+    }
+    function doBankJson(json, title){
+      PGNet.saveBank(pass, title, null, json, null).then(function(){ toast('🏦 Banked “'+title+'”'); loadBank(); }).catch(function(e){ toast('Bank failed: '+e.message); });
     }
     function doPublish(idx, title){
       var day=$('day').value; if(!day){ toast('Pick a date first'); return; }
@@ -206,15 +232,17 @@
         var c=$('bank'); if(!rows.length){ c.innerHTML='<p class="hint">Nothing banked yet. Use 🏦 Bank on a candidate to save it for a future date.</p>'; return; }
         c.innerHTML='';
         rows.forEach(function(r){
+          var gen=(r.hole_json!=null);
           var d=document.createElement('div'); d.className='prop';
-          d.innerHTML='<div class="row"><b style="flex:1">'+(r.title||('hole '+r.hole_index))+'</b>'+
+          d.innerHTML='<div class="row"><b style="flex:1">'+(gen?'🎲 ':'')+(r.title||('hole '+r.hole_index))+'</b>'+
             (r.for_day?'<span class="pill">'+r.for_day+'</span>':'')+
+            '<button class="btn btn-blue">▶</button>'+
             '<button class="btn btn-green">📤 Publish</button>'+
-            (r.hole_index!=null?'<a class="btn btn-blue" target="_blank" href="game.html?daily='+r.hole_index+'">▶</a>':'')+
             '<button class="btn btn-red">🗑</button></div>';
           var b=d.querySelectorAll('button');
-          b[0].onclick=function(){ doPublish(r.hole_index, r.title); };
-          b[1].onclick=function(){ PGNet.deleteBank(pass, r.id).then(function(){ toast('Deleted'); loadBank(); }).catch(function(e){ toast('Delete failed: '+e.message); }); };
+          b[0].onclick=function(){ if(gen) previewJson(r.hole_json); else window.open('game.html?daily='+r.hole_index,'_blank'); };
+          b[1].onclick=function(){ if(gen) doPublishJson(r.hole_json, r.title); else doPublish(r.hole_index, r.title); };
+          b[2].onclick=function(){ PGNet.deleteBank(pass, r.id).then(function(){ toast('Deleted'); loadBank(); }).catch(function(e){ toast('Delete failed: '+e.message); }); };
           $('bank').appendChild(d);
         });
       });

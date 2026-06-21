@@ -3850,7 +3850,12 @@
     try { if (sessionStorage.getItem('pg_ownerMode') === '1') St.ownerMode = true; } catch (e) { }
     if (_qs && (_qs.get('owner') === '1' || _qs.has('edit'))) { St.ownerMode = true; try { sessionStorage.setItem('pg_ownerMode', '1'); } catch (e) { } }
     var _ed = _qs && _qs.get('edit');
-    if (_ed != null && _ed !== '' && !isNaN(parseInt(_ed, 10))) {
+    var _pv = _qs && _qs.get('preview');
+    if (_pv != null && _pv !== '') {   // owner: preview a generated hole stashed in localStorage (pg_preview) by the Daily Studio
+      var _pvOk = false;
+      try { var _po = JSON.parse(localStorage.getItem('pg_preview') || 'null'); if (_po) { var _ph = edDeserialize(_po); PG.__loadHoleObj(_ph); St.banner = '🎲 ' + _ph.name; St.bannerT = 2.4; _pvOk = true; } } catch (e) { }
+      if (!_pvOk) chooseSet();
+    } else if (_ed != null && _ed !== '' && !isNaN(parseInt(_ed, 10))) {
       var _ei = parseInt(_ed, 10); loadHole(_ei >= 0 && _ei < 36 ? _ei : 0); editBuiltin(St.hi);   // owner: tweak a candidate's layout
     } else if (_qs && (_qs.has('daily') || (_hs && _hs.has('g')))) {
       var _dv = _qs.get('daily'), _gh = (_hs && _hs.has('g')) ? decGhost(_hs.get('g')) : null;
@@ -3858,7 +3863,8 @@
       var _explicit = (_dv != null && _dv !== '') ? parseInt(_dv, 10) : null;          // ?daily=N → that exact hole
       if (_explicit == null && _gh && _gh.hi >= 0 && _gh.hi < 36) _explicit = _gh.hi;   // a shared ghost pins its hole
       enterDaily(_explicit, _gh);
-    } else { chooseSet(); }
+    } else if (_qs && _qs.get('gen')) { /* generator host (hidden iframe from Daily Studio) — engine only, no UI; PG.__proposeWacky is ready */ }
+    else { chooseSet(); }
     var ld = document.getElementById('load'); if (ld) { ld.classList.add('gone'); setTimeout(function () { ld.style.display = 'none'; }, 450); }
     requestAnimationFrame(function (t) { St.last = t; frame(t); });
     versionWatch();
@@ -3979,7 +3985,7 @@
         var pv = elt('button', gsBtn('#3a8a30', '#1f5018'), '▶ Preview', row);
         var ed = elt('button', gsBtn('#6a4628', '#3a2614'), '✎ Edit', row);
         var pb = elt('button', gsBtn('#1d9bf0', '#0d6fb8'), '📤 Publish as today’s daily', row);
-        pv.onclick = function () { ov.remove(); St.daily = false; St.dailyPractice = false; St.archive = false; PG.__loadHoleObj(h); };
+        pv.onclick = function () { ov.remove(); St.daily = false; St.dailyPractice = false; St.archive = false; PG.__loadHoleObj(h); St.banner = '🎲 ' + h.name; St.bannerT = 2.2; };
         ed.onclick = function () { ov.remove(); h.theme = h.theme || 'grass'; h.phys = h.phys || themePhys('grass'); openEditorWith(h); };
         pb.onclick = function () { publishGen(h, pb); };
       });
