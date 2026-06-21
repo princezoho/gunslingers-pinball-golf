@@ -702,6 +702,9 @@
     if (R3.hemi) { R3.hemi.color.setHex(m.hemi.s); R3.hemi.groundColor.setHex(m.hemi.g); R3.hemi.intensity = m.hemi.i; }
     if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
     if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uTint.value.set(g.tint[0], g.tint[1], g.tint[2]); u.uCon.value = g.con; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uSplit.value = g.split; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca; }
+    // B&W moods (noir / sin city) → desaturate the HUD canvas + on-screen controls too, so the whole frame reads black-and-white
+    var _gf = m.grade.sat < 0.12 ? 'grayscale(1) contrast(1.04)' : '';
+    [St.hud, document.getElementById('cam'), document.getElementById('snd')].concat(R3.hudBtns || []).forEach(function (e) { if (e) try { e.style.filter = _gf; } catch (x) { } });
     if (R3.r.shadowMap) R3.r.shadowMap.needsUpdate = true;
     return m;
   }
@@ -3942,6 +3945,7 @@
     ownRow('🔄 Hard reload', function () { location.replace(location.pathname + '?bust=' + Date.now()); });
     elt('div', 'padding:7px 11px 3px;color:rgba(245,197,66,.6);font:700 11px Georgia;', BUILD, ownMenu);
     }
+    R3.hudBtns = (ED.dom.gameBtns || []).slice(); if (typeof lookBtn !== 'undefined' && lookBtn) R3.hudBtns.push(lookBtn); if (typeof ownBtn !== 'undefined' && ownBtn) R3.hudBtns.push(ownBtn);   // controls that also go B&W in noir/sin city
     St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
