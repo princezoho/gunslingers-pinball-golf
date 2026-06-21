@@ -680,7 +680,7 @@
   }
   // ===== LIGHTING MOODS — distinct cinematic looks (lights + tone-map exposure + fog + post-FX color grade) =====
   var MOODS = {
-    daytime: { name: '☀ Daylight', exp: 1.4, sun: { c: 0xfff4d8, i: 1.78 }, amb: { c: 0xe6eeff, i: 0.46 }, hemi: { s: 0xcfe6ff, g: 0x6a5a3a, i: 0.76 }, rim: { c: 0xeaf4ff, i: 0.42 }, fill: { c: 0xfff0d0, i: 0.44 }, fog: 0xd6c8a8, grade: { sat: 1.1, sep: 0, shad: [0.86, 0.94, 1.1], high: [1.08, 1.06, 0.92], lo: 0.2, hi: 0.84, con: 1.12, bright: 1.03, lift: 0.5 }, ca: 0.0014, grain: 0.06, vig: 0.28 },
+    daytime: { name: '☀ Daylight', exp: 1.26, sun: { c: 0xfff6e0, i: 2.5 }, amb: { c: 0xbcd0f0, i: 0.13 }, hemi: { s: 0xbcd8ff, g: 0x5a4d34, i: 0.3 }, rim: { c: 0xeaf4ff, i: 0.34 }, fill: { c: 0xffe8c0, i: 0.12 }, fog: 0xcfe2f2, grade: { sat: 1.2, sep: 0, shad: [0.82, 0.9, 1.06], high: [1.1, 1.07, 0.9], lo: 0.16, hi: 0.9, con: 1.34, bright: 0.97, lift: 0.18 }, ca: 0.0014, grain: 0.04, vig: 0.32, shadowR: 0.6 },   // harsh NOON sun: blazing key light + very low ambient so shadows stay DARK & hard-edged (not washed flat)
     sunset: { name: '🌅 Sunset', exp: 1.14, sun: { c: 0xffbf52, i: 1.6 }, amb: { c: 0xffdcb0, i: 0.2 }, hemi: { s: 0xffe0ae, g: 0x4a3320, i: 0.42 }, rim: { c: 0xbfe0ff, i: 0.6 }, fill: { c: 0xffcf8a, i: 0.28 }, fog: 0xc9a06a, grade: { sat: 1.14, sep: 0, shad: [0.9, 0.97, 1.08], high: [1.12, 1.01, 0.82], lo: 0.18, hi: 0.75, con: 1.16, bright: 0.93, lift: 1 }, ca: 0.0026, grain: 0.13, vig: 0.4 },
     night: { name: '🌙 Moody Night', exp: 0.64, sun: { c: 0x8aa2e6, i: 1.0 }, amb: { c: 0x1c2a52, i: 0.18 }, hemi: { s: 0x24345c, g: 0x05070e, i: 0.36 }, rim: { c: 0xb2ceff, i: 1.05 }, fill: { c: 0x2a3868, i: 0.15 }, fog: 0x070a18, grade: { sat: 0.95, sep: 0, shad: [0.28, 0.42, 0.9], high: [0.84, 0.98, 1.18], lo: 0.08, hi: 0.64, con: 1.38, bright: 0.72, lift: 1.5, gmAmt: 0.5, gm: [[0.02, 0.04, 0.12], [0.1, 0.21, 0.48], [0.62, 0.82, 1.0]] }, ca: 0.003, grain: 0.16, vig: 0.68 },
     noir: { name: '🎬 Film Noir', exp: 1.0, sun: { c: 0xffffff, i: 2.15 }, amb: { c: 0x202020, i: 0.12 }, hemi: { s: 0x484848, g: 0x0e0e0e, i: 0.26 }, rim: { c: 0xffffff, i: 0.7 }, fill: { c: 0x2c2c2c, i: 0.09 }, fog: 0x1f2226, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.78, con: 1.66, bright: 0.98, lift: 1.0 }, ca: 0.0015, grain: 0.24, vig: 0.7 },
@@ -692,7 +692,7 @@
     cartoon: { name: '✏ Cartoon', exp: 1.3, sun: { c: 0xffffff, i: 1.35 }, amb: { c: 0xffffff, i: 0.72 }, hemi: { s: 0xffffff, g: 0xaa9988, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xc9b89a, grade: { sat: 1.55, sep: 0, shad: [0.96, 0.98, 1.02], high: [1.04, 1.02, 0.96], lo: 0.2, hi: 0.8, con: 1.15, bright: 1.05, lift: 0.6 }, ca: 0.0014, grain: 0.0, vig: 0.3 },
     cel: { name: '🖍 Cel Shaded', exp: 1.22, sun: { c: 0xfff0d0, i: 1.6 }, amb: { c: 0xdde6ff, i: 0.5 }, hemi: { s: 0xcfe0ff, g: 0x6a5a3a, i: 0.6 }, rim: { c: 0xffffff, i: 0.4 }, fill: { c: 0xffe8c0, i: 0.4 }, fog: 0xccb89a, grade: { sat: 1.32, sep: 0, shad: [0.9, 0.96, 1.06], high: [1.08, 1.04, 0.92], lo: 0.18, hi: 0.78, con: 1.2, bright: 1.02, lift: 0.7 }, ca: 0.0014, grain: 0.0, vig: 0.34 },
     tron: { name: '⬡ Tron', exp: 1.0, sun: { c: 0x2aa0ff, i: 1.2 }, amb: { c: 0x041018, i: 0.2 }, hemi: { s: 0x0a2030, g: 0x000408, i: 0.3 }, rim: { c: 0x46e0ff, i: 1.2 }, fill: { c: 0x103040, i: 0.2 }, fog: 0x020608, grade: { sat: 0.6, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.3, bright: 1.0, lift: 0.6, gmAmt: 0.72, gm: [[0.0, 0.03, 0.07], [0.05, 0.3, 0.7], [0.4, 0.95, 1.0]], edge: 1.25, style: 2.0 }, ca: 0.003, grain: 0.06, vig: 0.6 },
-    line: { name: '✎ Line Art', exp: 1.3, sun: { c: 0xffffff, i: 1.4 }, amb: { c: 0xffffff, i: 0.7 }, hemi: { s: 0xffffff, g: 0xcccccc, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xeeeae0, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.1, lift: 0.6 }, ca: 0.0, grain: 0.04, vig: 0.2 },
+    line: { name: '✎ Line Art', exp: 1.05, sun: { c: 0xffffff, i: 1.4 }, amb: { c: 0xffffff, i: 0.7 }, hemi: { s: 0xffffff, g: 0xcccccc, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xd6d2c6, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.85, con: 1.42, bright: 0.84, lift: 0.18 }, ca: 0.0, grain: 0.05, vig: 0.34, lineEdges: true },   // ink-on-PAPER: muted paper tone kept below bloom so it never blows out; feature-edge lines + bold silhouette do the drawing
     wireframe: { name: '△ Wireframe', exp: 1.0, sun: { c: 0xffffff, i: 1.5 }, amb: { c: 0x111111, i: 0.3 }, hemi: { s: 0x222222, g: 0x000000, i: 0.3 }, rim: { c: 0xffffff, i: 0.5 }, fill: { c: 0x222222, i: 0.2 }, fog: 0x000000, grade: { sat: 0.4, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.0, lift: 0.6 }, ca: 0.002, grain: 0.03, vig: 0.52, wire: true }
   };
   var MOOD_ORDER = ['daytime', 'sunset', 'night', 'noir', 'faded', 'redglow', 'sincity', 'prismatic', 'vaporwave', 'cartoon', 'cel', 'tron', 'line', 'wireframe'];
@@ -711,6 +711,7 @@
     function L(o, c, i) { if (!o) return; o.color.setHex(c); o.intensity = i; }
     L(R3.sun, m.sun.c, m.sun.i); L(R3.amb, m.amb.c, m.amb.i); L(R3.rim, m.rim.c, m.rim.i); L(R3.fill, m.fill.c, m.fill.i);
     if (R3.hemi) { R3.hemi.color.setHex(m.hemi.s); R3.hemi.groundColor.setHex(m.hemi.g); R3.hemi.intensity = m.hemi.i; }
+    if (R3.sun && R3.sun.shadow) { R3.sun.shadow.radius = m.shadowR != null ? m.shadowR : 1; }   // crisp hard shadows (daytime) vs soft (default)
     if (R3.spot) { var sp = SPOTS[St.mood] || SPOTS.sunset; R3.spotBase = sp.i; R3.spot.color.setHex(sp.c); R3.spot.angle = sp.a; R3.spot.intensity = sp.i; }
     R3.prismOn = m.lights === 'prism'; R3.prismI = R3.prismOn ? (m.prismI || 3.0) : 0; if (R3.prism) R3.prism.forEach(function (pl) { pl.intensity = R3.prismOn ? R3.prismI : 0; });   // real coloured lights only fire in the prismatic look (orbit + pulse animated in renderGL)
     if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
@@ -768,14 +769,18 @@
     R3.outlineDirty = false;
     if (R3.toonOutline) R3.scene.remove(R3.toonOutline);   // geometry is SHARED with the originals — don't dispose
     R3.toonOutline = new T.Group(); R3.toonOutline.frustumCulled = false;
-    if (!R3.outlineMat) R3.outlineMat = new T.ShaderMaterial({ uniforms: { oT: { value: 3.4 }, oCol: { value: new T.Color(0x0b0b0f) } }, side: T.BackSide, fog: false, vertexShader: ['uniform float oT;', 'void main(){ vec3 p = position + normalize(normal) * oT; gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }'].join('\n'), fragmentShader: ['uniform vec3 oCol;', 'void main(){ gl_FragColor = vec4(oCol, 1.0); }'].join('\n') });
+    if (!R3.outlineMat) R3.outlineMat = new T.ShaderMaterial({ uniforms: { oT: { value: 4.2 }, oCol: { value: new T.Color(0x0a0a0e) } }, side: T.BackSide, fog: false, vertexShader: ['uniform float oT;', 'void main(){ vec3 p = position + normalize(normal) * oT; gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }'].join('\n'), fragmentShader: ['uniform vec3 oCol;', 'void main(){ gl_FragColor = vec4(oCol, 1.0); }'].join('\n') });
+    if (!R3.inkMat) R3.inkMat = new T.LineBasicMaterial({ color: 0x14140f, fog: false });   // black feature-edge lines for Line Art (internal detail, not just silhouette)
+    if (R3.lineEdgeGroup) R3.scene.remove(R3.lineEdgeGroup);
+    R3.lineEdgeGroup = new T.Group(); R3.lineEdgeGroup.frustumCulled = false;
     R3.group.traverse(function (o) {
       if (!o.isMesh || !o.geometry || o === R3.ballLocator || o.renderOrder <= -1) return;   // skip the sky dome (renderOrder -2)
       if (!o.geometry.attributes || !o.geometry.attributes.normal) return;                    // hull needs normals
       var m = new T.Mesh(o.geometry, R3.outlineMat); m.matrixAutoUpdate = false; m.frustumCulled = false; m.userData.src = o; m.renderOrder = 1;
       o.updateWorldMatrix(true, false); m.matrix.copy(o.matrixWorld); R3.toonOutline.add(m);
+      try { var eg = new T.EdgesGeometry(o.geometry, 32); if (eg.attributes.position && eg.attributes.position.count > 0) { var le = new T.LineSegments(eg, R3.inkMat); le.matrixAutoUpdate = false; le.frustumCulled = false; le.userData.src = o; le.renderOrder = 2; le.matrix.copy(o.matrixWorld); R3.lineEdgeGroup.add(le); } else eg.dispose(); } catch (e) { }   // internal feature-edge ink lines (Line Art only)
     });
-    R3.scene.add(R3.toonOutline);
+    R3.scene.add(R3.toonOutline); R3.scene.add(R3.lineEdgeGroup);
   }
   function toonSync() {
     if (!R3.scene || !R3.group) return;
@@ -788,14 +793,16 @@
         if (!o.isMesh || !o.material || o === R3.ballLocator || o.renderOrder <= -1) return;
         if (!o.userData.origMat) o.userData.origMat = o.material;
         var src = o.userData.origMat;
-        if (isLine) { if (!o.userData.lineMat) o.userData.lineMat = new T.MeshBasicMaterial({ color: 0xf6f3ea }); o.material = o.userData.lineMat; }   // ink-on-paper: FLAT white fills (no texture), the inverted-hull outline draws the lines
+        if (isLine) { if (!o.userData.lineMat) o.userData.lineMat = new T.MeshBasicMaterial({ color: 0xc9c4b6 }); o.material = o.userData.lineMat; }   // ink-on-paper: muted paper grey (below the bloom threshold so it never blows out), the outline + feature edges draw the lines
         else { var key = (mood === 'cel') ? 'celMat' : 'cartMat'; if (!o.userData[key]) o.userData[key] = new T.MeshToonMaterial({ map: src.map || null, color: src.color ? src.color.clone() : new T.Color(0xffffff), gradientMap: grad }); o.material = o.userData[key]; }
       });
       if (R3.toonOutline) { R3.toonOutline.visible = true; R3.group.updateWorldMatrix(false, true); var k = R3.toonOutline.children; for (var i = 0; i < k.length; i++) { var s = k[i].userData.src; if (s && s.visible) { k[i].visible = true; k[i].matrix.copy(s.matrixWorld); } else k[i].visible = false; } }
+      if (R3.lineEdgeGroup) { var lev = isLine; R3.lineEdgeGroup.visible = lev; if (lev) { var le = R3.lineEdgeGroup.children; for (var j = 0; j < le.length; j++) { var ls = le[j].userData.src; if (ls && ls.visible) { le[j].visible = true; le[j].matrix.copy(ls.matrixWorld); } else le[j].visible = false; } } }   // internal feature lines show for Line Art only
       R3.toonActive = true;
     } else if (R3.toonActive) {
       R3.group.traverse(function (o) { if (o.userData.origMat) o.material = o.userData.origMat; });   // restore the real PBR materials
       if (R3.toonOutline) R3.toonOutline.visible = false;
+      if (R3.lineEdgeGroup) R3.lineEdgeGroup.visible = false;
       R3.toonActive = false;
     }
   }
