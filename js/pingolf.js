@@ -689,10 +689,10 @@
     sincity: { name: '🖤 Sin City', exp: 1.05, sun: { c: 0xffffff, i: 2.35 }, amb: { c: 0x141414, i: 0.1 }, hemi: { s: 0x343434, g: 0x060606, i: 0.22 }, rim: { c: 0xffffff, i: 0.75 }, fill: { c: 0x222222, i: 0.08 }, fog: 0x101010, grade: { sat: 0.07, sep: 0, shad: [0.9, 0.9, 0.95], high: [1.06, 1.0, 1.0], lo: 0.16, hi: 0.74, con: 1.98, bright: 1.0, lift: 0.5 }, ca: 0.0016, grain: 0.28, vig: 0.78 },
     vaporwave: { name: '🌴 Vaporwave', exp: 1.16, sun: { c: 0xff6ad5, i: 1.5 }, amb: { c: 0x3a1a6a, i: 0.42 }, hemi: { s: 0x6a2aa8, g: 0x12204a, i: 0.62 }, rim: { c: 0x46e0ff, i: 1.0 }, fill: { c: 0xff6ad5, i: 0.42 }, fog: 0x2a0a4a, grade: { sat: 1.1, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.18, hi: 0.78, con: 1.18, bright: 1.0, lift: 1.2, gmAmt: 0.9, gm: [[0.16, 0.03, 0.34], [0.96, 0.22, 0.66], [0.36, 0.96, 0.99]], scan: 0.1 }, ca: 0.0062, grain: 0.08, vig: 0.42 },
     prismatic: { name: '🌈 Prismatic', exp: 0.66, sun: { c: 0x161d33, i: 0.14 }, amb: { c: 0x0a0f22, i: 0.07 }, hemi: { s: 0x101733, g: 0x04030c, i: 0.12 }, rim: { c: 0x7a40ff, i: 0.25 }, fill: { c: 0x12193a, i: 0.08 }, fog: 0x03020a, grade: { sat: 1.42, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.18, hi: 0.82, con: 1.26, bright: 0.5, lift: 0.45 }, ca: 0.0115, grain: 0.05, vig: 0.64, lights: 'prism', prismI: 15.0 },   // dark base (low exp) so the orbiting coloured POINT LIGHTS become the dominant light → distinct magenta/cyan/amber pools that mix additively on the real geometry; heavy chromatic aberration
-    cartoon: { name: '✏ Cartoon', exp: 1.3, sun: { c: 0xffffff, i: 1.35 }, amb: { c: 0xffffff, i: 0.72 }, hemi: { s: 0xffffff, g: 0xaa9988, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xc9b89a, grade: { sat: 1.55, sep: 0, shad: [0.96, 0.98, 1.02], high: [1.04, 1.02, 0.96], lo: 0.2, hi: 0.8, con: 1.15, bright: 1.05, lift: 0.6, edge: 1.4, style: 1.0 }, ca: 0.0014, grain: 0.0, vig: 0.3 },
-    cel: { name: '🖍 Cel Shaded', exp: 1.22, sun: { c: 0xfff0d0, i: 1.6 }, amb: { c: 0xdde6ff, i: 0.5 }, hemi: { s: 0xcfe0ff, g: 0x6a5a3a, i: 0.6 }, rim: { c: 0xffffff, i: 0.4 }, fill: { c: 0xffe8c0, i: 0.4 }, fog: 0xccb89a, grade: { sat: 1.32, sep: 0, shad: [0.9, 0.96, 1.06], high: [1.08, 1.04, 0.92], lo: 0.18, hi: 0.78, con: 1.2, bright: 1.02, lift: 0.7, edge: 1.3, style: 1.0 }, ca: 0.0014, grain: 0.0, vig: 0.34 },
+    cartoon: { name: '✏ Cartoon', exp: 1.3, sun: { c: 0xffffff, i: 1.35 }, amb: { c: 0xffffff, i: 0.72 }, hemi: { s: 0xffffff, g: 0xaa9988, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xc9b89a, grade: { sat: 1.55, sep: 0, shad: [0.96, 0.98, 1.02], high: [1.04, 1.02, 0.96], lo: 0.2, hi: 0.8, con: 1.15, bright: 1.05, lift: 0.6 }, ca: 0.0014, grain: 0.0, vig: 0.3 },
+    cel: { name: '🖍 Cel Shaded', exp: 1.22, sun: { c: 0xfff0d0, i: 1.6 }, amb: { c: 0xdde6ff, i: 0.5 }, hemi: { s: 0xcfe0ff, g: 0x6a5a3a, i: 0.6 }, rim: { c: 0xffffff, i: 0.4 }, fill: { c: 0xffe8c0, i: 0.4 }, fog: 0xccb89a, grade: { sat: 1.32, sep: 0, shad: [0.9, 0.96, 1.06], high: [1.08, 1.04, 0.92], lo: 0.18, hi: 0.78, con: 1.2, bright: 1.02, lift: 0.7 }, ca: 0.0014, grain: 0.0, vig: 0.34 },
     tron: { name: '⬡ Tron', exp: 1.0, sun: { c: 0x2aa0ff, i: 1.2 }, amb: { c: 0x041018, i: 0.2 }, hemi: { s: 0x0a2030, g: 0x000408, i: 0.3 }, rim: { c: 0x46e0ff, i: 1.2 }, fill: { c: 0x103040, i: 0.2 }, fog: 0x020608, grade: { sat: 0.6, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.3, bright: 1.0, lift: 0.6, gmAmt: 0.72, gm: [[0.0, 0.03, 0.07], [0.05, 0.3, 0.7], [0.4, 0.95, 1.0]], edge: 1.25, style: 2.0 }, ca: 0.003, grain: 0.06, vig: 0.6 },
-    line: { name: '✎ Line Art', exp: 1.3, sun: { c: 0xffffff, i: 1.4 }, amb: { c: 0xffffff, i: 0.7 }, hemi: { s: 0xffffff, g: 0xcccccc, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xeeeae0, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.1, lift: 0.6, edge: 1.4, style: 3.0 }, ca: 0.0, grain: 0.04, vig: 0.2 },
+    line: { name: '✎ Line Art', exp: 1.3, sun: { c: 0xffffff, i: 1.4 }, amb: { c: 0xffffff, i: 0.7 }, hemi: { s: 0xffffff, g: 0xcccccc, i: 0.7 }, rim: { c: 0xffffff, i: 0.3 }, fill: { c: 0xffffff, i: 0.4 }, fog: 0xeeeae0, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.1, lift: 0.6 }, ca: 0.0, grain: 0.04, vig: 0.2 },
     wireframe: { name: '△ Wireframe', exp: 1.0, sun: { c: 0xffffff, i: 1.5 }, amb: { c: 0x111111, i: 0.3 }, hemi: { s: 0x222222, g: 0x000000, i: 0.3 }, rim: { c: 0xffffff, i: 0.5 }, fill: { c: 0x222222, i: 0.2 }, fog: 0x000000, grade: { sat: 0.4, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.0, lift: 0.6 }, ca: 0.002, grain: 0.03, vig: 0.52, wire: true }
   };
   var MOOD_ORDER = ['daytime', 'sunset', 'night', 'noir', 'faded', 'redglow', 'sincity', 'prismatic', 'vaporwave', 'cartoon', 'cel', 'tron', 'line', 'wireframe'];
@@ -720,7 +720,7 @@
     var _gf = m.grade.sat < 0.12 ? 'grayscale(1) contrast(1.04)' : '';
     [St.hud, document.getElementById('cam'), document.getElementById('snd')].concat(R3.hudBtns || []).forEach(function (e) { if (e) try { e.style.filter = _gf; } catch (x) { } });
     if (R3.r.shadowMap) R3.r.shadowMap.needsUpdate = true;
-    wireSync();
+    wireSync(); toonSync();
     return m;
   }
   // REAL wireframe: build LineSegments from each mesh's EdgesGeometry (only FEATURE edges — a flat floor = its outline, a box = 12 edges, NOT every triangle) on a black world; the ball keeps a full WireframeGeometry so it still reads as a sphere. Overlays follow moving objects (ball, obstacles) every frame.
@@ -760,6 +760,43 @@
       if (R3.wireGroup) R3.wireGroup.visible = false;
       if (R3.scene.overrideMaterial) R3.scene.overrideMaterial = null;
       if (R3.holeBg && R3.scene.background !== R3.holeBg) R3.scene.background = R3.holeBg;
+    }
+  }
+  // REAL toon shading: a NEAREST-filtered gradient ramp drives MeshToonMaterial → genuine BANDED lighting (not a posterize filter); inverted-hull back-faces give a real geometry ink outline (not a 2D Sobel pass).
+  function toonGrad(steps) { var c = document.createElement('canvas'); c.width = steps; c.height = 1; var x = c.getContext('2d'); for (var i = 0; i < steps; i++) { var v = Math.round(255 * Math.pow(i / (steps - 1), 0.85)); x.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')'; x.fillRect(i, 0, 1, 1); } var t = new T.CanvasTexture(c); t.minFilter = t.magFilter = T.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; }
+  function buildOutline() {
+    R3.outlineDirty = false;
+    if (R3.toonOutline) R3.scene.remove(R3.toonOutline);   // geometry is SHARED with the originals — don't dispose
+    R3.toonOutline = new T.Group(); R3.toonOutline.frustumCulled = false;
+    if (!R3.outlineMat) R3.outlineMat = new T.ShaderMaterial({ uniforms: { oT: { value: 3.4 }, oCol: { value: new T.Color(0x0b0b0f) } }, side: T.BackSide, fog: false, vertexShader: ['uniform float oT;', 'void main(){ vec3 p = position + normalize(normal) * oT; gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }'].join('\n'), fragmentShader: ['uniform vec3 oCol;', 'void main(){ gl_FragColor = vec4(oCol, 1.0); }'].join('\n') });
+    R3.group.traverse(function (o) {
+      if (!o.isMesh || !o.geometry || o === R3.ballLocator || o.renderOrder <= -1) return;   // skip the sky dome (renderOrder -2)
+      if (!o.geometry.attributes || !o.geometry.attributes.normal) return;                    // hull needs normals
+      var m = new T.Mesh(o.geometry, R3.outlineMat); m.matrixAutoUpdate = false; m.frustumCulled = false; m.userData.src = o; m.renderOrder = 1;
+      o.updateWorldMatrix(true, false); m.matrix.copy(o.matrixWorld); R3.toonOutline.add(m);
+    });
+    R3.scene.add(R3.toonOutline);
+  }
+  function toonSync() {
+    if (!R3.scene || !R3.group) return;
+    var mood = St.mood, isToon = (mood === 'cartoon' || mood === 'cel'), isLine = (mood === 'line'), on = isToon || isLine;
+    if (on) {
+      if (!R3.toonGrad) { R3.toonGrad = toonGrad(4); R3.toonGradC = toonGrad(3); }   // cel = 4 bands (smoother), cartoon = 3 bands (punchier)
+      if (R3.outlineDirty || !R3.toonOutline) buildOutline();
+      var grad = (mood === 'cel') ? R3.toonGrad : R3.toonGradC;
+      R3.group.traverse(function (o) {
+        if (!o.isMesh || !o.material || o === R3.ballLocator || o.renderOrder <= -1) return;
+        if (!o.userData.origMat) o.userData.origMat = o.material;
+        var src = o.userData.origMat;
+        if (isLine) { if (!o.userData.lineMat) o.userData.lineMat = new T.MeshBasicMaterial({ color: 0xf6f3ea }); o.material = o.userData.lineMat; }   // ink-on-paper: FLAT white fills (no texture), the inverted-hull outline draws the lines
+        else { var key = (mood === 'cel') ? 'celMat' : 'cartMat'; if (!o.userData[key]) o.userData[key] = new T.MeshToonMaterial({ map: src.map || null, color: src.color ? src.color.clone() : new T.Color(0xffffff), gradientMap: grad }); o.material = o.userData[key]; }
+      });
+      if (R3.toonOutline) { R3.toonOutline.visible = true; R3.group.updateWorldMatrix(false, true); var k = R3.toonOutline.children; for (var i = 0; i < k.length; i++) { var s = k[i].userData.src; if (s && s.visible) { k[i].visible = true; k[i].matrix.copy(s.matrixWorld); } else k[i].visible = false; } }
+      R3.toonActive = true;
+    } else if (R3.toonActive) {
+      R3.group.traverse(function (o) { if (o.userData.origMat) o.material = o.userData.origMat; });   // restore the real PBR materials
+      if (R3.toonOutline) R3.toonOutline.visible = false;
+      R3.toonActive = false;
     }
   }
   function tex(key, w, h, paint, rep) { if (R3['_' + key]) return R3['_' + key]; var c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; R3['_' + key] = t; return t; }
@@ -1163,6 +1200,7 @@
   function renderGL() {
     var _rm = resolveMood(); if (_rm !== St.mood) applyMood(_rm);   // keep the active lighting mood in sync (hole default or player's setting)
     wireSync();   // enforce the real-wireframe override + black world every frame (survives hole rebuilds)
+    toonSync();   // real toon shading (banded MeshToonMaterial) + inverted-hull ink outline for cartoon/cel/line
     if (R3.spot && R3.spotBase > 0.001 && St.hole && St.balls && St.balls[0]) { var _sb = St.balls[0], _sgy = St.hole.terrain(_sb.x, _sb.z); R3.spot.position.set(_sb.x + Math.sin(St.t * 0.9) * 90, _sgy + 1400, _sb.z - 120); R3.spot.target.position.set(_sb.x, _sgy, _sb.z); R3.spot.intensity = R3.spotBase * (0.82 + 0.18 * Math.sin(St.t * 3.5)); }   // SPOTLIGHT tracks the ball with a gentle sway + pulse = drama/action
     if (R3.prismOn && R3.prism && St.hole) { var _bn = St.hole.bounds, _cx = (_bn.minX + _bn.maxX) / 2, _cz = (_bn.minZ + _bn.maxZ) / 2, _rr = Math.max(700, (_bn.maxX - _bn.minX + _bn.maxZ - _bn.minZ) * 0.32), _gy = St.hole.terrain(_cx, _cz); for (var _k = 0; _k < R3.prism.length; _k++) { var _a = St.t * 0.3 + _k * (TAU / R3.prism.length), _pl = R3.prism[_k]; _pl.position.set(_cx + Math.cos(_a) * _rr, _gy + 150 + Math.sin(St.t * 1.2 + _k * 1.7) * 90, _cz + Math.sin(_a) * _rr); _pl.intensity = R3.prismI * (0.55 + 0.45 * Math.sin(St.t * 2.3 + _k * 2.1)); } }   // PRISMATIC: real coloured point lights orbit the table at different heights + pulse → additive coloured illumination that actually lights the geometry & casts coloured speculars
     R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
@@ -1207,7 +1245,7 @@
     R3.group = new T.Group(); R3.scene.add(R3.group);
     R3.portalSwirls = []; R3.flagWave = null;
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
-    R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); R3.holeBg = R3.scene.background; R3.wireDirty = true; if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
+    R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); R3.holeBg = R3.scene.background; R3.wireDirty = true; R3.outlineDirty = true; if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
     R3.scene.environment = (hole.theme === 'moon') ? null : (R3.env || null);   // night scene: no warm desert IBL
     var scene = sceneFor(hole);   // this hole's backdrop painting + matching ground/fog/tint — computed up front so the turf can harmonize with it
     var bn = hole.bounds, midZ = (bn.minZ + bn.maxZ) / 2, spanX = bn.maxX - bn.minX + 600, spanZ = bn.maxZ - bn.minZ + 600;
