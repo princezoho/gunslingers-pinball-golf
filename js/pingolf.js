@@ -2601,8 +2601,9 @@
     d.noBox = true; d.walls = d.walls.filter(function (w) { return !w._bnd; });
     // single-line wall following the exact path. Only close if the ends actually meet — never force it.
     var closed = pts.length > 3 && hyp(pts[0].x - pts[pts.length - 1].x, pts[0].z - pts[pts.length - 1].z) < 55;
-    for (i = 0; i < pts.length - 1; i++) d.wall(pts[i].x, pts[i].z, pts[i + 1].x, pts[i + 1].z, { e: K.wallE, h: 80, curve: true });
-    if (closed) { d.wall(pts[pts.length - 1].x, pts[pts.length - 1].z, pts[0].x, pts[0].z, { e: K.wallE, h: 80, curve: true }); d.shape = pts.map(function (p) { return { x: p.x, z: p.z }; }); }   // CLOSED outline -> render the GREEN to this organic shape (multi-tier fairway), not a rectangle
+    var sm = closed ? chaikinClosed(pts, 2) : chaikin(pts, 2);   // SMOOTH the hand-drawn path into rounded curbs (like the reference), not jagged segments
+    if (closed) { for (i = 0; i < sm.length; i++) d.wall(sm[i].x, sm[i].z, sm[(i + 1) % sm.length].x, sm[(i + 1) % sm.length].z, { e: K.wallE, h: 80, curve: true }); d.shape = sm.map(function (p) { return { x: Math.round(p.x), z: Math.round(p.z) }; }); }   // CLOSED outline -> render the GREEN to this smooth organic shape, not a rectangle
+    else { for (i = 0; i < sm.length - 1; i++) d.wall(sm[i].x, sm[i].z, sm[i + 1].x, sm[i + 1].z, { e: K.wallE, h: 80, curve: true }); }
     var minx = 1e9, maxx = -1e9, minz = 1e9, maxz = -1e9; pts.forEach(function (p) { if (p.x < minx) minx = p.x; if (p.x > maxx) maxx = p.x; if (p.z < minz) minz = p.z; if (p.z > maxz) maxz = p.z; });
     var mg = 110;
     if (existing === 0) { d.bounds = { minX: minx - mg, maxX: maxx + mg, minZ: minz - mg, maxZ: maxz + mg }; if (closed) { var cx = (minx + maxx) / 2; d.tee = { x: cx, z: minz + (maxz - minz) * 0.15 }; d.cup = { x: cx, z: minz + (maxz - minz) * 0.85 }; } else { d.tee = { x: Math.round(pts[0].x), z: Math.round(pts[0].z) }; d.cup = { x: Math.round(pts[pts.length - 1].x), z: Math.round(pts[pts.length - 1].z) }; } }
@@ -2614,7 +2615,7 @@
     var pts = ED.drawing; ED.drawing = null; if (!pts || pts.length < 3) { edPanel(); return; }
     pts = simplifyPath(pts, 42); if (pts.length < 3) { edPanel(); return; }
     var d = ED.draft, firstIsland = !(d.islands && d.islands.length);
-    var poly = pts.map(function (p) { return { x: Math.round(p.x), z: Math.round(p.z) }; });
+    var poly = chaikinClosed(pts, 2).map(function (p) { return { x: Math.round(p.x), z: Math.round(p.z) }; });   // SMOOTH rounded island (like the reference), not a jagged polygon
     d.island(poly, 0, { h: 66 });   // adds d.islands entry + platform terrain + curb walls + noBox
     var cx = 0, cz = 0; poly.forEach(function (p) { cx += p.x; cz += p.z; }); cx = Math.round(cx / poly.length); cz = Math.round(cz / poly.length);
     if (firstIsland) d.tee = { x: cx, z: cz };   // start on the first island you draw
