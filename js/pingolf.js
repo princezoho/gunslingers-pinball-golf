@@ -3262,13 +3262,25 @@
   }
   // one-time how-to-play coachmark for brand-new players (incoming shared-link traffic)
   function showHowTo() {
-    try { if (localStorage.getItem('pg_seen_howto')) return; } catch (e) { }
-    if (document.getElementById('pg-howto') || St.dailyPractice || St.archive) return;
-    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:rgba(12,8,4,.32);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:none;padding:18px;text-align:center;', null, document.body); ov.id = 'pg-howto';
-    elt('div', 'font:900 18px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '🤠 HOW TO PLAY', ov);
-    elt('div', 'font:600 14px Georgia;color:#f3eedd;line-height:1.55;margin-bottom:12px;', 'Pull BACK from the ball and let go — like a slingshot. Aim any direction; pull farther for more power. Sink today’s hole in as few shots as you can!', ov);
-    var b = elt('button', 'padding:11px 26px;background:transparent;border:none;color:#86d85f;font:900 16px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY ▶', ov);
-    b.onclick = function () { dismissHowTo(); };
+    if (St.dailyPractice || St.archive) return;
+    if (document.getElementById('pg-howto')) return;
+    var seen = false; try { seen = !!localStorage.getItem('pg_seen_howto'); } catch (e) { }
+    var hasName = !!playerName();
+    if (seen && hasName) return;   // returning, named player → straight to play
+    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(400px,92vw);background:rgba(12,8,4,.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:none;padding:22px;text-align:center;', null, document.body); ov.id = 'pg-howto';
+    elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '⭐ GUNSLINGERS DAILY #' + dailyNum(), ov);
+    elt('div', 'font:900 23px Wantedo,Georgia;color:#f5c542;margin:1px 0 12px;', St.dailyTitle || (St.hole ? St.hole.name : 'TODAY’S HOLE'), ov);
+    var nin = null;
+    if (!hasName) {
+      elt('div', 'font:700 14px Georgia;color:#f3eedd;margin-bottom:7px;', '🤠 What do they call you, partner?', ov);
+      nin = elt('input', 'width:100%;padding:12px;background:rgba(0,0,0,.3);border:none;outline:none;color:#f5efdc;font:16px Georgia;text-align:center;margin-bottom:14px;', null, ov);
+      nin.placeholder = 'Your name'; nin.maxLength = 24; setTimeout(function () { try { nin.focus(); } catch (e) { } }, 60);
+    }
+    elt('div', 'font:600 13px Georgia;color:#d8c4a2;line-height:1.5;margin-bottom:15px;', 'Pull BACK from the ball and let go — like a slingshot. Aim any way, pull farther for power. Sink it in as few shots as you can!', ov);
+    var b = elt('button', 'background:transparent;border:none;color:#86d85f;font:900 19px Wantedo,Georgia;cursor:pointer;', '▶ PLAY TODAY’S HOLE', ov);
+    var go = function () { if (nin) { var v = (nin.value || '').trim(); if (v) setPlayerName(v); } dismissHowTo(); };
+    b.onclick = go;
+    if (nin) nin.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
   }
   function dismissHowTo() { try { localStorage.setItem('pg_seen_howto', '1'); } catch (e) { } var h = document.getElementById('pg-howto'); if (h) h.remove(); }
   function afterDailyLoaded(urlGhost) {
@@ -3575,8 +3587,18 @@
     }
     var prim = 'width:100%;padding:12px;font:900 16px Wantedo,Georgia;cursor:pointer;margin-top:9px;background:transparent;letter-spacing:.5px;';
     if (navigator.share) {   // mobile: one-tap native share sheet (Messages, WhatsApp, Discord, X, …) — the most usable way to share
-      var nsb = elt('button', prim + 'color:#f5c542;', '📤  SHARE MY SCORE', box);
-      nsb.onclick = function () { var s = shareStrings(rec); try { navigator.share({ title: 'Gunslingers Daily #' + s.n, text: s.text }).catch(function () { }); } catch (e) { copyText(s.text, 'Result copied — paste anywhere!'); } };
+      var nsb = elt('button', prim + 'color:#f5c542;', '📤  SHARE MY SHOT (GIF)', box);
+      nsb.onclick = function () {
+        var s = shareStrings(rec), origTxt = nsb.textContent;
+        nsb.disabled = true; nsb.textContent = '🎞  Rendering your shot…';
+        setTimeout(function () {
+          var file = null;
+          try { var blob = makeHighlightGif(rec, (playerName() ? playerName().slice(0, 16) + ' · ' : '') + s.strokes + ' strokes (' + s.overStr + ')'); if (blob) file = new File([blob], 'gunslingers-daily-' + s.n + '.gif', { type: 'image/gif' }); } catch (e) { }
+          nsb.disabled = false; nsb.textContent = origTxt;
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ text: s.text, files: [file] }).catch(function () { }); }   // attach the animated highlight GIF
+          else { try { navigator.share({ title: 'Gunslingers Daily #' + s.n, text: s.text }).catch(function () { }); } catch (e) { copyText(s.text, 'Result copied — paste anywhere!'); } }   // no file-share support → text only
+        }, 40);
+      };
     }
     var xb = elt('button', prim + 'color:#5cb8ff;', '𝕏  SHARE ON X', box);
     xb.onclick = function () { window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareStrings(rec).text), '_blank', 'noopener'); };

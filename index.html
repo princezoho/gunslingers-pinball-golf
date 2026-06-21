@@ -3,259 +3,37 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<title>Gunslingers Pinball Golf — Wild West Pinball + Mini-Golf</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%2336a836'/%3E%3Ccircle cx='32' cy='32' r='21' fill='white'/%3E%3Ccircle cx='26' cy='29' r='3.2' fill='%2336a836'/%3E%3Ccircle cx='38' cy='29' r='3.2' fill='%2336a836'/%3E%3Cpath d='M24 38 Q32 46 40 38' fill='none' stroke='%2336a836' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E" />
-<meta name="theme-color" content="#2b1c10" />
-<link rel="manifest" href="manifest.json" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Gunslingers" />
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-<meta name="description" content="A 3D Wild-West pinball + mini-golf hybrid. 27 hand-built holes of six-shooter pinball chaos and high-desert putting, plus a full 2D + 3D level editor. Free & open source, runs in your browser." />
+<meta http-equiv="refresh" content="0; url=game.html?daily" />
+<title>Gunslingers Pinball Golf — Daily Hole</title>
+<meta name="description" content="One shot at today's shared hole. Race other players' ghosts, climb the leaderboard, and share your score. A new Wild-West daily drops every day." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Gunslingers Pinball Golf" />
-<meta property="og:title" content="Gunslingers Pinball Golf — Daily Wild-West Golf" />
-<meta property="og:description" content="A new hole every day. Race other players' ghosts, beat the par, and share your score. Wild-West pinball + mini-golf, free in your browser." />
+<meta property="og:title" content="Gunslingers Pinball Golf — Daily Hole" />
+<meta property="og:description" content="Can you beat today's hole? One shot at the daily — race the ghosts and share your score." />
 <meta property="og:url" content="https://princezoho.github.io/gunslingers-pinball-golf/" />
 <meta property="og:image" content="https://princezoho.github.io/gunslingers-pinball-golf/docs/shots/og-daily.jpg?v=3" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Gunslingers Pinball Golf — Daily Wild-West Golf" />
-<meta name="twitter:description" content="A new hole drops every day. Race the ghosts and share your score. #GunslingersGolf" />
+<meta name="twitter:title" content="Gunslingers Pinball Golf — Daily Hole" />
+<meta name="twitter:description" content="Beat today's hole, race the ghosts, and share your score. A new Wild-West daily every day. #GunslingersGolf" />
 <meta name="twitter:image" content="https://princezoho.github.io/gunslingers-pinball-golf/docs/shots/og-daily.jpg?v=3" />
-<style>
-  @font-face { font-family:'Wantedo'; src:url('assets/fonts/Wantedo.ttf') format('truetype'); font-display:swap; }
-  :root{
-    --gold:#f5c542; --gold-d:#e0a92e; --cream:#f3eedd; --ink:#160d06; --wood:#5a3a22; --wood-d:#3a2614;
-    --dusk-1:#241433; --dusk-2:#6e3a50; --dusk-3:#c98a76; --sand:#e9c9a0;
-  }
-  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html{ scroll-behavior:smooth; }
-  body{ font-family:Georgia,serif; color:var(--cream); background:#160d06; overflow-x:hidden; }
-  a{ color:inherit; }
-  .wd{ font-family:Wantedo,Georgia; }
-  ::selection{ background:var(--gold); color:var(--ink); }
-
-  /* ===== top bar music toggle ===== */
-  .musicbtn{
-    position:fixed; top:15px; right:15px; z-index:40; cursor:pointer;
-    border:2px solid var(--ink); border-radius:11px; padding:9px 14px;
-    background:linear-gradient(180deg,#6a4628,#3a2614); color:var(--gold);
-    font:700 13px Georgia; letter-spacing:.3px; box-shadow:0 3px 0 var(--ink), 0 5px 12px rgba(0,0,0,.5);
-  }
-  .musicbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--ink); }
-
-  /* ===== hero ===== */
-  .hero{
-    position:relative; min-height:100vh; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center; padding:56px 20px 80px; overflow:hidden;
-    background:linear-gradient(180deg,#1c1029 0%, #241433 22%, #6e3a50 56%, #c98a76 84%, #e9c9a0 100%);
-  }
-  .herobg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.5; z-index:0; }
-  .hero::after{
-    content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
-    background:
-      radial-gradient(ellipse at 50% 38%, rgba(0,0,0,0) 28%, rgba(18,9,4,.5) 100%),
-      linear-gradient(180deg, rgba(18,9,4,.5), rgba(18,9,4,.05) 38%, rgba(18,9,4,.78));
-  }
-  .hero-char{
-    position:absolute; bottom:-8px; height:48vh; max-height:540px; z-index:1; opacity:.97;
-    filter:drop-shadow(0 12px 22px rgba(0,0,0,.55)); pointer-events:none; user-select:none;
-    animation:sway 5s ease-in-out infinite;
-  }
-  .hero-char.right{ right:1.5vw; }
-  @keyframes sway{ 0%,100%{ transform:translateY(0) rotate(0); } 50%{ transform:translateY(-12px) rotate(1.2deg); } }
-  @media(max-width:900px){ .hero-char{ display:none; } }
-  @media(max-width:560px){
-    .hero{ padding:48px 12px 72px; }
-    .eyebrow{ letter-spacing:3px; font-size:11px; }
-    .subtitle{ letter-spacing:4px; }
-    .btn{ font-size:21px; padding:14px 26px; }
-    .btn-ghost{ font-size:15px; padding:13px 20px; }
-  }
-
-  .hero > .inner{ position:relative; z-index:2; width:100%; max-width:760px; }
-  .eyebrow{ letter-spacing:5px; font-weight:700; color:var(--gold); font-size:13px; text-transform:uppercase; margin-bottom:14px; text-shadow:0 2px 0 var(--ink); }
-  .eyebrow span{ opacity:.7; }
-  .title{ font-size:clamp(34px,11vw,150px); color:var(--gold); line-height:.9; letter-spacing:1px;
-    /* the word is wider than the 760px column — size the h1 to its content and center it on the viewport, else the overflow all spills right and the logo sits off-center */
-    width:max-content; max-width:none; position:relative; left:50%; transform:translateX(-50%); white-space:nowrap;
-    text-shadow:5px 6px 0 var(--ink), 0 0 34px rgba(245,197,66,.35); }
-  .subtitle{ font-size:clamp(18px,4.4vw,40px); color:var(--cream); letter-spacing:7px; margin-top:8px; text-shadow:2px 3px 0 var(--ink); }
-  .tagline{ max-width:600px; margin:22px auto 0; font-size:clamp(15px,2.3vw,19px); line-height:1.55; color:#f6ead2; text-shadow:0 1px 4px rgba(0,0,0,.7); }
-  .cta{ margin-top:36px; display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:center; }
-  .btn{ font-family:Wantedo,Georgia; cursor:pointer; border:3px solid var(--ink); border-radius:14px;
-    padding:16px 36px; font-size:25px; letter-spacing:1px; text-decoration:none; display:inline-flex; align-items:center; gap:10px;
-    box-shadow:0 5px 0 var(--ink), 0 9px 20px rgba(0,0,0,.5); transition:transform .08s, box-shadow .08s; }
-  .btn:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--ink); }
-  .btn-play{ background:linear-gradient(180deg,#f7d678,#e0a92e); color:#2a1c12; }
-  .btn-play:hover{ background:linear-gradient(180deg,#ffe18a,#ecb73a); }
-  .btn-ghost{ background:linear-gradient(180deg,#4a3320,#2c1d11); color:var(--gold); font-size:17px; padding:15px 24px; }
-  .scrollhint{ position:absolute; bottom:18px; left:0; right:0; z-index:2; color:var(--gold); font-size:12px; letter-spacing:3px; animation:bob 1.7s ease-in-out infinite; }
-  @keyframes bob{ 0%,100%{ transform:translateY(0); opacity:.85; } 50%{ transform:translateY(7px); opacity:1; } }
-
-  /* ===== rope divider ===== */
-  .rope{ height:8px; background:repeating-linear-gradient(90deg,#caa15e 0 14px,#8a6a36 14px 28px); border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); }
-
-  /* ===== sections ===== */
-  .section{ padding:70px 20px; max-width:1100px; margin:0 auto; }
-  .section h2{ font-family:Wantedo,Georgia; text-align:center; color:var(--gold); font-size:clamp(30px,6vw,56px); letter-spacing:1px; text-shadow:3px 3px 0 var(--ink); }
-  .section .sub{ text-align:center; color:#d8c4a2; margin-top:8px; font-size:16px; }
-
-  /* features: open type on the page — no cards, no borders, no boxes */
-  .grid{ margin-top:48px; display:grid; gap:44px 56px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
-  .card{ background:none; border:none; padding:0; }
-  .card .ic{ font-size:44px; line-height:1; filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
-  .card h3{ font-family:Wantedo,Georgia; color:var(--gold); font-size:27px; letter-spacing:.5px; margin:14px 0 8px; }
-  .card p{ color:#ddcbab; font-size:15.5px; line-height:1.6; }
-
-  /* ===== screenshots: frameless, the game speaks for itself ===== */
-  .shots{ margin-top:44px; display:grid; gap:34px 26px; grid-template-columns:1fr 1fr; }
-  .shot{ display:block; text-decoration:none; }
-  .shot img{ display:block; width:100%; height:auto; box-shadow:0 22px 50px rgba(0,0,0,.55); }   /* canonical responsive image: width:100% + height:auto preserves the intrinsic 1280x720 ratio on EVERY browser — no aspect-ratio/object-fit combos that render inconsistently */
-  .shot.wide{ grid-column:1 / -1; }
-  .shot .tag{ display:block; margin-top:14px; color:var(--cream); font-family:Wantedo,Georgia; font-size:19px; letter-spacing:2.5px; text-align:center; }
-  @media(max-width:680px){ .shots{ grid-template-columns:1fr; } }
-
-  /* ===== outlaws (wanted posters) ===== */
-  .posters{ margin-top:42px; display:flex; gap:24px; flex-wrap:wrap; justify-content:center; }
-  .poster{ width:250px; background:#efe2c2; color:#3a2614; border:3px solid #2a1c12; border-radius:6px; padding:16px 16px 18px;
-    box-shadow:0 10px 22px rgba(0,0,0,.5); transform:rotate(-1.3deg); }
-  .poster:nth-child(even){ transform:rotate(1.6deg); }
-  .poster .wanted{ font-family:Wantedo,Georgia; text-align:center; font-size:34px; letter-spacing:3px; color:#7a2018; line-height:1; }
-  .poster .dead{ text-align:center; font-size:11px; letter-spacing:4px; color:#6a4a22; margin:2px 0 12px; }
-  .poster .photo{ border:3px solid #2a1c12; border-radius:4px; overflow:hidden; line-height:0; }
-  .poster .photo img{ display:block; width:100%; height:auto; }   /* full art at its TRUE ratio — never cropped, letterboxed, or stretched */
-  .poster .name{ font-family:Wantedo,Georgia; text-align:center; font-size:25px; margin-top:12px; letter-spacing:1px; }
-  .poster .reward{ text-align:center; font-size:14px; color:#7a2018; font-weight:700; letter-spacing:1px; margin-top:14px; }
-
-  /* ===== final cta ===== */
-  .final{ text-align:center; padding:80px 20px 70px;
-    background:linear-gradient(180deg,#160d06, #2a1838); border-top:2px solid var(--ink); }
-  .final h2{ font-family:Wantedo,Georgia; color:var(--gold); font-size:clamp(32px,7vw,64px); text-shadow:3px 4px 0 var(--ink); }
-  .final p{ color:#d8c4a2; margin:14px auto 30px; max-width:480px; font-size:16px; }
-
-  /* ===== footer ===== */
-  footer{ text-align:center; padding:30px 20px 40px; color:#9c8a66; background:#0f0a05; border-top:1px solid #2a1c12; }
-  footer .links{ display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin-bottom:12px; }
-  footer a{ color:var(--gold); text-decoration:none; font-size:14px; }
-  footer a:hover{ text-decoration:underline; }
-  footer .fine{ color:#7a6648; font-size:12.5px; line-height:1.6; }
-</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%2336a836'/%3E%3Ccircle cx='32' cy='32' r='21' fill='white'/%3E%3Ccircle cx='26' cy='29' r='3.2' fill='%2336a836'/%3E%3Ccircle cx='38' cy='29' r='3.2' fill='%2336a836'/%3E%3Cpath d='M24 38 Q32 46 40 38' fill='none' stroke='%2336a836' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#2b1c10" />
+<link rel="manifest" href="manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Gunslingers" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<script>location.replace('game.html?daily');</script>
+<style>html,body{height:100%;margin:0;background:#160d06;color:#f3eedd;font-family:Georgia,serif;}
+.c{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;}
+a{color:#f5c542;font-weight:700;}</style>
 </head>
 <body>
-  <button class="musicbtn" id="theme" title="Play the theme">♪ Play theme</button>
-
-  <!-- ===================== HERO ===================== -->
-  <header class="hero">
-    <img class="herobg" src="assets/bg-town.png" alt="" onerror="this.remove()" />
-    <img class="hero-char right" src="assets/char-ghost.png" alt="" onerror="this.remove()" />
-    <div class="inner">
-      <div class="eyebrow"><span>★</span>&nbsp; Wild West Arcade &nbsp;<span>★</span></div>
-      <h1 class="title wd">GUNSLINGERS</h1>
-      <div class="subtitle wd">PINBALL&nbsp;·&nbsp;GOLF</div>
-      <p class="tagline">A new hole drops <b>every single day</b>. Take your shot, race the <b>ghosts</b> of everyone who played before you, then <b>share your score</b> to Discord &amp; X. Wild-West pinball + mini-golf across <b>36 hand-built holes</b> — plus a full <b>2D&nbsp;+&nbsp;3D level editor</b>.</p>
-      <div class="cta">
-        <a class="btn btn-play" href="game.html?daily">⭐&nbsp; PLAY TODAY'S DAILY</a>
-        <a class="btn btn-ghost" href="game.html">▶&nbsp; All 36 Holes</a>
-      </div>
-    </div>
-    <div class="scrollhint">▼ &nbsp; SADDLE UP &nbsp; ▼</div>
-  </header>
-
-  <div class="rope"></div>
-
-  <!-- ===================== FEATURES ===================== -->
-  <section class="section">
-    <h2>The Whole Dang Saloon</h2>
-    <p class="sub">Everything's procedurally rendered — no waiting, no installs, runs right in your browser.</p>
-    <div class="grid">
-      <div class="card"><div class="ic">🎯</div><h3>27 Holes · 3 Nines</h3><p>Pick your run — a brand-new <b>Front 9</b>, the original <b>Middle 9</b>, or the <b>Back 9</b> of ice, moon and loops. No hole over par 4; every one beatable.</p></div>
-      <div class="card"><div class="ic">🛠️</div><h3>2D + 3D Level Editor</h3><p>Draw walls, drop bumpers, flippers, portals and hazards — then orbit your course in 3D and drag pieces around. Save, test, share.</p></div>
-      <div class="card"><div class="ic">🤠</div><h3>7 Wild Terrains</h3><p>Grass, Ice slides, low-gravity Moon, Mud, Rubber, Speedway and Sand — each with its own physics.</p></div>
-      <div class="card"><div class="ic">⚡</div><h3>Pinball Powerups</h3><p>Grab a Magnet, Shield, Slow-mo, Gem or Jump and turn a busted shot into a hole-in-one.</p></div>
-      <div class="card"><div class="ic">🔥</div><h3>Six-Shooter Chaos</h3><p>Bumpers, boosters, windmills, loop-de-loops, fire hoops, lasers and 3-exit teleport portals.</p></div>
-      <div class="card"><div class="ic">🎵</div><h3>Saloon Soundtrack</h3><p>Original Wild-West tunes with full volume controls — Master, Music and SFX sliders, never blasting, always your call.</p></div>
-    </div>
-  </section>
-
-  <div class="rope"></div>
-
-  <!-- ===================== SCREENSHOTS ===================== -->
-  <section class="section">
-    <h2>See the Course</h2>
-    <p class="sub">Photographic turf, weathered timber, glass bumpers, golden-hour sun — straight from the game.</p>
-    <div class="shots">
-      <a class="shot wide" href="game.html"><img src="docs/shots/og-daily.jpg?v=3" alt="Hole 1 — Greenhorn Gulch, sunset desert table" width="1280" height="720" loading="lazy"/><span class="tag">HOLE 1 · GREENHORN GULCH</span></a>
-      <a class="shot" href="game.html"><img src="docs/shots/game-moon.jpg?v=2" alt="Frozen Pond hole — glossy real ice" width="1280" height="720" loading="lazy"/><span class="tag">FROZEN POND · REAL ICE</span></a>
-      <a class="shot" href="game.html"><img src="docs/shots/game-combo.jpg?v=2" alt="Loop-de-Loop City — ride the loop" width="1280" height="720" loading="lazy"/><span class="tag">LOOP-DE-LOOP CITY</span></a>
-    </div>
-  </section>
-
-  <div class="rope"></div>
-
-  <!-- ===================== OUTLAWS ===================== -->
-  <section class="section">
-    <h2>The Most Wanted</h2>
-    <p class="sub">A rogues' gallery rendered in hand-drawn cartoon grit.</p>
-    <div class="posters">
-      <div class="poster">
-        <div class="wanted">WANTED</div><div class="dead">DEAD OR ALIVE</div>
-        <div class="photo"><img src="assets/char-slugger.png" alt="Gunslingers character" onerror="this.parentNode.innerHTML='🐻'"/></div>
-        <div class="reward">REWARD&nbsp; $5,000</div>
-      </div>
-      <div class="poster">
-        <div class="wanted">WANTED</div><div class="dead">DEAD OR ALIVE</div>
-        <div class="photo"><img src="assets/char-ghost.png" alt="Gunslingers character" onerror="this.parentNode.innerHTML='👹'"/></div>
-        <div class="reward">REWARD&nbsp; $6,660</div>
-      </div>
-      <div class="poster">
-        <div class="wanted">WANTED</div><div class="dead">DEAD OR ALIVE</div>
-        <div class="photo"><img src="assets/char-lucky.png" alt="Gunslingers character" onerror="this.parentNode.innerHTML='🐴'"/></div>
-        <div class="reward">REWARD&nbsp; $0.50</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== FINAL CTA ===================== -->
-  <section class="final">
-    <h2 class="wd">Quit Loiterin’.</h2>
-    <p>A fresh hole drops <b>every day</b> — race the ghosts, beat the par, share your score. Plus 36 holes and a level editor. No sign-up, no nonsense.</p>
-    <a class="btn btn-play" href="game.html?daily">⭐&nbsp; PLAY TODAY'S DAILY</a>
-  </section>
-
-  <!-- ===================== FOOTER ===================== -->
-  <footer>
-    <div class="links">
-      <a href="game.html?daily">Daily</a>
-      <a href="game.html">All Holes</a>
-      <a href="https://github.com/princezoho/gunslingers-pinball-golf" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://github.com/princezoho/gunslingers-pinball-golf/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
-      <a href="owner.html" title="Owner — set &amp; edit today's daily hole (passcode)" style="color:#f5c542;font-weight:700;">⚙ Owner Studio</a>
-    </div>
-    <div class="fine">© 2026 princezoho · Free &amp; open source · Built with Three.js.<br/>Best with sound on — volume controls live in the game.</div>
-  </footer>
-
-  <script>
-    /* Theme music — gentle preview at 50%×50% (0.25); off until tapped (browser autoplay policy). */
-    (function(){
-      var btn = document.getElementById('theme'); if(!btn) return;
-      var audio = null, playing = false, dead = false;
-      btn.addEventListener('click', function(){
-        if(dead) return;
-        if(!audio){
-          audio = new Audio('assets/audio/music1.mp3');
-          audio.loop = true; audio.volume = 0.25;
-          audio.addEventListener('error', function(){ dead = true; btn.textContent = '♪ —'; btn.disabled = true; btn.style.opacity = '.5'; });
-        }
-        if(playing){ audio.pause(); btn.textContent = '♪ Play theme'; playing = false; }
-        else { audio.play().then(function(){ btn.textContent = '❚❚ Pause theme'; playing = true; }).catch(function(){}); }
-      });
-    })();
-  </script>
-  <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+  <div class="c">
+    <div style="font-family:Wantedo,Georgia;color:#f5c542;font-size:28px;">🤠 GUNSLINGERS</div>
+    <div>Loading today’s daily hole…</div>
+    <div><a href="game.html?daily">Tap here</a> if it doesn’t load.</div>
+  </div>
 </body>
 </html>
