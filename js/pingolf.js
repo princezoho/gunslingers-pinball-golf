@@ -726,16 +726,14 @@
     return m;
   }
   // CINEMATIC FX OVERLAY — real bokeh/dust/film footage (assets/fx/*.mp4) screen-blended over the render per mood. Black footage → transparent; only the light/particles/grain show. This is the AAA way (compositing real plates), not 3D point sprites.
+  // Overlays ONLY where the footage IS the aesthetic — NOT on every mood (owner: "doesn't make sense on night or rainbow"). Clean lighting looks (daytime / night / prismatic) get no plate.
   var FXLAYERS = {
-    faded:     { src: 'dust-motes',     op: 0.3 },    // warm airborne dust — subtle
-    sunset:    { src: 'bokeh-gold',     op: 0.16 },   // dreamy golden bokeh, a hint
-    redglow:   { src: 'bokeh-gold',     op: 0.18 },   // warm embers, a hint
-    daytime:   { src: 'bokeh-soft',     op: 0.07 },   // faint lens bokeh
-    night:     { src: 'haze',           op: 0.2 },    // light atmospheric haze
-    noir:      { src: 'film-dirt',      op: 0.26 },   // old-film scratches, subtle
-    sincity:   { src: 'film-dirt',      op: 0.28 },   // film damage, subtle
-    prismatic: { src: 'haze',           op: 0.16 },
-    vaporwave: { src: 'particles-fine', op: 0.17 }
+    faded:     { src: 'dust-motes',     op: 0.3 },    // sun-baked airborne dust — the dust IS the look
+    noir:      { src: 'film-dirt',      op: 0.26 },   // old-film scratches + dirt
+    sincity:   { src: 'film-dirt',      op: 0.28 },   // B&W film damage
+    sunset:    { src: 'bokeh-gold',     op: 0.15 },   // golden-hour bokeh, a dreamy hint
+    redglow:   { src: 'bokeh-gold',     op: 0.16 },   // warm floating embers
+    vaporwave: { src: 'particles-fine', op: 0.16 }    // retro VHS particle grain
   };
   function setFxOverlay(mood) {
     var v = document.getElementById('fxOverlay'); if (!v) return;
