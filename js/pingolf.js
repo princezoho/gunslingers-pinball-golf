@@ -672,7 +672,7 @@
       var sc = sun.shadow.camera; sc.near = 100; sc.far = 4400; sc.left = -1150; sc.right = 1150; sc.top = 1150; sc.bottom = -1150;   // tight frustum around the table = much crisper shadows from the same 2048 map
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
-      var rim = new T.DirectionalLight(0xbfe0ff, 0.6); rim.position.set(650, 760, 1050); R3.scene.add(rim); R3.rim = rim; var fill = new T.DirectionalLight(0xffcf8a, 0.28); fill.position.set(700, 380, -200); R3.scene.add(fill); R3.fill = fill; R3.sunOff = { x: -1020, y: 760, z: -560 };   // cool back-rim + warm low fill = cinematic golden-hour separation
+      var rim = new T.DirectionalLight(0xbfe0ff, 0.6); rim.position.set(650, 760, 1050); R3.scene.add(rim); R3.rim = rim; var fill = new T.DirectionalLight(0xffcf8a, 0.28); fill.position.set(700, 380, -200); R3.scene.add(fill); R3.fill = fill; var spot = new T.SpotLight(0xfff0e0, 0, 2000, 0.55, 0.88, 0); spot.position.set(0, 1500, -160); R3.scene.add(spot.target); R3.scene.add(spot); R3.spot = spot; R3.spotBase = 0; R3.sunOff = { x: -1020, y: 760, z: -560 };   // cool back-rim + warm low fill + a theatrical SPOTLIGHT that tracks the ball (lit per mood)
       initEnv(); initPost(); R3.zoom = 1; R3.ready = true; return true;
     } catch (e) { R3.ready = false; return false; }
   }
@@ -693,6 +693,8 @@
     wireframe: { name: '△ Wireframe', exp: 1.0, sun: { c: 0xffffff, i: 1.5 }, amb: { c: 0x111111, i: 0.3 }, hemi: { s: 0x222222, g: 0x000000, i: 0.3 }, rim: { c: 0xffffff, i: 0.5 }, fill: { c: 0x222222, i: 0.2 }, fog: 0x000000, grade: { sat: 0.4, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.8, con: 1.2, bright: 1.0, lift: 0.6, gm: [[0, 0, 0], [0.3, 0.8, 0.5], [0.45, 1.0, 0.7]], edge: 8.0, style: 4.0 }, ca: 0.002, grain: 0.04, vig: 0.5 }
   };
   var MOOD_ORDER = ['daytime', 'sunset', 'night', 'noir', 'faded', 'redglow', 'sincity', 'vaporwave', 'cartoon', 'cel', 'tron', 'line', 'wireframe'];
+  // theatrical SPOTLIGHT per mood (tracks the ball; i=intensity, c=colour, a=cone angle). Dramatic for the dark looks, off for the flat/bright ones.
+  var SPOTS = { sunset: { i: 0.45, c: 0xffe0b0, a: 0.55 }, daytime: { i: 0, c: 0xffffff, a: 0.55 }, night: { i: 1.4, c: 0xcfe0ff, a: 0.5 }, noir: { i: 0.55, c: 0xffffff, a: 0.48 }, faded: { i: 0.3, c: 0xffe8c8, a: 0.55 }, redglow: { i: 1.3, c: 0xff7a4a, a: 0.52 }, sincity: { i: 0.6, c: 0xffffff, a: 0.46 }, vaporwave: { i: 1.1, c: 0xff6ad5, a: 0.52 }, cartoon: { i: 0, c: 0xffffff, a: 0.55 }, cel: { i: 0.5, c: 0xfff0d0, a: 0.55 }, tron: { i: 1.3, c: 0x46e0ff, a: 0.52 }, line: { i: 0, c: 0xffffff, a: 0.55 }, wireframe: { i: 0, c: 0xffffff, a: 0.55 } };
   function resolveMood() {
     var um = null; try { um = localStorage.getItem('pg_mood'); } catch (e) { }
     if (um && MOODS[um]) return um;                                            // player's chosen look (settings override)
@@ -706,6 +708,7 @@
     function L(o, c, i) { if (!o) return; o.color.setHex(c); o.intensity = i; }
     L(R3.sun, m.sun.c, m.sun.i); L(R3.amb, m.amb.c, m.amb.i); L(R3.rim, m.rim.c, m.rim.i); L(R3.fill, m.fill.c, m.fill.i);
     if (R3.hemi) { R3.hemi.color.setHex(m.hemi.s); R3.hemi.groundColor.setHex(m.hemi.g); R3.hemi.intensity = m.hemi.i; }
+    if (R3.spot) { var sp = SPOTS[St.mood] || SPOTS.sunset; R3.spotBase = sp.i; R3.spot.color.setHex(sp.c); R3.spot.angle = sp.a; R3.spot.intensity = sp.i; }
     if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
     if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uShad.value.set(g.shad[0], g.shad[1], g.shad[2]); u.uHigh.value.set(g.high[0], g.high[1], g.high[2]); u.uLo.value = g.lo; u.uHi.value = g.hi; u.uCon.value = g.con; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca;
       u.uGmAmt.value = g.gmAmt || 0; if (g.gm) { u.uGm0.value.set(g.gm[0][0], g.gm[0][1], g.gm[0][2]); u.uGm1.value.set(g.gm[1][0], g.gm[1][1], g.gm[1][2]); u.uGm2.value.set(g.gm[2][0], g.gm[2][1], g.gm[2][2]); } u.uPost.value = g.post || 0; u.uEdge.value = g.edge || 0; u.uStyle.value = g.style || 0; u.uScan.value = g.scan || 0; }
@@ -1110,6 +1113,7 @@
   }
   function renderGL() {
     var _rm = resolveMood(); if (_rm !== St.mood) applyMood(_rm);   // keep the active lighting mood in sync (hole default or player's setting)
+    if (R3.spot && R3.spotBase > 0.001 && St.hole && St.balls && St.balls[0]) { var _sb = St.balls[0], _sgy = St.hole.terrain(_sb.x, _sb.z); R3.spot.position.set(_sb.x + Math.sin(St.t * 0.9) * 90, _sgy + 1400, _sb.z - 120); R3.spot.target.position.set(_sb.x, _sgy, _sb.z); R3.spot.intensity = R3.spotBase * (0.82 + 0.18 * Math.sin(St.t * 3.5)); }   // SPOTLIGHT tracks the ball with a gentle sway + pulse = drama/action
     R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
     var p = R3.post;
     if (p && p.on) {
