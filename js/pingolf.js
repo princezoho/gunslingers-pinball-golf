@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 220 · RENDER EFFICIENCY';
+  var BUILD = 'BUILD 221 · OWNER MENU';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -3830,6 +3830,18 @@
     var lb = elt('button', BTNCSS + 'bottom:74px;', '📋 LEVELS', document.body); lb.onclick = levelMenu;
     var sk = elt('button', BTNCSS + 'bottom:44px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
     ED.dom.gameBtns = [eb, lb, sk];
+    // OWNER / DEBUG menu — high z-index so it's reachable on EVERY screen (over the chooser, daily card, etc.)
+    var ownBtn = elt('button', 'position:fixed;left:12px;bottom:140px;z-index:9600;padding:5px 11px;border:none;border-radius:18px;background:rgba(20,13,6,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;', '⚙ OWNER', document.body);
+    var ownMenu = elt('div', 'position:fixed;left:12px;bottom:178px;z-index:9601;width:214px;padding:7px;border-radius:13px;background:rgba(18,12,5,.5);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);display:none;flex-direction:column;gap:4px;', null, document.body);
+    function ownRow(label, fn) { var r = elt('button', 'padding:10px 11px;border:none;border-radius:8px;background:rgba(245,197,66,.09);color:#f5efdc;font:800 13px Georgia;cursor:pointer;text-align:left;', label, ownMenu); r.onclick = function () { ownMenu.style.display = 'none'; fn(); }; return r; }
+    ownBtn.onclick = function () { ownMenu.style.display = ownMenu.style.display === 'none' ? 'flex' : 'none'; };
+    function clearOverlays() { document.querySelectorAll('#pg-chooser,#pg-daily,#pg-howto,#pg-over,#pg-scorecard,#pg-champs,#pg-teamball,#pg-tbsetup').forEach(function (e) { e.remove(); }); }
+    ownRow('🎯 Daily Studio (set the daily)', function () { location.href = 'owner.html'; });
+    ownRow('✎ Level Editor', function () { clearOverlays(); if (St.testing && ED.draft) edEnter(); else if (St.hole && St.hi >= 0) editBuiltin(St.hi); else edEnter(); });
+    ownRow('⛳ Jump to any hole (0–35)', function () { var v = prompt('Load hole # (0–35):', String(St.hi >= 0 ? St.hi : 0)); var n = parseInt(v, 10); if (n >= 0 && n < 36) { clearOverlays(); St.daily = false; St.dailyPractice = false; St.archive = false; loadHole(n); } });
+    ownRow('♻ Reset today’s daily (replay)', function () { try { localStorage.removeItem('pg_daily_done'); } catch (e) { } location.reload(); });
+    ownRow('🔄 Hard reload', function () { location.replace(location.pathname + '?bust=' + Date.now()); });
+    elt('div', 'padding:7px 11px 3px;color:rgba(245,197,66,.6);font:700 11px Georgia;', BUILD, ownMenu);
     St.scores = []; St.parDone = 0; St.setBase = 0; loadHole(0);
     var _qs, _hs; try { _qs = new URLSearchParams(location.search); } catch (e) { _qs = null; }
     try { _hs = new URLSearchParams((location.hash || '').replace(/^#/, '')); } catch (e) { _hs = null; }
