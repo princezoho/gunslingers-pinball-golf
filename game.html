@@ -30,7 +30,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 <style>
   @font-face { font-family:'Wantedo'; src:url('assets/fonts/Wantedo.ttf') format('truetype'); font-display:swap; }
-  :root { --gold:#f5c542; --cream:#f3eedd; --ink:#1b120a; --wood:#5a3a22; }
+  :root { --gold:#ffffff; --cream:#f3eedd; --ink:#1b120a; --wood:#5a3a22; }   /* UI chrome is white now (no yellow) — owner: menu/UI text black or white only */
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; width:100%; overflow:hidden; background:#120c07; font-family:Georgia,serif; color:var(--cream); touch-action:none; user-select:none; }
   #wrap { position:fixed; inset:0; }
@@ -51,13 +51,13 @@
   /* sound dock (bottom-right) */
   #snd { position:absolute; right:14px; bottom:14px; display:flex; gap:8px; z-index:20; }
   #snd button { width:44px; height:44px; border:none; border-radius:0; cursor:pointer;
-    background:transparent; color:var(--gold); font-size:24px;
+    background:transparent; color:var(--gold); font:900 15px Wantedo,Georgia; letter-spacing:.5px;
     display:flex; align-items:center; justify-content:center; }
   #load { position:absolute; inset:0; z-index:60; display:flex; flex-direction:column; gap:14px;
     align-items:center; justify-content:center; background:#160f08; transition:opacity .4s; }
   #load.gone { opacity:0; pointer-events:none; }
   #load h1 { font-family:Wantedo,Georgia; color:var(--gold); font-size:8vmin; letter-spacing:1px; }
-  #load p { color:#c9a06a; font-size:3vmin; font-family:Wantedo,Georgia; }
+  #load p { color:#f3eedd; font-size:3vmin; font-family:Wantedo,Georgia; }
   .spin { width:40px; height:40px; border-radius:50%; border:5px solid #3a2616; border-top-color:var(--gold); animation:s .9s linear infinite; }
   @keyframes s { to { transform:rotate(360deg); } }
   /* phones: bigger touch targets, docks tucked tighter */
@@ -85,7 +85,7 @@
       <button id="vreset" title="Reset view">&#9678;</button>
     </div>
     <div id="snd">
-      <button id="mute" title="Sound">&#128266;</button>
+      <button id="mute" title="Audio & volume">SND</button>
     </div>
     <div id="load">
       <h1>GUNSLINGERS</h1>
@@ -96,7 +96,7 @@
   <script src="vendor/three.min.js"></script>
   <script src="vendor/gifquick.js?v=2"></script>
   <script src="js/net.js?v=15"></script>
-  <script src="js/pingolf.js?v=326"></script>
+  <script src="js/pingolf.js?v=328"></script>
   <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </body>
 </html>
