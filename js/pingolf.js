@@ -3947,7 +3947,8 @@
       if (ch(0.3)) { var bw = wp[ri(1, nWp - 2)]; b.bouncer(bw[0], bw[1], 56); }   // a spring pad
       b.coin(wp[1][0], wp[1][1], 1).coin(wp[nWp - 1][0], wp[nWp - 1][1], 2);
     }
-    return isl(genName(rnd), ri(3, 4), wp, width, obs);
+    var par = wp[nWp - 1][1] > 2600 ? 4 : 3;   // longer hole → higher par (isl caps at 4)
+    return isl(genName(rnd), par, wp, width, obs);
   }
   // serialize any built hole object to the editor/daily JSON (so a generated hole can be published as the daily)
   function serializeHole(h) { var sv = ED.draft; ED.draft = h; try { return edSerialize(); } finally { ED.draft = sv; } }
