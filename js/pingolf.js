@@ -2138,7 +2138,7 @@
   var SETS = [{ base: 0, name: 'FRONT 9', sub: '9 brand-new holes — the toughest run' }, { base: 9, name: 'MIDDLE 9', sub: 'the original desert gauntlet' }, { base: 18, name: 'BACK 9', sub: 'ice, moon, ghost town & the loops' }, { base: 27, name: 'WILD 9', sub: 'crazy multi-tier free-form greens' }];
   function chooseSet() {
     var old = document.getElementById('pg-chooser'); if (old) old.remove();
-    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(7,4,1,.5);backdrop-filter:blur(17px);-webkit-backdrop-filter:blur(17px);', null, document.body); ov.id = 'pg-chooser';
+    var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(6,4,2,.16);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-chooser';   // BLUR the game behind, not a dark veil — owner: "blur background not overlay"
     elt('div', 'font:900 clamp(30px,7vw,54px) Wantedo,Georgia;color:#ffffff;text-align:center;', 'CHOOSE YOUR NINE', ov);
     elt('div', 'font:600 15px Georgia;color:#ffffff;margin-top:-12px;', 'No hole over par 4 — pick a run and play through.', ov);
     var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:none;background:transparent;color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
@@ -2240,7 +2240,7 @@
     ov.innerHTML = ''; ov.style.display = 'flex';
     var box = elt('div', 'width:392px;max-height:85%;overflow:auto;background:transparent;border:none;padding:16px;', null, ov);
     elt('div', 'font:800 19px Wantedo,Georgia;color:#ffffff;margin-bottom:8px;', '◎ SELECT LEVEL', box);
-    var sec = function (t) { elt('div', 'font:700 11px Georgia;color:#caa06a;margin:11px 0 4px;', t, box); };
+    var sec = function (t) { elt('div', 'font:700 11px Georgia;color:#ffffff;margin:11px 0 4px;', t, box); };
     var rowBtn = function (label, sub, play, edit) {
       var r = elt('div', 'display:flex;gap:5px;align-items:stretch;margin:3px 0;', null, box);
       var pb = elt('button', 'flex:1;display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#ffffff;font:700 13px Georgia;cursor:pointer;text-align:left;', null, r);
@@ -2946,7 +2946,7 @@
   var BTN = 'display:block;width:184px;margin:3px 0;padding:7px 9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#ffffff;font:700 12px Georgia;cursor:pointer;text-align:left;';
   function edInit() {
     var root = elt('div', 'position:fixed;inset:0;z-index:40;display:none;pointer-events:none;', null, document.body); ED.dom.root = root;
-    if (!document.getElementById('edscrollcss')) { var stl = elt('style', null, null, document.head); stl.id = 'edscrollcss'; stl.textContent = '.edscroll::-webkit-scrollbar{width:11px;height:11px}.edscroll::-webkit-scrollbar-track{background:#1a1109;scrollbar-color:#7a5230 #1a1109}'; }
+    if (!document.getElementById('edscrollcss')) { var stl = elt('style', null, null, document.head); stl.id = 'edscrollcss'; stl.textContent = '.edscroll::-webkit-scrollbar{width:11px;height:11px}.edscroll::-webkit-scrollbar-track{background:#1a1109;scrollbar-color:#ffffff #1a1109}'; }
     // ---- TOP BAR: full width, single row, never wraps (scrolls if narrow) ----
     var top = elt('div', 'position:absolute;left:8px;right:8px;top:8px;height:40px;display:flex;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;pointer-events:auto;', null, root);
     ED.dom.topBtns = [];
@@ -3008,9 +3008,9 @@
       var gi = ED.sel.items, gcard = elt('div', 'background:rgba(245,197,66,.12);padding:8px;margin-bottom:10px;', null, p);
       elt('div', 'font:800 13px Georgia;color:#ffffff;', 'WALL PATH', gcard);
       elt('div', 'font-size:10px;line-height:1.35;opacity:.9;margin:3px 0 7px;', gi.length + ' segments. ROUND it into perfect curves, or SHARPEN it into clean straight/diagonal corners (like Illustrator). Drag white dots to bend corners; drag the line to move it; Shift-click for one segment.', gcard);
-      elt('div', 'font:800 11px Georgia;color:#7affb0;margin-bottom:1px;', 'ROUND — perfect curves →', gcard);
+      elt('div', 'font:800 11px Georgia;color:#ffffff;margin-bottom:1px;', 'ROUND — perfect curves →', gcard);
       row(gcard, 'rounding', ED.sel.smoothLevel || 0, 0, 4, 1, function (v) { if (!ED.sel.snapped) { edSnapshot(); ED.sel.snapped = true; } ED.sel.smoothLevel = v; applyPathShape(); });
-      elt('div', 'font:800 11px Georgia;color:#7ad0ff;margin:6px 0 1px;', 'SHARPEN — fewer, cleaner corners →', gcard);
+      elt('div', 'font:800 11px Georgia;color:#ffffff;margin:6px 0 1px;', 'SHARPEN — fewer, cleaner corners →', gcard);
       row(gcard, 'simplify', ED.sel.simplifyAmt || 0, 0, 6, 1, function (v) { if (!ED.sel.snapped) { edSnapshot(); ED.sel.snapped = true; } ED.sel.simplifyAmt = v; applyPathShape(); });
       row(gcard, 'bounce', gi[0] && gi[0].e != null ? gi[0].e : K.wallE, 0, 1, 0.05, function (v) { ED.sel.items.forEach(function (g) { g.e = v; }); edLiveRefresh(); });
       row(gcard, 'height (taller blocks airborne balls)', gi[0] && gi[0].h ? gi[0].h : 80, 20, 240, 4, function (v) { ED.sel.items.forEach(function (g) { g.h = v; }); edLiveRefresh(); });
@@ -3292,7 +3292,7 @@
     function row(label, key) {
       var r = elt('div', 'margin-bottom:9px;', null, panel);
       var top = elt('div', 'display:flex;justify-content:space-between;margin-bottom:3px;', null, r);
-      elt('span', 'color:#e8dcc0;', label, top);
+      elt('span', 'color:#ffffff;', label, top);
       var val = elt('span', 'color:#ffffff;font-weight:700;', Math.round(AU[key] * 100) + '%', top);
       var sl = elt('input', 'width:100%;accent-color:#ffffff;cursor:pointer;', null, r); sl.type = 'range'; sl.min = '0'; sl.max = '100'; sl.step = '5'; sl.value = String(Math.round(AU[key] * 100));
       sl.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
@@ -4035,8 +4035,8 @@
           elt('div', 'width:28px;color:#ffffff;font-weight:700;text-align:center;', i === 0 ? '' : i === 1 ? '' : i === 2 ? '' : (i + 1) + '.', row);
           elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
           elt('div', 'font-weight:800;color:#ffffff;white-space:nowrap;', r.wins + '', row);
-          if (mode === 'players') { var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av); elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row); }
-          else { elt('div', 'font:600 11px Georgia;color:#caa06a;white-space:nowrap;', r.days + 'd · best ' + r.best, row); }
+          if (mode === 'players') { var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av); elt('div', 'font:600 11px Georgia;color:#ffffff;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row); }
+          else { elt('div', 'font:600 11px Georgia;color:#ffffff;white-space:nowrap;', r.days + 'd · best ' + r.best, row); }
         });
         // viral flex: if you're on the board, let you share your rank
         var myIdx = -1; rows.forEach(function (r, i) { var mine = mode === 'players' ? (me && r.name === me) : (myTeam && myTeam.name === r.name); if (mine) myIdx = i; });
