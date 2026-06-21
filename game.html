@@ -36,6 +36,8 @@
   #wrap { position:fixed; inset:0; }
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   #hud { pointer-events:none; z-index:10; }
+  /* cinematic FX overlay — real bokeh/dust/film footage screen-blended over the render (black footage → transparent, only the light/particles show through) */
+  #fxOverlay { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:5; pointer-events:none; mix-blend-mode:screen; opacity:0; transition:opacity .6s ease; display:none; }
   /* HUD plates removed — type sits straight on the world with a soft shadow, no boxes */
   .glass { display:none; }
   /* camera dock (right edge) */
@@ -73,6 +75,7 @@
     <div id="glassTL" class="glass"></div>
     <div id="glassTR" class="glass"></div>
     <div id="glassPM" class="glass"></div>
+    <video id="fxOverlay" muted loop playsinline autoplay preload="auto"></video>
     <canvas id="hud"></canvas>
     <div id="cam">
       <button id="rotL" title="Rotate left">&#8634;</button>
@@ -93,7 +96,7 @@
   <script src="vendor/three.min.js"></script>
   <script src="vendor/gifquick.js?v=2"></script>
   <script src="js/net.js?v=15"></script>
-  <script src="js/pingolf.js?v=323"></script>
+  <script src="js/pingolf.js?v=324"></script>
   <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </body>
 </html>
