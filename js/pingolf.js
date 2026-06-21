@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 221 · OWNER MENU';
+  var BUILD = 'BUILD 222 · HOLE GENERATOR';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -1942,7 +1942,7 @@
     var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-chooser';
     elt('div', 'font:900 clamp(30px,7vw,54px) Wantedo,Georgia;color:#f5c542;text-align:center;', 'CHOOSE YOUR NINE', ov);
     elt('div', 'font:600 15px Georgia;color:#d8c4a2;margin-top:-12px;', 'No hole over par 4 — pick a run and play through.', ov);
-    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:none;border-radius:14px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,.5);', null, ov);
+    var daily = elt('button', 'width:min(540px,92vw);padding:16px 20px;border:none;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
     var dl = elt('div', 'text-align:left;', null, daily);
     elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '⭐ DAILY HOLE #' + dailyNum(), dl);
     elt('div', 'font:600 12px Georgia;color:#d8c4a2;', 'One shot at today’s hole. Beat the par, share your score, challenge your friends.', dl);
@@ -1962,7 +1962,7 @@
       var champ = elt('button', 'background:transparent;border:none;color:#f5c542;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '🏆 All-time champions', lnks); champ.onclick = function () { showChampions(); };
       var own = elt('button', 'background:transparent;border:none;color:#c9a06a;font:700 12px Georgia;cursor:pointer;text-decoration:underline;', '⚙ Owner Studio', lnks); own.title = 'Set & edit the daily hole (passcode)'; own.onclick = function () { location.href = 'owner.html'; };
     }
-    var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;border:2px solid #5a3a1a;border-radius:14px;background:linear-gradient(180deg,#2a1e10,#1a1109);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
+    var tb = elt('button', 'width:min(540px,92vw);padding:13px 20px;background:linear-gradient(180deg,#2a1e10,#1a1109);color:#f5efdc;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;', null, ov);
     var tbl = elt('div', 'text-align:left;', null, tb);
     elt('div', 'font:900 17px Wantedo,Georgia;color:#f5c542;', '👥 PASS & PLAY', tbl);
     elt('div', 'font:600 11px Georgia;color:#d8c4a2;', 'Team Ball (alternate shot) or Best Ball — with friends on one device.', tbl);
@@ -1970,7 +1970,7 @@
     tb.onclick = function () { ov.remove(); showTeamBallSetup(); };
     var row = elt('div', 'display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:760px;', null, ov);
     SETS.forEach(function (set) {
-      var card = elt('button', 'width:210px;min-height:150px;padding:20px 16px;border:none;border-radius:0;background:transparent;color:#f5efdc;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;', null, row);
+      var card = elt('button', 'width:210px;min-height:150px;padding:20px 16px;border:none;background:transparent;color:#f5efdc;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;', null, row);
       elt('div', 'font:900 30px Wantedo,Georgia;color:#f5c542;', set.name, card);
       elt('div', 'font:600 13px Georgia;color:#d8c4a2;line-height:1.4;', set.sub, card);
       elt('div', 'font:900 13px Wantedo,Georgia;color:#86d85f;margin-top:4px;', 'PLAY ▶', card);
@@ -1982,14 +1982,14 @@
   function showScorecard() {
     var old = document.getElementById('pg-scorecard'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:56;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-scorecard';
-    var box = elt('div', 'width:430px;max-width:94%;max-height:88%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:14px;padding:18px;box-shadow:0 10px 50px rgba(0,0,0,.7);', null, ov); box.className = 'edscroll';
+    var box = elt('div', 'width:430px;max-width:94%;max-height:88%;overflow:auto;background:transparent;border:none;padding:18px;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo, Georgia;color:#f5c542;text-align:center;', '🏆 ' + (SETS[(St.setBase || 0) / 9] ? SETS[(St.setBase || 0) / 9].name : 'NINE') + ' COMPLETE', box);
     var bs = bestStore(), totPar = 0, totYou = 0;
     var hdr = elt('div', 'display:flex;font:700 10px Georgia;color:#f5c542;opacity:.7;margin:8px 0 2px;padding:0 6px;', null, box);
     ['HOLE', 'PAR', 'YOU', 'BEST'].forEach(function (t, i) { elt('div', i === 0 ? 'flex:1;' : 'width:46px;text-align:right;', t, hdr); });
     var base = St.setBase || 0;
     for (var hidx = base; hidx < base + 9; hidx++) { var sc = St.scores[hidx]; if (sc == null) continue; var h = HOLES[hidx](), par = h.par; totPar += par; totYou += sc; var over = sc - par;
-      var r = elt('div', 'display:flex;align-items:center;padding:5px 6px;margin:2px 0;background:rgba(245,197,66,.06);border-radius:6px;font:13px Georgia;color:#f5efdc;', null, box);
+      var r = elt('div', 'display:flex;align-items:center;padding:5px 6px;margin:2px 0;background:rgba(245,197,66,.06);font:13px Georgia;color:#f5efdc;', null, box);
       elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', (hidx - base + 1) + '. ' + h.name, r);
       elt('div', 'width:46px;text-align:right;opacity:.7;', String(par), r);
       var yc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a'; elt('div', 'width:46px;text-align:right;font-weight:700;color:' + yc + ';', sc + (over === 0 ? '' : (over > 0 ? ' +' + over : ' ' + over)), r);
@@ -1999,8 +1999,8 @@
     var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:2px solid #5a3a1a;font:900 15px Georgia;color:#f5c542;', null, box);
     elt('div', 'flex:1;', 'TOTAL', tr); elt('div', 'width:46px;text-align:right;opacity:.7;', String(totPar), tr); elt('div', 'width:92px;text-align:right;', totYou + ' (' + tpStr + ')', tr);
     var act = elt('div', 'display:flex;gap:8px;margin-top:14px;', null, box);
-    var pa = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:3px;background:#2e7a26;color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', '▶ CHANGE NINE', act); pa.onclick = function () { ov.remove(); chooseSet(); };
-    var ls = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:3px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '📋 LEVEL SELECT', act); ls.onclick = function () { ov.remove(); levelMenu(); };
+    var pa = elt('button', 'flex:1;padding:11px;background:#2e7a26;color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', '▶ CHANGE NINE', act); pa.onclick = function () { ov.remove(); chooseSet(); };
+    var ls = elt('button', 'flex:1;padding:11px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '📋 LEVEL SELECT', act); ls.onclick = function () { ov.remove(); levelMenu(); };
   }
   // saved edits to the built-in campaign holes (persist across reloads) — keyed by hole index
   function overStore() { try { return JSON.parse(localStorage.getItem('pg_over') || '{}'); } catch (e) { return {}; } }
@@ -2039,15 +2039,15 @@
     var ov = ED.dom.lvlmenu;
     if (!ov) { ov = elt('div', 'position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.addEventListener('click', function (e) { if (e.target === ov) ov.style.display = 'none'; }); ED.dom.lvlmenu = ov; }
     ov.innerHTML = ''; ov.style.display = 'flex';
-    var box = elt('div', 'width:392px;max-height:85%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:16px;box-shadow:0 10px 50px rgba(0,0,0,.6);', null, ov);
+    var box = elt('div', 'width:392px;max-height:85%;overflow:auto;background:transparent;border:none;padding:16px;', null, ov);
     elt('div', 'font:800 19px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '⛳ SELECT LEVEL', box);
     var sec = function (t) { elt('div', 'font:700 11px Georgia;color:#caa06a;margin:11px 0 4px;', t, box); };
     var rowBtn = function (label, sub, play, edit) {
       var r = elt('div', 'display:flex;gap:5px;align-items:stretch;margin:3px 0;', null, box);
-      var pb = elt('button', 'flex:1;display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 13px Georgia;cursor:pointer;text-align:left;', null, r);
+      var pb = elt('button', 'flex:1;display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 13px Georgia;cursor:pointer;text-align:left;', null, r);
       elt('span', '', label, pb); if (sub) elt('span', 'font-size:10px;opacity:.6;margin-left:8px;white-space:nowrap;', sub, pb);
       pb.onclick = function () { ov.style.display = 'none'; play(); };
-      if (edit) { var eb = elt('button', 'padding:0 11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#cba;font:700 13px Georgia;cursor:pointer;', '✎', r); eb.title = 'Edit in level editor'; eb.onclick = function () { ov.style.display = 'none'; edit(); }; }
+      if (edit) { var eb = elt('button', 'padding:0 11px;background:#3a2614;color:#cba;font:700 13px Georgia;cursor:pointer;', '✎', r); eb.title = 'Edit in level editor'; eb.onclick = function () { ov.style.display = 'none'; edit(); }; }
     };
     SETS.forEach(function (set) {
       sec(set.name);
@@ -2057,7 +2057,7 @@
     var store = edStore(), names = Object.keys(store).sort();
     sec('MY LEVELS' + (names.length ? '' : ' — none yet (build one in the editor)'));
     names.forEach(function (n) { var lv = store[n], cnt = ['bumpers', 'flippers', 'windmills', 'loops', 'coins', 'powerups', 'walls', 'enemies', 'firerings'].reduce(function (a, k) { return a + ((lv[k] || []).length); }, 0); rowBtn(n, (lv.theme || 'grass').split(' ')[0] + ' · ' + cnt, function () { loadCustomLevel(n); }, function () { editCustom(n); }); });
-    var cl = elt('button', 'margin-top:12px;width:100%;padding:9px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Close', box); cl.onclick = function () { ov.style.display = 'none'; };
+    var cl = elt('button', 'margin-top:12px;width:100%;padding:9px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Close', box); cl.onclick = function () { ov.style.display = 'none'; };
   }
 
   /* ================================================================ fx + audio */
@@ -2691,7 +2691,7 @@
   // in-app dialog + toast (prompt()/alert()/confirm() are unreliable in embedded/preview frames — never use them)
   function edModal(title, build) {
     var m = ED.dom.modal; if (!m) return; m.innerHTML = ''; m.style.display = 'flex'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; };
-    var box = elt('div', 'width:380px;max-width:92%;max-height:84%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:16px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
+    var box = elt('div', 'width:380px;max-width:92%;max-height:84%;overflow:auto;background:transparent;border:none;padding:16px;', null, m);
     if (title) elt('div', 'font:800 16px Georgia;color:#f5c542;margin-bottom:10px;', title, box);
     build(box, function () { m.style.display = 'none'; });
     return box;
@@ -2700,36 +2700,36 @@
     edModal(null, function (box, close) {
       elt('div', 'font:13px Georgia;color:#f5efdc;line-height:1.4;margin-bottom:12px;', msg, box);
       var r = elt('div', 'display:flex;gap:8px;', null, box);
-      var yes = elt('button', 'flex:1;padding:10px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:800 12px Georgia;cursor:pointer;', 'Yes', r); yes.onclick = function () { close(); onYes(); };
-      var no = elt('button', 'flex:1;padding:10px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:800 12px Georgia;cursor:pointer;', 'Cancel', r); no.onclick = close;
+      var yes = elt('button', 'flex:1;padding:10px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:800 12px Georgia;cursor:pointer;', 'Yes', r); yes.onclick = function () { close(); onYes(); };
+      var no = elt('button', 'flex:1;padding:10px;background:#3a2614;color:#f5c542;font:800 12px Georgia;cursor:pointer;', 'Cancel', r); no.onclick = close;
     });
   }
   function edToast(msg, good) {
     if (!ED.dom.root) return;
-    var t = elt('div', 'position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:60;padding:9px 16px;border-radius:8px;border:2px solid #160d06;background:' + (good === false ? '#7a2618' : '#1f5018') + ';color:#fff;font:700 13px Georgia;box-shadow:0 4px 18px rgba(0,0,0,.5);pointer-events:none;', msg, ED.dom.root);
+    var t = elt('div', 'position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:60;padding:9px 16px;background:' + (good === false ? '#7a2618' : '#1f5018') + ';color:#fff;font:700 13px Georgia;pointer-events:none;', msg, ED.dom.root);
     setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2000);
   }
   function edGetNotes() { try { return JSON.parse(localStorage.getItem('pg_notes') || '[]'); } catch (e) { return []; } }
   function edNotes() {
     edModal('📝 NOTES FOR THE BUILDER', function (box, close) {
       elt('div', 'font-size:11px;opacity:.85;line-height:1.4;margin-bottom:6px;', 'Type anything that is wrong or what you want changed. It SAVES on this device and the developer reads it to fix things. Your past notes are listed below.', box);
-      var ta = elt('textarea', 'width:100%;height:90px;padding:8px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:12px Georgia;resize:vertical;', null, box); ta.placeholder = 'e.g. the bumper radius slider does nothing…';
-      var sb = elt('button', 'width:100%;margin-top:8px;padding:10px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '✓ Save note', box);
+      var ta = elt('textarea', 'width:100%;height:90px;padding:8px;background:#1a1109;color:#f5efdc;font:12px Georgia;resize:vertical;', null, box); ta.placeholder = 'e.g. the bumper radius slider does nothing…';
+      var sb = elt('button', 'width:100%;margin-top:8px;padding:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '✓ Save note', box);
       var list = elt('div', 'margin-top:10px;', null, box);
-      function render() { list.innerHTML = ''; var notes = edGetNotes(); if (!notes.length) { elt('div', 'opacity:.5;font-size:11px;', 'No notes yet.', list); return; } elt('div', 'font:700 11px Georgia;color:#f5c542;margin-bottom:3px;', 'SAVED NOTES (' + notes.length + ')', list); notes.slice().reverse().forEach(function (n) { var c = elt('div', 'background:rgba(245,197,66,.08);border:1px solid #5a3a1a;border-radius:6px;padding:6px;margin:4px 0;', null, list); elt('div', 'font-size:9px;opacity:.5;', n.t || '', c); elt('div', 'font-size:12px;white-space:pre-wrap;color:#f5efdc;', n.msg, c); }); }
+      function render() { list.innerHTML = ''; var notes = edGetNotes(); if (!notes.length) { elt('div', 'opacity:.5;font-size:11px;', 'No notes yet.', list); return; } elt('div', 'font:700 11px Georgia;color:#f5c542;margin-bottom:3px;', 'SAVED NOTES (' + notes.length + ')', list); notes.slice().reverse().forEach(function (n) { var c = elt('div', 'background:rgba(245,197,66,.08);padding:6px;margin:4px 0;', null, list); elt('div', 'font-size:9px;opacity:.5;', n.t || '', c); elt('div', 'font-size:12px;white-space:pre-wrap;color:#f5efdc;', n.msg, c); }); }
       sb.onclick = function () { var msg = (ta.value || '').trim(); if (!msg) { edToast('Write a note first', false); return; } var notes = edGetNotes(); notes.push({ t: new Date().toLocaleString(), msg: msg, build: BUILD }); try { localStorage.setItem('pg_notes', JSON.stringify(notes)); } catch (e) { } ta.value = ''; render(); edToast('Note saved ✓ — thank you!'); };
       render();
     });
   }
   function edLiveRefresh() { if (ED.view3d) { applyPhys(ED.draft.phys); ED.dirty3d = true; } }   // batched 3D rebuild (applied once per frame)
-  var BTN = 'display:block;width:184px;margin:3px 0;padding:7px 9px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;text-align:left;';
+  var BTN = 'display:block;width:184px;margin:3px 0;padding:7px 9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;text-align:left;';
   function edInit() {
     var root = elt('div', 'position:fixed;inset:0;z-index:40;display:none;pointer-events:none;', null, document.body); ED.dom.root = root;
-    if (!document.getElementById('edscrollcss')) { var stl = elt('style', null, null, document.head); stl.id = 'edscrollcss'; stl.textContent = '.edscroll::-webkit-scrollbar{width:11px;height:11px}.edscroll::-webkit-scrollbar-track{background:#1a1109;border-radius:6px}.edscroll::-webkit-scrollbar-thumb{background:#7a5230;border:2px solid #241a0e;border-radius:6px}.edscroll::-webkit-scrollbar-thumb:hover{background:#9a6a40}.edscroll{scrollbar-width:thin;scrollbar-color:#7a5230 #1a1109}'; }
+    if (!document.getElementById('edscrollcss')) { var stl = elt('style', null, null, document.head); stl.id = 'edscrollcss'; stl.textContent = '.edscroll::-webkit-scrollbar{width:11px;height:11px}.edscroll::-webkit-scrollbar-track{background:#1a1109;scrollbar-color:#7a5230 #1a1109}'; }
     // ---- TOP BAR: full width, single row, never wraps (scrolls if narrow) ----
     var top = elt('div', 'position:absolute;left:8px;right:8px;top:8px;height:40px;display:flex;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;pointer-events:auto;', null, root);
     ED.dom.topBtns = [];
-    var mk = function (label, fn, col) { var b = elt('button', 'flex:0 0 auto;padding:7px 8px;border:2px solid #160d06;border-radius:8px;background:' + (col || 'linear-gradient(180deg,#6a4628,#3a2614)') + ';color:#f5c542;font:700 11.5px Georgia;cursor:pointer;white-space:nowrap;', label, top); b.onclick = fn; b._full = label; b._icon = label.split(' ')[0]; b.title = b.title || label; ED.dom.topBtns.push(b); return b; };
+    var mk = function (label, fn, col) { var b = elt('button', 'flex:0 0 auto;padding:7px 8px;background:' + (col || 'linear-gradient(180deg,#6a4628,#3a2614)') + ';color:#f5c542;font:700 11.5px Georgia;cursor:pointer;white-space:nowrap;', label, top); b.onclick = fn; b._full = label; b._icon = label.split(' ')[0]; b.title = b.title || label; ED.dom.topBtns.push(b); return b; };
     mk('▶ TEST', edPlay, 'linear-gradient(180deg,#3a8a30,#1f5018)');
     ED.dom.btn3d = mk('🧊 3D', function () { if (ED.view3d) { edExit3D(); ED.dom.btn3d.style.background = 'linear-gradient(180deg,#6a4628,#3a2614)'; } else { edEnter3D(); ED.dom.btn3d.style.background = 'linear-gradient(180deg,#2a7ab0,#15486a)'; } }, 'linear-gradient(180deg,#2a7ab0,#15486a)');
     ED.dom.btn3d.style.background = 'linear-gradient(180deg,#6a4628,#3a2614)';
@@ -2744,15 +2744,15 @@
     mk('✕ Exit', function () { ED.on = false; edShow(false); if (St.state === 'load' || !St.hole) loadHole(0); });
     // ---- LEFT PALETTE: tool settings box + items ----
     var pal = elt('div', 'position:absolute;left:8px;top:56px;bottom:8px;width:212px;overflow-y:auto;overflow-x:hidden;pointer-events:auto;', null, root); pal.className = 'edscroll';
-    var ts = elt('div', 'background:rgba(30,20,10,.6);border:1px solid #5a3a1a;border-radius:8px;padding:6px;margin-bottom:7px;', null, pal);
-    ED.dom.snap = elt('button', 'display:block;width:100%;margin-bottom:5px;padding:5px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '▦ grid snap: ON', ts); ED.dom.snap.onclick = function () { ED.snapOn = !ED.snapOn; ED.dom.snap.textContent = '▦ grid snap: ' + (ED.snapOn ? 'ON' : 'OFF'); };
+    var ts = elt('div', 'background:rgba(30,20,10,.6);padding:6px;margin-bottom:7px;', null, pal);
+    ED.dom.snap = elt('button', 'display:block;width:100%;margin-bottom:5px;padding:5px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '▦ grid snap: ON', ts); ED.dom.snap.onclick = function () { ED.snapOn = !ED.snapOn; ED.dom.snap.textContent = '▦ grid snap: ' + (ED.snapOn ? 'ON' : 'OFF'); };
     var sr = elt('div', 'font:700 10px Georgia;color:#f5c542;margin:3px 0 1px;', '✏/🧽 brush size: ' + ED.size, ts); var si = elt('input', 'width:100%;', null, ts); si.type = 'range'; si.min = 40; si.max = 520; si.step = 10; si.value = ED.size; si.oninput = function () { ED.size = parseInt(si.value, 10); sr.textContent = '✏/🧽 brush size: ' + ED.size; };
     var smr = elt('div', 'display:flex;gap:4px;align-items:center;margin-top:5px;', null, ts);
-    var smb = elt('button', 'flex:0 0 auto;padding:5px 8px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#5a4a8a,#2f2350);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '〜 Smooth', smr); smb.onclick = smoothWalls;
+    var smb = elt('button', 'flex:0 0 auto;padding:5px 8px;background:linear-gradient(180deg,#5a4a8a,#2f2350);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '〜 Smooth', smr); smb.onclick = smoothWalls;
     var smi = elt('input', 'flex:1;', null, smr); smi.type = 'range'; smi.min = 1; smi.max = 4; smi.step = 1; smi.value = ED.smoothAmt; var sml = elt('div', 'font:700 11px Georgia;color:#f5c542;min-width:8px;', String(ED.smoothAmt), smr); smi.oninput = function () { ED.smoothAmt = parseInt(smi.value, 10); sml.textContent = ED.smoothAmt; };
     elt('div', 'font:800 11px Georgia;color:#f5c542;opacity:.85;margin:0 0 3px 2px;', 'ITEMS — pick one, click field', pal);
-    var FULLBTN = 'display:block;width:100%;margin:3px 0;padding:7px 9px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;text-align:left;';
-    var GBTN = 'padding:5px 3px;border:2px solid #160d06;border-radius:7px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 10px Georgia;cursor:pointer;text-align:center;line-height:1.1;min-height:29px;';
+    var FULLBTN = 'display:block;width:100%;margin:3px 0;padding:7px 9px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 12px Georgia;cursor:pointer;text-align:left;';
+    var GBTN = 'padding:5px 3px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 10px Georgia;cursor:pointer;text-align:center;line-height:1.1;min-height:29px;';
     var mkTool = function (t, parent, style) { var bb = elt('button', style, t[1], parent); bb.onclick = function () { ED.brush = t[0]; ED.seg = null; ED.poly = null; ED.drawing = null; ED.erasing = false; ED.sel = null; edHi(); edPanel(); }; bb._tool = t[0]; return bb; };
     ['select', 'draw', 'erase'].forEach(function (key) { var t = ED_TOOLS.filter(function (x) { return x[0] === key; })[0]; if (t) mkTool(t, pal, FULLBTN); });   // prominent mode tools
     var grid = elt('div', 'display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:3px;', null, pal);   // every placement tool, 2-column so they all fit
@@ -2761,7 +2761,7 @@
     var dupb = elt('button', FULLBTN.replace('#6a4628,#3a2614', '#3a6a8a,#1f3850') + 'color:#dff;', '⧉  Duplicate  (Ctrl+D)', pal); dupb.onclick = edDuplicate;
     ED.dom.pal = pal;
     // ---- RIGHT INSPECTOR ----
-    var panel = elt('div', 'position:absolute;right:8px;top:56px;bottom:8px;width:200px;overflow-y:auto;overflow-x:hidden;background:rgba(30,20,10,.94);border:2px solid #5a3a1a;border-radius:10px;padding:10px;color:#f5efdc;font:12px Georgia;pointer-events:auto;', null, root); ED.dom.panel = panel; panel.className = 'edscroll';
+    var panel = elt('div', 'position:absolute;right:8px;top:56px;bottom:8px;width:200px;overflow-y:auto;overflow-x:hidden;background:rgba(30,20,10,.94);padding:10px;color:#f5efdc;font:12px Georgia;pointer-events:auto;', null, root); ED.dom.panel = panel; panel.className = 'edscroll';
     var modal = elt('div', 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto;', null, root); ED.dom.modal = modal;
     document.body.appendChild(root);
     window.addEventListener('keydown', edKey);
@@ -2784,7 +2784,7 @@
   function edPanel() {
     var p = ED.dom.panel; if (!p) return; p.innerHTML = '';
     if (ED.sel && ED.sel.kind === 'wallgroup') {
-      var gi = ED.sel.items, gcard = elt('div', 'background:rgba(245,197,66,.12);border:1px solid #f5c542;border-radius:8px;padding:8px;margin-bottom:10px;', null, p);
+      var gi = ED.sel.items, gcard = elt('div', 'background:rgba(245,197,66,.12);padding:8px;margin-bottom:10px;', null, p);
       elt('div', 'font:800 13px Georgia;color:#f5c542;', '✦ WALL PATH', gcard);
       elt('div', 'font-size:10px;line-height:1.35;opacity:.9;margin:3px 0 7px;', gi.length + ' segments. ROUND it into perfect curves, or SHARPEN it into clean straight/diagonal corners (like Illustrator). Drag white dots to bend corners; drag the line to move it; Shift-click for one segment.', gcard);
       elt('div', 'font:800 11px Georgia;color:#7affb0;margin-bottom:1px;', '✨ ROUND — perfect curves →', gcard);
@@ -2793,14 +2793,14 @@
       row(gcard, 'simplify', ED.sel.simplifyAmt || 0, 0, 6, 1, function (v) { if (!ED.sel.snapped) { edSnapshot(); ED.sel.snapped = true; } ED.sel.simplifyAmt = v; applyPathShape(); });
       row(gcard, 'bounce', gi[0] && gi[0].e != null ? gi[0].e : K.wallE, 0, 1, 0.05, function (v) { ED.sel.items.forEach(function (g) { g.e = v; }); edLiveRefresh(); });
       row(gcard, 'height (taller blocks airborne balls)', gi[0] && gi[0].h ? gi[0].h : 80, 20, 240, 4, function (v) { ED.sel.items.forEach(function (g) { g.h = v; }); edLiveRefresh(); });
-      var gdl = elt('button', 'display:block;width:100%;margin-top:8px;padding:7px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕ Delete this path', gcard); gdl.onclick = edDelete;
+      var gdl = elt('button', 'display:block;width:100%;margin-top:8px;padding:7px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕ Delete this path', gcard); gdl.onclick = edDelete;
     } else if (ED.sel) {
       var k = ED.sel.kind, info = ED_INFO[k] || { n: k.toUpperCase(), a: '' }, it = ED.sel.item;
-      var card = elt('div', 'background:rgba(245,197,66,.12);border:1px solid #f5c542;border-radius:8px;padding:8px;margin-bottom:10px;', null, p);
+      var card = elt('div', 'background:rgba(245,197,66,.12);padding:8px;margin-bottom:10px;', null, p);
       elt('div', 'font:800 13px Georgia;color:#f5c542;', '✦ ' + info.n, card);
       if (info.a) elt('div', 'font-size:10px;line-height:1.35;opacity:.9;margin:3px 0 6px;', info.a, card);
       if (ED_PARAMS[k]) ED_PARAMS[k].forEach(function (pr) {
-        if (pr[2] === 'select') { var wrap = elt('div', 'margin:6px 0;', null, card); elt('div', 'font-size:10px;opacity:.8;', pr[1], wrap); var seln = elt('select', 'width:100%;padding:4px;border-radius:5px;background:#1a1109;color:#f5efdc;border:1px solid #5a3a1a;font:12px Georgia;', null, wrap); pr[3].forEach(function (opt) { var o = document.createElement('option'); o.value = opt; o.textContent = opt; if ((it[pr[0]] || pr[3][0]) === opt) o.selected = true; seln.appendChild(o); }); seln.onchange = function () { edSnapshot(); it[pr[0]] = seln.value; edLiveRefresh(); }; return; }
+        if (pr[2] === 'select') { var wrap = elt('div', 'margin:6px 0;', null, card); elt('div', 'font-size:10px;opacity:.8;', pr[1], wrap); var seln = elt('select', 'width:100%;padding:4px;background:#1a1109;color:#f5efdc;font:12px Georgia;', null, wrap); pr[3].forEach(function (opt) { var o = document.createElement('option'); o.value = opt; o.textContent = opt; if ((it[pr[0]] || pr[3][0]) === opt) o.selected = true; seln.appendChild(o); }); seln.onchange = function () { edSnapshot(); it[pr[0]] = seln.value; edLiveRefresh(); }; return; }
         var get = pr[0] === 'ang' ? (it.dx != null ? Math.atan2(it.dz, it.dx) : it.ang) : it[pr[0]];
         row(card, pr[1], get == null ? pr[2] : get, pr[2], pr[3], pr[4], function (v) { if (pr[0] === 'ang') { if (it.dx != null) { it.dx = Math.cos(v); it.dz = Math.sin(v); } else it.ang = v; } else it[pr[0]] = v; edLiveRefresh(); });
       });
@@ -2808,12 +2808,12 @@
         var po = ED.sel.item, exs = po.exits || (po.exits = [{ x: po.ex, z: po.ez }]);
         elt('div', 'font-size:10px;opacity:.9;margin:5px 0 2px;color:' + (exs.length > 1 ? '#c45cff' : '#f5efdc') + ';', exs.length + ' exit' + (exs.length > 1 ? 's — ball pops out a RANDOM one' : ''), card);
         var pact2 = elt('div', 'display:flex;gap:5px;', null, card);
-        var addB = elt('button', 'flex:1;padding:6px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#5a4a8a,#2f2350);color:#dff;font:700 11px Georgia;cursor:pointer;', '+ add exit', pact2); addB.onclick = function () { edSnapshot(); exs.push({ x: po.x + (exs.length % 2 ? 1 : -1) * (200 + exs.length * 40), z: po.z + 240 }); edPanel(); };
-        if (exs.length > 1) { var remB = elt('button', 'flex:1;padding:6px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '− remove', pact2); remB.onclick = function () { edSnapshot(); exs.pop(); edPanel(); }; }
+        var addB = elt('button', 'flex:1;padding:6px;background:linear-gradient(180deg,#5a4a8a,#2f2350);color:#dff;font:700 11px Georgia;cursor:pointer;', '+ add exit', pact2); addB.onclick = function () { edSnapshot(); exs.push({ x: po.x + (exs.length % 2 ? 1 : -1) * (200 + exs.length * 40), z: po.z + 240 }); edPanel(); };
+        if (exs.length > 1) { var remB = elt('button', 'flex:1;padding:6px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '− remove', pact2); remB.onclick = function () { edSnapshot(); exs.pop(); edPanel(); }; }
       }
       var px = it.x != null ? it.x : it.px, pz = it.z != null ? it.z : it.pz;
       if (px != null) elt('div', 'font-size:10px;opacity:.65;margin-top:4px;', 'position   x ' + Math.round(px) + '   z ' + Math.round(pz) + '   (drag on map)', card);
-      if (ED.sel.arr) { var act = elt('div', 'display:flex;gap:5px;margin-top:8px;', null, card); var dup = elt('button', 'flex:1;padding:6px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#3a6a8a,#1f3850);color:#dff;font:700 11px Georgia;cursor:pointer;', '⧉ Duplicate', act); dup.onclick = edDuplicate; var dl = elt('button', 'flex:1;padding:6px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕ Delete', act); dl.onclick = edDelete; }
+      if (ED.sel.arr) { var act = elt('div', 'display:flex;gap:5px;margin-top:8px;', null, card); var dup = elt('button', 'flex:1;padding:6px;background:linear-gradient(180deg,#3a6a8a,#1f3850);color:#dff;font:700 11px Georgia;cursor:pointer;', '⧉ Duplicate', act); dup.onclick = edDuplicate; var dl = elt('button', 'flex:1;padding:6px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕ Delete', act); dl.onclick = edDelete; }
       else elt('div', 'font-size:9px;opacity:.6;margin-top:5px;', '(permanent — drag on the map to move)', card);
     } else {
       elt('div', 'font-size:10px;opacity:.65;margin-bottom:9px;line-height:1.4;', 'Nothing selected. Pick a tool ◀ and click the field to build. Use Select to grab any item and edit its stats here.', p);
@@ -2824,18 +2824,18 @@
     row(p, 'width', ED.draft.bounds.maxX - ED.draft.bounds.minX, 400, 1600, 20, function (v) { ED.draft.bounds.minX = -v / 2; ED.draft.bounds.maxX = v / 2; rebuildBox(ED.draft); edLiveRefresh(); });
     row(p, 'length', ED.draft.bounds.maxZ - ED.draft.bounds.minZ, 800, 3200, 20, function (v) { ED.draft.bounds.maxZ = ED.draft.bounds.minZ + v; rebuildBox(ED.draft); edLiveRefresh(); });
     row(p, 'border wall height', ED.draft.wallH || 52, 30, 240, 4, function (v) { ED.draft.wallH = v; rebuildBox(ED.draft); edLiveRefresh(); });
-    var rwl = elt('button', 'display:block;width:100%;margin:3px 0 6px;padding:6px;border:2px solid #160d06;border-radius:7px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '⬆ Taller walls (whole level)', p);
+    var rwl = elt('button', 'display:block;width:100%;margin:3px 0 6px;padding:6px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '⬆ Taller walls (whole level)', p);
     rwl.onclick = function () { edSnapshot(); var nh = Math.min(240, Math.max(120, (ED.draft.wallH || 52) + 50)); ED.draft.wallH = nh; ED.draft.walls.forEach(function (w) { if (!w._bnd) w.h = Math.max(w.h || 52, nh); }); rebuildBox(ED.draft); edLiveRefresh(); edPanel(); };
     var sf = null, tf = ED.draft.terrainFeatures; for (var si = 0; si < tf.length; si++) if (tf[si].kind === 'slope') sf = tf[si]; if (!sf) { sf = { kind: 'slope', perX: 0, perZ: 0 }; tf.push(sf); }
     row(p, 'tilt L→R', sf.perX || 0, -0.2, 0.2, 0.01, function (v) { sf.perX = v; });
     row(p, 'tilt tee→cup', sf.perZ || 0, -0.15, 0.15, 0.01, function (v) { sf.perZ = v; });
-    var bt = elt('button', 'display:block;width:100%;margin:5px 0;padding:6px;border:2px solid #160d06;border-radius:7px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', ED.draft.noBox ? '▣ walls: CUSTOM shape' : '▢ walls: rectangle box', p); bt.onclick = function () { ED.draft.noBox = !ED.draft.noBox; rebuildBox(ED.draft); edPanel(); };
+    var bt = elt('button', 'display:block;width:100%;margin:5px 0;padding:6px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', ED.draft.noBox ? '▣ walls: CUSTOM shape' : '▢ walls: rectangle box', p); bt.onclick = function () { ED.draft.noBox = !ED.draft.noBox; rebuildBox(ED.draft); edPanel(); };
     if (ED.draft.noBox) elt('div', 'font-size:9px;opacity:.7;margin-bottom:4px;', 'use the Wall or Shape tool to draw your outline', p);
     elt('div', 'font:700 12px Georgia;color:#f5c542;margin:12px 0 2px;', 'TERRAIN & PHYSICS', p);
     if (!ED.draft.phys) ED.draft.phys = themePhys(ED.draft.theme || 'grass');
     var ph = ED.draft.phys;
     var tw = elt('div', 'margin:3px 0 6px;', null, p); elt('div', 'font-size:10px;opacity:.8;', 'terrain theme (sets all physics)', tw);
-    var tsel = elt('select', 'width:100%;padding:5px;border-radius:5px;background:#1a1109;color:#f5efdc;border:1px solid #5a3a1a;font:12px Georgia;', null, tw);
+    var tsel = elt('select', 'width:100%;padding:5px;background:#1a1109;color:#f5efdc;font:12px Georgia;', null, tw);
     Object.keys(THEMES).forEach(function (tk) { var o = document.createElement('option'); o.value = tk; o.textContent = THEMES[tk].name; if ((ED.draft.theme || 'grass') === tk) o.selected = true; tsel.appendChild(o); });
     tsel.onchange = function () { edSnapshot(); ED.draft.theme = tsel.value; ED.draft.phys = themePhys(tsel.value); ED.draft.turf = THEMES[tsel.value].turf; edPanel(); };
     row(p, 'gravity', ph.g, 400, 3500, 50, function (v) { ph.g = v; });
@@ -2861,27 +2861,27 @@
   }
   function edLevels() {
     var m = ED.dom.modal; if (!m) return; m.innerHTML = ''; m.style.display = 'flex'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; };
-    var box = elt('div', 'width:360px;max-height:80%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:14px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
+    var box = elt('div', 'width:360px;max-height:80%;overflow:auto;background:transparent;border:none;padding:14px;', null, m);
     elt('div', 'font:800 16px Georgia;color:#f5c542;margin-bottom:8px;', '📚 MY LEVELS', box);
     var sr = elt('div', 'display:flex;gap:6px;margin-bottom:12px;', null, box);
-    var nin = elt('input', 'flex:1;padding:7px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;', null, sr); nin.value = ED.draft.name;
-    var sb = elt('button', 'padding:7px 12px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:700 12px Georgia;cursor:pointer;', '💾 Save', sr);
+    var nin = elt('input', 'flex:1;padding:7px;background:#1a1109;color:#f5efdc;font:13px Georgia;', null, sr); nin.value = ED.draft.name;
+    var sb = elt('button', 'padding:7px 12px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:700 12px Georgia;cursor:pointer;', '💾 Save', sr);
     sb.onclick = function () { var nm = (nin.value || '').trim(); if (!nm) return; ED.draft.name = nm; var s = edStore(); s[nm] = edSerialize(); try { localStorage.setItem('pg_levels', JSON.stringify(s)); } catch (e) { alert('Save failed (storage full?): ' + e.message); } edLevels(); edPanel(); };
     var s = edStore(), names = Object.keys(s).sort();
     if (!names.length) elt('div', 'opacity:.6;font-size:12px;margin:8px 0;', 'No saved levels yet — build one and hit Save.', box);
     names.forEach(function (n) {
       var lv = s[n] || {}, cnt = ['bumpers', 'boosters', 'flippers', 'windmills', 'loops', 'lasers', 'walls'].reduce(function (a, kk) { return a + ((lv[kk] || []).length); }, 0);
-      var rd = elt('div', 'display:flex;gap:5px;align-items:center;padding:7px;margin:5px 0;background:rgba(245,197,66,.08);border:1px solid #5a3a1a;border-radius:8px;', null, box);
+      var rd = elt('div', 'display:flex;gap:5px;align-items:center;padding:7px;margin:5px 0;background:rgba(245,197,66,.08);', null, box);
       elt('div', 'flex:1;font:700 13px Georgia;color:#f5efdc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', n, rd);
       elt('div', 'font-size:10px;opacity:.55;margin-right:3px;', cnt + ' items', rd);
-      var lb = elt('button', 'padding:6px 10px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', 'Load', rd);
+      var lb = elt('button', 'padding:6px 10px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', 'Load', rd);
       lb.onclick = function () { edSnapshot(); ED.draft = edDeserialize(s[n]); ED.sel = null; m.style.display = 'none'; edPanel(); };
-      var rb = elt('button', 'padding:6px 8px;border:2px solid #160d06;border-radius:6px;background:#3a2614;color:#cba;font:700 11px Georgia;cursor:pointer;', '✎', rd);
-      rb.onclick = function () { edModal('✎ RENAME', function (bx, close) { var ri = elt('input', 'width:100%;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, bx); ri.value = n; var ok = elt('button', 'width:100%;padding:10px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 12px Georgia;cursor:pointer;', 'Rename', bx); ok.onclick = function () { var nn = (ri.value || '').trim(); if (!nn || nn === n) { close(); return; } var st = edStore(); st[nn] = st[n]; st[nn].name = nn; delete st[n]; localStorage.setItem('pg_levels', JSON.stringify(st)); close(); edLevels(); edToast('Renamed ✓'); }; setTimeout(function () { ri.focus(); ri.select(); }, 40); }); };
-      var xb = elt('button', 'padding:6px 8px;border:2px solid #160d06;border-radius:6px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕', rd);
+      var rb = elt('button', 'padding:6px 8px;background:#3a2614;color:#cba;font:700 11px Georgia;cursor:pointer;', '✎', rd);
+      rb.onclick = function () { edModal('✎ RENAME', function (bx, close) { var ri = elt('input', 'width:100%;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, bx); ri.value = n; var ok = elt('button', 'width:100%;padding:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 12px Georgia;cursor:pointer;', 'Rename', bx); ok.onclick = function () { var nn = (ri.value || '').trim(); if (!nn || nn === n) { close(); return; } var st = edStore(); st[nn] = st[n]; st[nn].name = nn; delete st[n]; localStorage.setItem('pg_levels', JSON.stringify(st)); close(); edLevels(); edToast('Renamed ✓'); }; setTimeout(function () { ri.focus(); ri.select(); }, 40); }); };
+      var xb = elt('button', 'padding:6px 8px;background:linear-gradient(180deg,#7a2618,#451008);color:#ffd;font:700 11px Georgia;cursor:pointer;', '✕', rd);
       xb.onclick = function () { edConfirm('Delete level "' + n + '"? This cannot be undone.', function () { var st = edStore(); delete st[n]; localStorage.setItem('pg_levels', JSON.stringify(st)); edLevels(); edToast('Deleted'); }); };
     });
-    var cl = elt('button', 'margin-top:10px;width:100%;padding:9px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Close', box); cl.onclick = function () { m.style.display = 'none'; };
+    var cl = elt('button', 'margin-top:10px;width:100%;padding:9px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Close', box); cl.onclick = function () { m.style.display = 'none'; };
   }
   function chaikin(pts, iters) { for (var k = 0; k < iters; k++) { var out = [pts[0]]; for (var i = 0; i < pts.length - 1; i++) { var p = pts[i], q = pts[i + 1]; out.push({ x: p.x * .75 + q.x * .25, z: p.z * .75 + q.z * .25 }); out.push({ x: p.x * .25 + q.x * .75, z: p.z * .25 + q.z * .75 }); } out.push(pts[pts.length - 1]); pts = out; } return pts; }
   function chaikinClosed(pts, iters) { for (var k = 0; k < iters; k++) { var out = []; for (var i = 0; i < pts.length; i++) { var p = pts[i], q = pts[(i + 1) % pts.length]; out.push({ x: p.x * .75 + q.x * .25, z: p.z * .75 + q.z * .25 }); out.push({ x: p.x * .25 + q.x * .75, z: p.z * .25 + q.z * .75 }); } pts = out; } return pts; }
@@ -2931,13 +2931,13 @@
   }
   function edShapes() {
     var m = ED.dom.modal; if (!m) return; m.innerHTML = ''; m.style.display = 'flex'; m.onclick = function (e) { if (e.target === m) m.style.display = 'none'; };
-    var box = elt('div', 'width:300px;background:rgba(20,13,6,.42);border:none;border-radius:12px;padding:14px;box-shadow:0 8px 40px rgba(0,0,0,.6);', null, m);
+    var box = elt('div', 'width:300px;background:transparent;border:none;padding:14px;', null, m);
     elt('div', 'font:800 16px Georgia;color:#f5c542;margin-bottom:3px;', '⬡ HOLE SHAPES', box);
     elt('div', 'font-size:10px;opacity:.7;margin-bottom:10px;line-height:1.35;', 'Replaces the layout with a preset course shape. Undo (Ctrl+Z) reverts. You can keep adding items after.', box);
     [['s', 'S-Curve  〰'], ['z', 'Z-Bend  ⟋'], ['w', 'W-Zigzag  ⋀⋁'], ['circle', 'Round Arena  ◯'], ['twotier', 'Two-Tier Drop  ⭳'], ['threetier', 'Three-Tier Drop  ⛰']].forEach(function (sh) {
-      var b = elt('button', 'display:block;width:100%;margin:5px 0;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 13px Georgia;cursor:pointer;text-align:left;', sh[1], box); b.onclick = function () { applyShape(sh[0]); };
+      var b = elt('button', 'display:block;width:100%;margin:5px 0;padding:11px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 13px Georgia;cursor:pointer;text-align:left;', sh[1], box); b.onclick = function () { applyShape(sh[0]); };
     });
-    var cl = elt('button', 'margin-top:8px;width:100%;padding:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Cancel', box); cl.onclick = function () { m.style.display = 'none'; };
+    var cl = elt('button', 'margin-top:8px;width:100%;padding:8px;background:#3a2614;color:#f5c542;font:700 12px Georgia;cursor:pointer;', 'Cancel', box); cl.onclick = function () { m.style.display = 'none'; };
   }
   function edSerialize() { var d = ED.draft; return { name: d.name, par: d.par, bounds: d.bounds, tee: d.tee, cup: d.cup, walls: d.walls.filter(function (w) { return !w._bnd; }).map(function (w) { return { ax: w.ax, az: w.az, bx: w.bx, bz: w.bz, e: w.e, h: w.h }; }), bumpers: d.bumpers.map(function (b) { return { x: b.x, z: b.z, r: b.r, kick: b.kick }; }), boosters: d.boosters.map(function (b) { return { x: b.x, z: b.z, ang: Math.atan2(b.dz, b.dx), r: b.r, spd: b.spd }; }), flippers: d.flippers.map(function (f) { return { side: f.side, px: f.px, pz: f.pz, len: f.len, rot: f.rot, speed: f.speed, power: f.power }; }), windmills: d.windmills.map(function (w) { return { x: w.x, z: w.z, r: w.r, n: w.n, speed: w.speed }; }), lasers: d.lasers.map(function (l) { return { ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase }; }), gates: (d.gates || []).map(function (g) { return { ax: g.ax, az: g.az, bx: g.bx, bz: g.bz, barFrac: g.barFrac, speed: g.speed, h: g.h }; }), conveyors: (d.conveyors || []).map(function (cv) { return { x: cv.x, z: cv.z, w: cv.w, len: cv.len, ang: cv.ang, force: cv.force }; }), pendulums: (d.pendulums || []).map(function (pd) { return { x: pd.x, z: pd.z, len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }; }), turntables: (d.turntables || []).map(function (tt) { return { x: tt.x, z: tt.z, r: tt.r, spin: tt.spin }; }), loops: d.loops.map(function (l) { return { x: l.x, z: l.z, r: l.r, ang: l.ang }; }), warps: d.warps.map(function (w) { return { x: w.x, z: w.z, ex: w.ex, ez: w.ez, r: w.r, tube: !!w.tube }; }), portals: d.portals.map(function (w) { return { x: w.x, z: w.z, exits: (w.exits || [{ x: w.ex, z: w.ez }]).map(function (e) { return { x: e.x, z: e.z }; }), r: w.r }; }), firerings: d.firerings.map(function (f) { return { x: f.x, z: f.z, r: f.r, h: f.h, points: f.points }; }), enemies: d.enemies.map(function (e) { return { x: e.x, z: e.z, ex: e.ex, ez: e.ez, r: e.r, speed: e.speed, type: e.type, behavior: e.behavior, effect: e.effect }; }), coins: d.coins.map(function (c) { return { x: c.x, z: c.z, value: c.value }; }), powerups: (d.powerups || []).map(function (p) { return { x: p.x, z: p.z, kind: p.kind }; }), terrain: d.terrainFeatures, noBox: d.noBox, wallH: d.wallH || 52, theme: d.theme || 'grass', phys: d.phys || themePhys(d.theme || 'grass'), turf: d.turf, shape: (Array.isArray(d.shape) ? d.shape.map(function (p) { return { x: p.x, z: p.z }; }) : null), multiball: d.multiball ? { x: d.multiball.x, z: d.multiball.z, r: d.multiball.r } : null }; }
   function edDeserialize(o) { var d = builder(); d.name = o.name || 'LEVEL'; d.par = o.par || 3; d.bounds = o.bounds; d.tee = o.tee; d.cup = o.cup; d.noBox = !!o.noBox; d.wallH = o.wallH || 52; d.theme = o.theme || 'grass'; d.phys = o.phys || themePhys(d.theme); d.turf = o.turf != null ? o.turf : (THEMES[d.theme] || THEMES.grass).turf; rebuildBox(d); (o.loops || []).forEach(function (l) { d.loopde(l.x, l.z, l.r, l.ang); }); (o.warps || []).forEach(function (w) { if (w.tube) d.tube(w.x, w.z, w.ex, w.ez, w.r); else d.warp(w.x, w.z, w.ex, w.ez, w.r); }); (o.portals || []).forEach(function (w) { d.portal(w.x, w.z, w.exits || (w.ex != null ? [{ x: w.ex, z: w.ez }] : null), w.r); }); (o.firerings || []).forEach(function (f) { d.firering(f.x, f.z, f.r, f.h, f.points); }); (o.enemies || []).forEach(function (e) { d.enemy(e.x, e.z, e.ex, e.ez, e.r, e.speed, e.type, e.behavior, e.effect); }); (o.coins || []).forEach(function (c) { d.coin(c.x, c.z, c.value); }); (o.powerups || []).forEach(function (p) { d.powerup(p.x, p.z, p.kind); }); (o.walls || []).forEach(function (w) { d.wall(w.ax, w.az, w.bx, w.bz, { e: w.e, h: w.h }); }); (o.bumpers || []).forEach(function (b) { d.bumper(b.x, b.z, b.r); if (b.kick != null) last(d.bumpers).kick = b.kick; }); (o.boosters || []).forEach(function (b) { d.booster(b.x, b.z, b.ang, b.r, b.spd); }); (o.flippers || []).forEach(function (f) { d.flip(f.side, f.px, f.pz, f.len, f.rot, f.speed); if (f.power != null) last(d.flippers).power = f.power; }); (o.windmills || []).forEach(function (w) { d.windmill(w.x, w.z, w.r, w.n, w.speed); }); (o.lasers || []).forEach(function (l) { d.lasers.push({ ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase, on: false }); }); (o.gates || []).forEach(function (g) { d.gate(g.ax, g.az, g.bx, g.bz, { barFrac: g.barFrac, speed: g.speed, h: g.h }); }); (o.conveyors || []).forEach(function (cv) { d.conveyor(cv.x, cv.z, cv.w, cv.len, cv.ang, cv.force); }); (o.pendulums || []).forEach(function (pd) { d.pendulum(pd.x, pd.z, { len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }); }); (o.turntables || []).forEach(function (tt) { d.turntable(tt.x, tt.z, tt.r, tt.spin); }); (o.terrain || []).forEach(function (t) { d.terrainFeatures.push(t); }); if (o.multiball) d.mball(o.multiball.x, o.multiball.z, o.multiball.r); if (Array.isArray(o.shape) && o.shape.length >= 3) d.shape = o.shape.map(function (p) { return { x: p.x, z: p.z }; }); return d; }
@@ -2977,19 +2977,19 @@
   function edSave() {
     edModal('💾 SAVE LEVEL', function (box, close) {
       elt('div', 'font-size:11px;opacity:.8;margin-bottom:4px;', 'Level name', box);
-      var nin = elt('input', 'width:100%;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, box); nin.value = ED.draft.name || 'MY LEVEL';
-      var sb = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '💾 Save to my levels', box);
+      var nin = elt('input', 'width:100%;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:10px;', null, box); nin.value = ED.draft.name || 'MY LEVEL';
+      var sb = elt('button', 'width:100%;padding:11px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '💾 Save to my levels', box);
       sb.onclick = function () { var nm = (nin.value || '').trim(); if (!nm) { edToast('Enter a name', false); return; } ED.draft.name = nm; var s = edStore(); s[nm] = edSerialize(); try { localStorage.setItem('pg_levels', JSON.stringify(s)); close(); edToast('Saved "' + nm + '" ✓'); edPanel(); } catch (e) { edToast('Save failed: storage full', false); } };
       // ---- OWNER: publish this edited layout as the live daily (custom hole_json) ----
       if (St.ownerMode && NET()) {
         elt('div', 'border-top:1px solid #5a3a1a;margin:13px 0 9px;', null, box);
         elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;', '🤠 OWNER · set the daily for everyone', box);
         var dRow = elt('div', 'display:flex;gap:6px;margin-bottom:7px;', null, box);
-        var dayIn = elt('input', 'flex:1;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;', null, dRow); dayIn.type = 'date'; dayIn.value = NET().todayKey();
-        var passIn = elt('input', 'width:100%;padding:9px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:7px;', null, box); passIn.type = 'password'; passIn.placeholder = 'Owner passcode';
+        var dayIn = elt('input', 'flex:1;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;', null, dRow); dayIn.type = 'date'; dayIn.value = NET().todayKey();
+        var passIn = elt('input', 'width:100%;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;margin-bottom:7px;', null, box); passIn.type = 'password'; passIn.placeholder = 'Owner passcode';
         try { passIn.value = sessionStorage.getItem('pg_owner_pass') || ''; } catch (e) { }
-        var pubB = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#1d9bf0,#0d6fb8);color:#fff;font:800 13px Georgia;cursor:pointer;', '📤 Publish this edited hole as the daily', box);
-        var bankB = elt('button', 'width:100%;margin-top:6px;padding:9px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#b8862a,#6a4a10);color:#fff;font:700 12px Georgia;cursor:pointer;', '🏦 Bank this hole for later', box);
+        var pubB = elt('button', 'width:100%;padding:11px;background:linear-gradient(180deg,#1d9bf0,#0d6fb8);color:#fff;font:800 13px Georgia;cursor:pointer;', '📤 Publish this edited hole as the daily', box);
+        var bankB = elt('button', 'width:100%;margin-top:6px;padding:9px;background:linear-gradient(180deg,#b8862a,#6a4a10);color:#fff;font:700 12px Georgia;cursor:pointer;', '🏦 Bank this hole for later', box);
         var ownerDo = function (fn, okMsg) {
           var pass = (passIn.value || '').trim(); if (!pass) { edToast('Enter the owner passcode', false); return; }
           try { sessionStorage.setItem('pg_owner_pass', pass); } catch (e) { }
@@ -3013,9 +3013,9 @@
         var oi = ED.draft._ov, bn = (HOLES[oi] && HOLES[oi]().name) || ('#' + (oi + 1));
         elt('div', 'border-top:1px solid #5a3a1a;margin:13px 0 9px;', null, box);
         elt('div', 'font-size:11px;opacity:.85;margin-bottom:6px;line-height:1.4;', 'This is campaign Level #' + (oi + 1) + ' · ' + bn + '. Save your edits straight back into it — it\'ll play this version every time, even after a reload:', box);
-        var ob = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#b8862a,#6a4a10);color:#fff;font:800 13px Georgia;cursor:pointer;', '⭳ Save into Level #' + (oi + 1) + ' (campaign)', box);
+        var ob = elt('button', 'width:100%;padding:11px;background:linear-gradient(180deg,#b8862a,#6a4a10);color:#fff;font:800 13px Georgia;cursor:pointer;', '⭳ Save into Level #' + (oi + 1) + ' (campaign)', box);
         ob.onclick = function () { if (saveOver(oi, edSerialize())) { close(); edToast('Saved into Level #' + (oi + 1) + ' ✓ — plays every time'); } else edToast('Save failed: storage full', false); };
-        if (hasOver(oi)) { var rvb = elt('button', 'width:100%;margin-top:6px;padding:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '↺ Revert Level #' + (oi + 1) + ' to original', box); rvb.onclick = function () { edConfirm('Revert Level #' + (oi + 1) + ' to the original built-in? Your saved edits for it are removed.', function () { clearOver(oi); close(); edToast('Reverted to original'); }); }; }
+        if (hasOver(oi)) { var rvb = elt('button', 'width:100%;margin-top:6px;padding:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:700 11px Georgia;cursor:pointer;', '↺ Revert Level #' + (oi + 1) + ' to original', box); rvb.onclick = function () { edConfirm('Revert Level #' + (oi + 1) + ' to the original built-in? Your saved edits for it are removed.', function () { clearOver(oi); close(); edToast('Reverted to original'); }); }; }
       }
       setTimeout(function () { nin.focus(); nin.select(); }, 40);
     });
@@ -3025,11 +3025,11 @@
     var json = JSON.stringify(edSerialize(), null, 2);
     edModal('⇪ EXPORT LEVEL', function (box, close) {
       elt('div', 'font-size:11px;opacity:.8;margin-bottom:4px;', 'Copy this JSON, or download it as a .json file:', box);
-      var ta = elt('textarea', 'width:100%;height:150px;padding:8px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#cfe;font:11px monospace;resize:vertical;', null, box); ta.value = json; ta.readOnly = true;
+      var ta = elt('textarea', 'width:100%;height:150px;padding:8px;background:#1a1109;color:#cfe;font:11px monospace;resize:vertical;', null, box); ta.value = json; ta.readOnly = true;
       var rb = elt('div', 'display:flex;gap:6px;margin-top:8px;', null, box);
-      var cp = elt('button', 'flex:1;padding:10px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a6a8a,#1f3850);color:#dff;font:800 12px Georgia;cursor:pointer;', '⧉ Copy', rb);
+      var cp = elt('button', 'flex:1;padding:10px;background:linear-gradient(180deg,#3a6a8a,#1f3850);color:#dff;font:800 12px Georgia;cursor:pointer;', '⧉ Copy', rb);
       cp.onclick = function () { ta.select(); try { document.execCommand('copy'); } catch (e) { } try { if (navigator.clipboard) navigator.clipboard.writeText(json); } catch (e) { } edToast('Copied ✓'); };
-      var dl = elt('button', 'flex:1;padding:10px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 12px Georgia;cursor:pointer;', '⇩ Download .json', rb);
+      var dl = elt('button', 'flex:1;padding:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 12px Georgia;cursor:pointer;', '⇩ Download .json', rb);
       dl.onclick = function () { try { var blob = new Blob([json], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = (ED.draft.name || 'level').replace(/[^a-z0-9_-]+/gi, '_') + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000); edToast('Downloaded ✓'); } catch (e) { edToast('Download blocked — use Copy', false); } };
       setTimeout(function () { ta.select(); }, 50);
     });
@@ -3037,10 +3037,10 @@
   function edImport() {
     edModal('⇩ IMPORT LEVEL', function (box, close) {
       elt('div', 'font-size:11px;opacity:.8;margin-bottom:4px;', 'Paste level JSON below, or choose a .json file:', box);
-      var ta = elt('textarea', 'width:100%;height:130px;padding:8px;border-radius:6px;border:1px solid #5a3a1a;background:#1a1109;color:#cfe;font:11px monospace;resize:vertical;', null, box); ta.placeholder = '{ … level json … }';
+      var ta = elt('textarea', 'width:100%;height:130px;padding:8px;background:#1a1109;color:#cfe;font:11px monospace;resize:vertical;', null, box); ta.placeholder = '{ … level json … }';
       var fi = elt('input', 'margin:8px 0;color:#f5efdc;font:11px Georgia;width:100%;', null, box); fi.type = 'file'; fi.accept = '.json,application/json';
       fi.onchange = function () { var f = fi.files && fi.files[0]; if (!f) return; var rd = new FileReader(); rd.onload = function () { ta.value = rd.result; }; rd.readAsText(f); };
-      var lb = elt('button', 'width:100%;padding:11px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '⇩ Load this level', box);
+      var lb = elt('button', 'width:100%;padding:11px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 13px Georgia;cursor:pointer;', '⇩ Load this level', box);
       lb.onclick = function () { var t = (ta.value || '').trim(); if (!t) { edToast('Paste JSON or pick a file', false); return; } try { var o = JSON.parse(t); edSnapshot(); ED.draft = edDeserialize(o); ED.sel = null; close(); edPanel(); edToast('Imported "' + (ED.draft.name || 'level') + '" ✓'); } catch (e) { edToast('Bad JSON — check the text', false); } };
     });
   }
@@ -3065,7 +3065,7 @@
   function audioUI() {
     var dock = document.getElementById('snd'); if (!dock) return;
     var mb = document.getElementById('mute');
-    var panel = elt('div', 'position:absolute;right:0;bottom:48px;width:210px;padding:12px 13px;border:2px solid #160d06;border-radius:12px;background:linear-gradient(180deg,#2a1c10,#160d06);box-shadow:0 7px 24px rgba(0,0,0,.6);color:#f3eedd;font:12px Georgia;display:none;', null, dock);
+    var panel = elt('div', 'position:absolute;right:0;bottom:48px;width:210px;padding:12px 13px;background:linear-gradient(180deg,#2a1c10,#160d06);color:#f3eedd;font:12px Georgia;display:none;', null, dock);
     AU.panel = panel;
     elt('div', 'font:900 13px Wantedo,Georgia;color:#f5c542;letter-spacing:1px;margin-bottom:10px;text-align:center;', '♪ AUDIO', panel);
     function row(label, key) {
@@ -3080,7 +3080,7 @@
     }
     row('Master', 'master'); row('Music', 'music'); row('SFX', 'sfx');
     var btnrow = elt('div', 'display:flex;gap:6px;margin-top:4px;', null, panel);
-    var BCSS = 'flex:1;padding:7px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:800 11px Georgia;cursor:pointer;';
+    var BCSS = 'flex:1;padding:7px;background:linear-gradient(180deg,#6a4628,#3a2614);color:#f5c542;font:800 11px Georgia;cursor:pointer;';
     var mt = elt('button', BCSS, AU.on ? '🔊 ON' : '🔇 OFF', btnrow);
     mt.addEventListener('click', function (e) { e.stopPropagation(); AU.on = !AU.on; mt.textContent = AU.on ? '🔊 ON' : '🔇 OFF'; if (AU.on) { if (!AU.ctx) audioInit(); musicStart(); } audioApply(); audioSavePrefs(); if (mb) mb.textContent = AU.on ? '🔊' : '🔇'; });
     var nx = elt('button', BCSS, '⏭ Track', btnrow);
@@ -3231,10 +3231,10 @@
   function showHowTo() {
     try { if (localStorage.getItem('pg_seen_howto')) return; } catch (e) { }
     if (document.getElementById('pg-howto') || St.dailyPractice || St.archive) return;
-    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:rgba(20,13,6,.42);border:none;border-radius:14px;padding:18px;box-shadow:0 12px 48px rgba(0,0,0,.7);text-align:center;', null, document.body); ov.id = 'pg-howto';
+    var ov = elt('div', 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9000;width:min(380px,90vw);background:transparent;border:none;padding:18px;text-align:center;', null, document.body); ov.id = 'pg-howto';
     elt('div', 'font:900 18px Wantedo,Georgia;color:#f5c542;margin-bottom:8px;', '🤠 HOW TO PLAY', ov);
     elt('div', 'font:600 14px Georgia;color:#f3eedd;line-height:1.55;margin-bottom:12px;', 'Pull BACK from the ball and let go — like a slingshot. Aim any direction; pull farther for more power. Sink today’s hole in as few shots as you can!', ov);
-    var b = elt('button', 'padding:11px 26px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY', ov);
+    var b = elt('button', 'padding:11px 26px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 14px Wantedo,Georgia;cursor:pointer;', 'GOT IT — LET’S PLAY', ov);
     b.onclick = function () { dismissHowTo(); };
   }
   function dismissHowTo() { try { localStorage.setItem('pg_seen_howto', '1'); } catch (e) { } var h = document.getElementById('pg-howto'); if (h) h.remove(); }
@@ -3271,7 +3271,7 @@
   }
   function legacyCopy(str) { try { var ta = document.createElement('textarea'); ta.value = str; ta.style.cssText = 'position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch (e) { } }
   function socialToast(msg) {
-    var t = elt('div', 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:9999;padding:11px 20px;border:2px solid #160d06;border-radius:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;box-shadow:0 6px 24px rgba(0,0,0,.55);pointer-events:none;opacity:0;transition:opacity .2s;', msg, document.body);
+    var t = elt('div', 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:9999;padding:11px 20px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;pointer-events:none;opacity:0;transition:opacity .2s;', msg, document.body);
     requestAnimationFrame(function () { t.style.opacity = '1'; }); setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 300); }, 1800);
   }
   // varied CTA so the shared feed looks organic, not templated — stable per player+day, different across players
@@ -3385,13 +3385,13 @@
     var old = document.getElementById('pg-daily'); if (old) old.remove();
     var S = shareStrings(rec);
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-daily';
-    var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var box = elt('div', 'width:420px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:20px;text-align:center;', null, ov); box.className = 'edscroll';
     // ✕ dismiss — close the card and just play/look around (it auto-pops on revisit; let people get out of it)
-    var closeX = elt('div', 'position:fixed;top:12px;right:16px;z-index:59;width:40px;height:40px;line-height:38px;text-align:center;font:900 24px Georgia;color:#f5efdc;cursor:pointer;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid rgba(245,197,66,.6);', '✕', ov);
+    var closeX = elt('div', 'position:fixed;top:12px;right:16px;z-index:59;width:40px;height:40px;line-height:38px;text-align:center;font:900 24px Georgia;color:#f5efdc;cursor:pointer;background:rgba(0,0,0,.55);', '✕', ov);
     closeX.title = 'Close — practice this hole'; closeX.onclick = function () { ov.remove(); if ((St.state === 'sunk' || St.state === 'done') && St.hi >= 0) { try { loadHole(St.hi); } catch (e) { } } };
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '⭐ GUNSLINGERS DAILY #' + S.n, box);
     elt('div', 'font:900 26px Wantedo,Georgia;color:#f5c542;margin:2px 0 4px;', S.name, box);
-    if (St.streak > 1) elt('div', 'display:inline-block;font:800 13px Georgia;color:#ff9a3a;background:rgba(255,138,42,.14);border:1px solid rgba(255,138,42,.5);border-radius:20px;padding:3px 12px;margin-bottom:6px;', '🔥 ' + St.streak + '-day streak', box);
+    if (St.streak > 1) elt('div', 'display:inline-block;font:800 13px Georgia;color:#ff9a3a;background:rgba(255,138,42,.14);padding:3px 12px;margin-bottom:6px;', '🔥 ' + St.streak + '-day streak', box);
     var sc = S.over < 0 ? '#86d85f' : S.over === 0 ? '#f5efdc' : '#df8a6a';
     elt('div', 'font:900 46px Wantedo,Georgia;color:' + sc + ';line-height:1.05;', S.strokes + ' strokes', box);
     elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:8px;', S.verdict + '  (' + S.overStr + ')', box);
@@ -3402,13 +3402,13 @@
       var won = S.strokes < St.ghostStrokes, tied = S.strokes === St.ghostStrokes;
       var hcol = won ? '#86d85f' : tied ? '#f5c542' : '#df8a6a';
       var hmsg = won ? '⚔️ You beat ' + St.ghostName + '!' : tied ? '🤝 Dead heat with ' + St.ghostName : '👻 ' + St.ghostName + ' won this round';
-      var hwrap = elt('div', 'margin:2px auto 12px;padding:9px 12px;border:2px solid ' + hcol + ';border-radius:10px;background:rgba(0,0,0,.25);max-width:320px;', null, box);
+      var hwrap = elt('div', 'margin:2px auto 12px;padding:9px 12px;background:rgba(0,0,0,.25);max-width:320px;', null, box);
       elt('div', 'font:900 15px Wantedo,Georgia;color:' + hcol + ';', hmsg, hwrap);
       elt('div', 'font:700 12px Georgia;color:#d8c4a2;margin-top:2px;', 'You ' + S.strokes + '  ·  ' + St.ghostName + ' ' + St.ghostStrokes + (won ? '  — rub it in below 👇' : tied ? '' : '  — rematch & win it back'), hwrap);
     }
     // ---- shared difficulty read ----
     var diff = difficultyLine(St.daySummary);
-    if (diff) elt('div', 'font:800 13px Georgia;color:#f5c542;margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);border-radius:8px;max-width:340px;', diff, box);
+    if (diff) elt('div', 'font:800 13px Georgia;color:#f5c542;margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);max-width:340px;', diff, box);
     // ---- all-time course record on this hole layout (St.courseRecord = the record BEFORE this run) ----
     if (NET() && St.hi >= 0) {
       var cr = St.courseRecord, crMsg = '', crCol = '#f5c542';
@@ -3418,7 +3418,7 @@
         else if (S.strokes === cr.best) { crMsg = '⚡ You TIED the course record (' + cr.best + ' · ' + cr.name + ')'; }
         else { crMsg = '⚡ Course record: ' + cr.best + ' by ' + cr.name; }
       } else if (cr) { crMsg = '⚡ Course record: ' + cr.best + ' by ' + cr.name; }
-      if (crMsg) elt('div', 'font:800 13px Georgia;color:' + crCol + ';margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);border-radius:8px;max-width:340px;', crMsg, box);
+      if (crMsg) elt('div', 'font:800 13px Georgia;color:' + crCol + ';margin:2px auto 10px;padding:7px 12px;background:rgba(245,197,66,.08);max-width:340px;', crMsg, box);
     }
     // ---- post score + live leaderboard ----
     var net = NET();
@@ -3430,11 +3430,11 @@
       else if (St.dailyPractice) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;line-height:1.4;', '🎯 Practice round — you already played today’s daily. Scores count once a day; come back tomorrow for a fresh hole!', lbWrap);
       else if (firstTime) elt('div', 'font:800 12px Georgia;color:#f5c542;margin-bottom:6px;', '🤠 You’re on the board! ✏️ Change your name below + tap POST to claim it.', lbWrap);
       var postRow = elt('div', 'display:flex;gap:6px;', null, lbWrap);
-      var nameIn = elt('input', 'flex:1;padding:10px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
+      var nameIn = elt('input', 'flex:1;padding:10px;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
       nameIn.placeholder = 'Your name'; nameIn.maxLength = 24; nameIn.value = playerName();
       nameIn.onchange = function () { var v = (nameIn.value || '').trim(); if (v) { setPlayerName(v); if (!St.dailyPractice && !St.archive) { postBtn.disabled = false; postBtn.textContent = '🏆 POST as ' + v.slice(0, 12); postBtn.style.background = 'linear-gradient(180deg,#3a8a30,#1f5018)'; } } };   // change your name → re-post under it
       if (firstTime) { nameIn.style.borderColor = '#f5c542'; nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.3)'; nameIn.onfocus = function () { nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.6)'; }; }
-      var postBtn = elt('button', 'padding:10px 14px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '🏆 POST', postRow);
+      var postBtn = elt('button', 'padding:10px 14px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '🏆 POST', postRow);
       if (St.dailyPractice || St.archive) { postRow.style.display = 'none'; }   // no posting on practice/archive runs
       var lbBox = elt('div', 'margin-top:10px;', null, lbWrap);
       function renderLB() {
@@ -3454,7 +3454,7 @@
           var myRow = null;
           rows.forEach(function (r, i) {
             var mine = me && r.name === me;
-            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;border-radius:6px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, rowsBox);
+            var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);' : 'background:rgba(245,197,66,.06);'), null, rowsBox);
             if (mine) myRow = row;
             elt('div', 'width:26px;color:#f5c542;font-weight:700;', (i + 1) + '.', row);
             elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
@@ -3475,7 +3475,7 @@
       postBtn.onclick = doPost;
       if (St.dailyPractice || St.archive) { renderLB(); } else { doPost(); }   // practice/archive never post; EVERY real finish auto-posts (we always have a name now)
       // ---- TEAMS: form a posse, battle other teams on the daily ----
-      var teamWrap = elt('div', 'margin:6px 0 12px;padding:10px;background:rgba(245,197,66,.05);border:1px solid rgba(245,197,66,.25);border-radius:10px;text-align:left;', null, lbWrap);
+      var teamWrap = elt('div', 'margin:6px 0 12px;padding:10px;background:rgba(245,197,66,.05);text-align:left;', null, lbWrap);
       function myTeamName() { return (playerName() || (nameIn.value || '').trim() || '').slice(0, 24); }
       function renderTeams() {
         teamWrap.textContent = '';
@@ -3486,7 +3486,7 @@
           var codeRow = elt('div', 'display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:8px;', null, teamWrap);
           elt('div', 'font:700 12px Georgia;color:#d8c4a2;', 'Code', codeRow);
           elt('div', 'font:900 14px Wantedo,Georgia;color:#f5c542;letter-spacing:2px;', team.code, codeRow);
-          var cpy = elt('button', 'padding:4px 10px;border:1px solid #5a3a1a;border-radius:6px;background:#3a2614;color:#f5c542;font:800 11px Georgia;cursor:pointer;', '📋 Invite', codeRow);
+          var cpy = elt('button', 'padding:4px 10px;background:#3a2614;color:#f5c542;font:800 11px Georgia;cursor:pointer;', '📋 Invite', codeRow);
           cpy.onclick = function () { var jl = S.link + (S.link.indexOf('?') > -1 ? '&' : '?') + 'team=' + team.code; copyText('🤠 Join my Gunslingers posse “' + team.name + '”! One tap to join + play today’s daily 👉 ' + jl, 'Team invite copied — one tap joins them!'); };
           var tlist = elt('div', 'margin-top:2px;', null, teamWrap);
           net.teamStanding(St.dailyDay).then(function (rows) {
@@ -3494,7 +3494,7 @@
             elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:4px;text-align:center;', 'TEAM LEADERBOARD', tlist);
             rows.slice(0, 8).forEach(function (r, i) {
               var mine = team.id && r.team_id === team.id;
-              var rw = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;border-radius:6px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, tlist);
+              var rw = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);' : 'background:rgba(245,197,66,.06);'), null, tlist);
               elt('div', 'width:24px;color:#f5c542;font-weight:700;', (i + 1) + '.', rw);
               elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.team + (mine ? ' (you)' : '') + ' · ' + r.members + 'p', rw);
               elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', 'best ' + r.best, rw);
@@ -3511,11 +3511,11 @@
         } else {
           elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin-bottom:6px;line-height:1.4;text-align:center;', 'Form a posse and battle other teams on the daily.', teamWrap);
           var crRow = elt('div', 'display:flex;gap:6px;margin-bottom:6px;', null, teamWrap);
-          var crIn = elt('input', 'flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;text-align:center;', null, crRow); crIn.placeholder = 'New team name'; crIn.maxLength = 24;
-          var crBtn = elt('button', 'padding:9px 12px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '➕ CREATE', crRow);
+          var crIn = elt('input', 'flex:1;min-width:0;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;text-align:center;', null, crRow); crIn.placeholder = 'New team name'; crIn.maxLength = 24;
+          var crBtn = elt('button', 'padding:9px 12px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', '➕ CREATE', crRow);
           var jnRow = elt('div', 'display:flex;gap:6px;', null, teamWrap);
-          var jnIn = elt('input', 'flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:13px Georgia;text-align:center;letter-spacing:2px;', null, jnRow); jnIn.placeholder = 'Invite code'; jnIn.maxLength = 6;
-          var jnBtn = elt('button', 'padding:9px 12px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', 'JOIN', jnRow);
+          var jnIn = elt('input', 'flex:1;min-width:0;padding:9px;background:#1a1109;color:#f5efdc;font:13px Georgia;text-align:center;letter-spacing:2px;', null, jnRow); jnIn.placeholder = 'Invite code'; jnIn.maxLength = 6;
+          var jnBtn = elt('button', 'padding:9px 12px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', 'JOIN', jnRow);
           crBtn.onclick = function () {
             var tn = (crIn.value || '').trim(); if (!tn) { socialToast('Name your team first'); return; }
             var who = myTeamName(); if (!who) { socialToast('Enter your name above first'); try { nameIn.focus(); } catch (e) { } return; }
@@ -3539,7 +3539,7 @@
       }
       if (!St.archive) renderTeams();   // teams compete on the live daily, not past-hole archive
     }
-    var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
+    var prim = 'width:100%;padding:13px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:8px;color:#fff;';
     if (navigator.share) {   // mobile: one-tap native share sheet (Messages, WhatsApp, Discord, X, …) — the most usable way to share
       var nsb = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤  SHARE MY SCORE', box);
       nsb.onclick = function () { var s = shareStrings(rec); try { navigator.share({ title: 'Gunslingers Daily #' + s.n, text: s.text }).catch(function () { }); } catch (e) { copyText(s.text, 'Result copied — paste anywhere!'); } };
@@ -3562,13 +3562,13 @@
           if (lastGifUrl) { try { URL.revokeObjectURL(lastGifUrl); } catch (e) { } }   // free the previous GIF's blob (its card is gone)
           var url = URL.createObjectURL(blob); lastGifUrl = url;
           gb.remove();
-          var img = elt('img', 'width:100%;border-radius:10px;border:2px solid #5a3a1a;display:block;margin-bottom:8px;', null, gifWrap); img.src = url;
+          var img = elt('img', 'width:100%;display:block;margin-bottom:8px;', null, gifWrap); img.src = url;
           var grow = elt('div', 'display:flex;gap:8px;', null, gifWrap);
-          var dl = elt('a', 'flex:1;text-align:center;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a8a30;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;text-decoration:none;', '⬇ SAVE GIF', grow);
+          var dl = elt('a', 'flex:1;text-align:center;padding:11px;background:#3a8a30;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;text-decoration:none;', '⬇ SAVE GIF', grow);
           dl.href = url; dl.download = 'gunslingers-daily-' + St.dailyN + '.gif'; dl.target = '_blank'; dl.rel = 'noopener';   // iOS ignores download -> open in a new tab so the game isn't lost
           var file = null; try { file = new File([blob], dl.download, { type: 'image/gif' }); } catch (e) { }
           if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-            var sh = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#1d9bf0;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;', '📤 SHARE GIF', grow);
+            var sh = elt('button', 'flex:1;padding:11px;background:#1d9bf0;color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;', '📤 SHARE GIF', grow);
             sh.onclick = function () { navigator.share({ files: [file], text: shareStrings(rec).text }).catch(function () { }); };   // fresh text (incl. rank/streak)
           }
           socialToast('Highlight ready — save it & post it!');
@@ -3576,24 +3576,24 @@
       };
     }
     var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);
-    var rep = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🔁 WATCH REPLAY', row);
+    var rep = elt('button', 'flex:1;padding:11px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🔁 WATCH REPLAY', row);
     rep.onclick = function () { ov.remove(); var rp = capReplay(rec.path); St.ghost = { path: rp, shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rp.length / 20 + 0.6) * 1000); };
-    var pf = elt('button', 'flex:1;padding:11px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
+    var pf = elt('button', 'flex:1;padding:11px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎮 FULL GAME', row);
     pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
     // watch how the day's best player sank it
     if (St.leaderGhost && St.leaderGhost.path && St.leaderGhost.path.length && St.leaderGhost.name !== playerName()) {
       var lg = St.leaderGhost;
-      var wl = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '👑 WATCH ' + lg.name + '’S RUN (' + lg.strokes + ')', box);
+      var wl = elt('button', 'width:100%;padding:11px;margin-top:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '👑 WATCH ' + lg.name + '’S RUN (' + lg.strokes + ')', box);
       wl.onclick = function () { ov.remove(); var lp = capReplay(lg.path); St.ghost = { path: lp, shots: [], par: rec.par, t: 0, playing: true }; setTimeout(function () { St.ghost = null; showDailyCard(rec); }, (lp.length / 20 + 0.6) * 1000); };
     }
     if (St.dailyPractice) {   // already played today → let them dismiss the result and hit balls for fun (won't post)
-      var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
+      var prac = elt('button', 'width:100%;padding:11px;margin-top:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '🎯 PRACTICE THIS HOLE', box);
       prac.onclick = function () { ov.remove(); recStart(St.hi >= 0 ? St.hi : -1); if (St.ghost) { St.ghost.playing = false; St.ghost.t = 0; } };
     }
     // ---- archive: play an older day's hole (more to play; never counts) ----
     if (NET() && (St.archiveDaysAgo || 0) < 14) {
       var older = (St.archiveDaysAgo || 0) + 1;
-      var arcBtn = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', St.archive ? '📅 OLDER HOLE (DAILY #' + (St.dailyN - 1) + ')' : '📅 PLAY YESTERDAY’S HOLE', box);
+      var arcBtn = elt('button', 'width:100%;padding:11px;margin-top:8px;background:linear-gradient(180deg,#3a2a12,#241a0e);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', St.archive ? '📅 OLDER HOLE (DAILY #' + (St.dailyN - 1) + ')' : '📅 PLAY YESTERDAY’S HOLE', box);
       arcBtn.onclick = function () { ov.remove(); enterPastDaily(older); };
     }
     // ---- lifetime career stats ----
@@ -3601,7 +3601,7 @@
     if (cs.played > 0) {
       var avg = cs.over / cs.played, avgStr = (Math.abs(avg) < 0.05) ? 'even' : (avg > 0 ? '+' + avg.toFixed(1) : avg.toFixed(1));
       var line = '🏅 ' + cs.played + ' dail' + (cs.played === 1 ? 'y' : 'ies') + ' · avg ' + avgStr + ' vs par · beat the ghost ' + cs.beat + '×' + (cs.ace ? ' · ' + cs.ace + ' ace' + (cs.ace > 1 ? 's' : '') : '');
-      elt('div', 'font:700 12px Georgia;color:#d8c4a2;margin-top:12px;padding:8px;background:rgba(245,197,66,.06);border-radius:8px;', line, box);
+      elt('div', 'font:700 12px Georgia;color:#d8c4a2;margin-top:12px;padding:8px;background:rgba(245,197,66,.06);', line, box);
     }
     var streakLive = (St.streak > 1 && !St.archive && !St.dailyPractice);   // remind them what's at stake right as they leave
     var paintCd = function () { var t = fmtCountdown(); return streakLive ? ('🔥 Keep your ' + St.streak + '-day streak — ' + t.replace('⏳ Next daily in', 'next hole in')) : t; };
@@ -3616,7 +3616,7 @@
   function tbClearTurn() { var e = document.getElementById('pg-tbturn'); if (e) e.remove(); }
   function turnBadge(text) {
     var e = document.getElementById('pg-tbturn');
-    if (!e) { e = elt('div', 'position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:40;padding:8px 18px;border:2px solid #160d06;border-radius:20px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 15px Wantedo,Georgia;box-shadow:0 6px 22px rgba(0,0,0,.5);pointer-events:none;text-align:center;white-space:nowrap;', null, document.body); e.id = 'pg-tbturn'; }
+    if (!e) { e = elt('div', 'position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:40;padding:8px 18px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 15px Wantedo,Georgia;pointer-events:none;text-align:center;white-space:nowrap;', null, document.body); e.id = 'pg-tbturn'; }
     e.textContent = text;
   }
   function tbTurnUpdate() {
@@ -3648,7 +3648,7 @@
     var counts = {}; St.tbShots.forEach(function (p) { counts[p] = (counts[p] || 0) + 1; });
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-teamball';
-    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:22px;text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '👥 TEAM BALL', box);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;margin:2px 0 6px;', hole ? hole.name : '', box);
     var sc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a';
@@ -3656,11 +3656,11 @@
     elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:12px;', verdict + ' (par ' + par + ')', box);
     elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:6px;', 'WHO HIT WHAT', box);
     St.tbPlayers.forEach(function (p) {
-      var rw = elt('div', 'display:flex;justify-content:space-between;padding:5px 10px;margin:2px 0;border-radius:6px;background:rgba(245,197,66,.06);font:13px Georgia;color:#f5efdc;', null, box);
+      var rw = elt('div', 'display:flex;justify-content:space-between;padding:5px 10px;margin:2px 0;background:rgba(245,197,66,.06);font:13px Georgia;color:#f5efdc;', null, box);
       elt('div', 'font-weight:700;', p, rw);
       elt('div', 'font-weight:800;color:#f5c542;', (counts[p] || 0) + ' shot' + ((counts[p] || 0) === 1 ? '' : 's'), rw);
     });
-    var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var prim = 'width:100%;padding:13px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
     var tbText = '👥 Team Ball — ' + St.tbPlayers.join(', ') + ' sank ' + (hole ? hole.name : 'the hole') + ' in ' + n + ' shots (' + verdict.replace(/[🎯🦅🐦✅😬💀]/g, '').trim() + ')! 🤠 Play Gunslingers Pinball Golf 👉 ' + shareBase() + '?daily';
     var sh = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤 SHARE RESULT', box);
     sh.onclick = function () { shareLocalResult(tbText); };
@@ -3701,7 +3701,7 @@
     var verdict = best.s === 1 ? 'HOLE IN ONE! 🎯' : over <= -2 ? 'EAGLE 🦅' : over === -1 ? 'BIRDIE 🐦' : over === 0 ? 'PAR ✅' : over === 1 ? 'BOGEY 😬' : '+' + over + ' 💀';
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-teamball';
-    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:22px;text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 13px Wantedo,Georgia;color:#d8c4a2;letter-spacing:2px;', '🎯 BEST BALL', box);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;margin:2px 0 6px;', hole ? hole.name : '', box);
     var sc = over < 0 ? '#86d85f' : over === 0 ? '#f5efdc' : '#df8a6a';
@@ -3709,12 +3709,12 @@
     elt('div', 'font:900 17px Wantedo,Georgia;color:' + sc + ';margin-bottom:12px;', verdict + ' is the team’s best (par ' + par + ')', box);
     elt('div', 'font:700 11px Georgia;color:#f5c542;opacity:.8;letter-spacing:1px;margin-bottom:6px;', 'EVERYONE’S SCORE', box);
     rows.forEach(function (r, i) {
-      var rw = elt('div', 'display:flex;justify-content:space-between;align-items:center;padding:5px 10px;margin:2px 0;border-radius:6px;background:' + (i === 0 ? 'rgba(245,197,66,.2);border:1px solid #f5c542;' : 'rgba(245,197,66,.06);') + 'font:13px Georgia;color:#f5efdc;', null, box);
+      var rw = elt('div', 'display:flex;justify-content:space-between;align-items:center;padding:5px 10px;margin:2px 0;background:' + (i === 0 ? 'rgba(245,197,66,.2);' : 'rgba(245,197,66,.06);') + 'font:13px Georgia;color:#f5efdc;', null, box);
       elt('div', 'font-weight:' + (i === 0 ? '800' : '600') + ';', (i === 0 ? '🏆 ' : (i + 1) + '. ') + r.name, rw);
       var ro = r.s - par, roc = ro < 0 ? '#86d85f' : ro === 0 ? '#f5efdc' : '#df8a6a';
       elt('div', 'font-weight:800;color:' + roc + ';', r.s + (ro !== 0 ? (ro > 0 ? ' +' + ro : ' ' + ro) : ''), rw);
     });
-    var prim = 'width:100%;padding:13px;border:2px solid #160d06;border-radius:8px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
+    var prim = 'width:100%;padding:13px;font:900 15px Wantedo,Georgia;cursor:pointer;margin-top:12px;color:#fff;';
     var bbText = '🎯 Best Ball — ' + best.name + ' led the crew with ' + best.s + ' on ' + (hole ? hole.name : 'the hole') + ' (' + St.bbPlayers.join(', ') + ')! 🤠 Play Gunslingers Pinball Golf 👉 ' + shareBase() + '?daily';
     var sh = elt('button', prim + 'background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;border-color:#7a5a12;', '📤 SHARE RESULT', box);
     sh.onclick = function () { shareLocalResult(bbText); };
@@ -3728,7 +3728,7 @@
   function showTeamBallSetup() {
     var old = document.getElementById('pg-tbsetup'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:58;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-tbsetup';
-    var box = elt('div', 'width:390px;max-width:92%;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:22px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov);
+    var box = elt('div', 'width:390px;max-width:92%;background:transparent;border:none;padding:22px;text-align:center;', null, ov);
     elt('div', 'font:900 24px Wantedo,Georgia;color:#f5c542;', '👥 PASS & PLAY', box);
     var blurb = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:6px 0 12px;line-height:1.5;min-height:34px;', '', box);
     var mode = 'team';   // 'team' = alternate shot, 'best' = best ball
@@ -3736,19 +3736,19 @@
     var mTeam = elt('button', '', '🔄 Team Ball', modeRow);
     var mBest = elt('button', '', '🎯 Best Ball', modeRow);
     function paintMode() {
-      var on = 'flex:1;padding:10px;border:none;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;';
-      var off = 'flex:1;padding:10px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 13px Wantedo,Georgia;cursor:pointer;';
+      var on = 'flex:1;padding:10px;border:none;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 13px Wantedo,Georgia;cursor:pointer;';
+      var off = 'flex:1;padding:10px;background:#1a1109;color:#caa06a;font:900 13px Wantedo,Georgia;cursor:pointer;';
       mTeam.style.cssText = (mode === 'team' ? on : off); mBest.style.cssText = (mode === 'best' ? on : off);
       blurb.textContent = mode === 'team'
         ? 'Take turns hitting the SAME ball — fewest shots as a team wins.'
         : 'Each partner plays the hole solo; the team’s LOWEST score wins.';
     }
     mTeam.onclick = function () { mode = 'team'; paintMode(); }; mBest.onclick = function () { mode = 'best'; paintMode(); }; paintMode();
-    var inp = elt('input', 'width:100%;padding:11px;border-radius:8px;border:1px solid #5a3a1a;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, box);
+    var inp = elt('input', 'width:100%;padding:11px;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, box);
     inp.placeholder = 'Names, comma-separated (2–4)'; inp.value = (playerName() || 'Tex') + ', Annie';
-    var start = elt('button', 'width:100%;padding:13px;margin-top:12px;border:2px solid #160d06;border-radius:8px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ START', box);
+    var start = elt('button', 'width:100%;padding:13px;margin-top:12px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ START', box);
     start.onclick = function () { var names = (inp.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); if (names.length < 2) { socialToast('Add at least 2 players'); return; } ov.remove(); if (mode === 'best') enterBestBall(names, TEAM_BALL_HOLE); else enterTeamBall(names, TEAM_BALL_HOLE); };
-    var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
+    var cancel = elt('button', 'width:100%;padding:11px;margin-top:8px;background:#3a2614;color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     cancel.onclick = function () { ov.remove(); chooseSet(); };
   }
   // ALL-TIME CHAMPIONS — the persistent competitive ladder (daily wins, then scoring average)
@@ -3757,7 +3757,7 @@
     var old = document.getElementById('pg-champs'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:59;display:flex;align-items:center;justify-content:center;background:rgba(10,7,3,.22);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);', null, document.body); ov.id = 'pg-champs';
     ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
-    var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:rgba(20,13,6,.42);border:none;border-radius:16px;padding:20px;box-shadow:0 12px 56px rgba(0,0,0,.75);text-align:center;', null, ov); box.className = 'edscroll';
+    var box = elt('div', 'width:404px;max-width:94%;max-height:88%;overflow:auto;background:transparent;border:none;padding:20px;text-align:center;', null, ov); box.className = 'edscroll';
     elt('div', 'font:900 22px Wantedo,Georgia;color:#f5c542;', '🏆 CHAMPIONS', box);
     var sub = elt('div', 'font:600 12px Georgia;color:#d8c4a2;margin:4px 0 10px;line-height:1.4;min-height:30px;', '', box);
     var mode = 'players', period = 'all';
@@ -3769,10 +3769,10 @@
     var pA = elt('button', '', '⭐ ALL-TIME', perRow);
     var listBox = elt('div', 'min-height:60px;', null, box);
     var me = playerName(), myTeam = getTeam();
-    var shareRank = elt('button', 'width:100%;padding:11px;margin-top:10px;border:2px solid #7a5a12;border-radius:8px;background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;font:900 13px Wantedo,Georgia;cursor:pointer;display:none;', '📤 SHARE MY RANK', box);   // viral flex: brag your standing
+    var shareRank = elt('button', 'width:100%;padding:11px;margin-top:10px;background:linear-gradient(180deg,#f5c542,#c9971e);color:#1b120a;font:900 13px Wantedo,Georgia;cursor:pointer;display:none;', '📤 SHARE MY RANK', box);   // viral flex: brag your standing
     function paintTabs() {
-      var on = 'flex:1;padding:9px;border:none;border-radius:8px;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
-      var off = 'flex:1;padding:9px;border:2px solid #5a3a1a;border-radius:8px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
+      var on = 'flex:1;padding:9px;border:none;background:linear-gradient(180deg,#8a6a1e,#5a3a10);color:#fff;font:900 12px Wantedo,Georgia;cursor:pointer;';
+      var off = 'flex:1;padding:9px;background:#1a1109;color:#caa06a;font:900 12px Wantedo,Georgia;cursor:pointer;';
       tP.style.cssText = (mode === 'players' ? on : off); tT.style.cssText = (mode === 'teams' ? on : off);
       pW.style.cssText = (period === 'week' ? on : off); pA.style.cssText = (period === 'all' ? on : off);
     }
@@ -3786,7 +3786,7 @@
         if (!rows || !rows.length) { elt('div', 'font:600 13px Georgia;color:#9c8a6a;', mode === 'players' ? 'No champions yet — win a daily to claim the top spot!' : 'No team champions yet — form a posse and win a daily!', listBox); return; }
         rows.forEach(function (r, i) {
           var mine = mode === 'players' ? (me && r.name === me) : (myTeam && myTeam.name === r.name);
-          var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:3px 0;border-radius:8px;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);border:1px solid #f5c542;' : 'background:rgba(245,197,66,.06);'), null, listBox);
+          var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:6px 10px;margin:3px 0;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);' : 'background:rgba(245,197,66,.06);'), null, listBox);
           elt('div', 'width:28px;color:#f5c542;font-weight:700;text-align:center;', i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.', row);
           elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
           elt('div', 'font-weight:800;color:#f5c542;white-space:nowrap;', r.wins + '🏆', row);
@@ -3807,7 +3807,7 @@
     pW.onclick = function () { period = 'week'; render(); };
     pA.onclick = function () { period = 'all'; render(); };
     render();
-    var close = elt('button', 'width:100%;padding:12px;margin-top:12px;border:2px solid #160d06;border-radius:8px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
+    var close = elt('button', 'width:100%;padding:12px;margin-top:12px;background:#3a2614;color:#f5c542;font:900 14px Wantedo,Georgia;cursor:pointer;', '← BACK', box);
     close.onclick = function () { ov.remove(); };
   }
   function boot() {
@@ -3831,9 +3831,9 @@
     var sk = elt('button', BTNCSS + 'bottom:44px;', '⏭ SKIP', document.body); sk.onclick = skipLevel;
     ED.dom.gameBtns = [eb, lb, sk];
     // OWNER / DEBUG menu — high z-index so it's reachable on EVERY screen (over the chooser, daily card, etc.)
-    var ownBtn = elt('button', 'position:fixed;left:12px;bottom:140px;z-index:9600;padding:5px 11px;border:none;border-radius:18px;background:rgba(20,13,6,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;', '⚙ OWNER', document.body);
-    var ownMenu = elt('div', 'position:fixed;left:12px;bottom:178px;z-index:9601;width:214px;padding:7px;border-radius:13px;background:rgba(18,12,5,.5);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);display:none;flex-direction:column;gap:4px;', null, document.body);
-    function ownRow(label, fn) { var r = elt('button', 'padding:10px 11px;border:none;border-radius:8px;background:rgba(245,197,66,.09);color:#f5efdc;font:800 13px Georgia;cursor:pointer;text-align:left;', label, ownMenu); r.onclick = function () { ownMenu.style.display = 'none'; fn(); }; return r; }
+    var ownBtn = elt('button', 'position:fixed;left:12px;bottom:140px;z-index:9600;padding:5px 11px;border:none;background:rgba(20,13,6,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f5c542;font:900 13px Wantedo,Georgia;cursor:pointer;letter-spacing:.5px;', '⚙ OWNER', document.body);
+    var ownMenu = elt('div', 'position:fixed;left:12px;bottom:178px;z-index:9601;width:214px;padding:7px;background:rgba(18,12,5,.5);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);display:none;flex-direction:column;gap:4px;', null, document.body);
+    function ownRow(label, fn) { var r = elt('button', 'padding:10px 11px;border:none;background:rgba(245,197,66,.09);color:#f5efdc;font:800 13px Georgia;cursor:pointer;text-align:left;', label, ownMenu); r.onclick = function () { ownMenu.style.display = 'none'; fn(); }; return r; }
     ownBtn.onclick = function () { ownMenu.style.display = ownMenu.style.display === 'none' ? 'flex' : 'none'; };
     function clearOverlays() { document.querySelectorAll('#pg-chooser,#pg-daily,#pg-howto,#pg-over,#pg-scorecard,#pg-champs,#pg-teamball,#pg-tbsetup').forEach(function (e) { e.remove(); }); }
     ownRow('🎯 Daily Studio (set the daily)', function () { location.href = 'owner.html'; });
@@ -3872,7 +3872,7 @@
         var m = t.match(/pingolf\.js\?v=(\d+)/);
         if (m && m[1] !== cur) {
           shown = true;
-          var bar = elt('div', 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;padding:11px 18px;border:2px solid #160d06;border-radius:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.55);', '🔄 New build v' + m[1] + ' ready — tap to update', document.body);
+          var bar = elt('div', 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;padding:11px 18px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 14px Georgia;cursor:pointer;', '🔄 New build v' + m[1] + ' ready — tap to update', document.body);
           bar.onclick = function () { location.replace(self + '?bust=' + Date.now()); };
         }
       }).catch(function () { });
@@ -3884,6 +3884,60 @@
   PG.game = St; PG.K = K; PG.HOLES = HOLES;
   PG.__tick = tick; PG.__render = drawHUD; PG.__load = loadHole; PG.__St = St; PG.__HOLES = HOLES; PG.__K = K;
   PG.__AU = AU; PG.__audioInit = function () { audioInit(); }; PG.__musicStart = function () { musicStart(); }; PG.__audioApply = function () { audioApply(); }; PG.__audioUI = AU; PG.__sfx = function (k) { sfx(k); }; PG.__sfxLoadAll = function () { sfxLoadAll(); }; PG.__spawnShock = function (x, gy, z, col) { spawnShock(x, gy, z, col); };
+  // ============ PROCEDURAL WACKY HOLE GENERATOR ("propose new holes" — fresh weird holes every time) ============
+  function genName(rnd) {
+    var A = ['RATTLER', 'CACTUS', 'DUST DEVIL', 'SIDEWINDER', 'COYOTE', 'BUZZARD', 'FOOL’S GOLD', 'THUNDER', 'CROOKED', 'MESA', 'BANDIT', 'OUTLAW', 'DESERT', 'TUMBLEWEED', 'SCORPION', 'IRON', 'DEADWOOD', 'SILVER', 'RUSTY SPUR', 'BLACKJACK', 'PERDITION', 'DRY GULCH', 'WIDOW’S', 'GALLOWS'];
+    var B = ['RUN', 'GULCH', 'PASS', 'TRAIL', 'BEND', 'SPINE', 'RIDGE', 'CROSSING', 'HOLLOW', 'DRIFT', 'ALLEY', 'CANYON', 'BLUFF', 'TWIST', 'GAMBIT', 'SHUFFLE', 'TANGLE', 'SNAKE', 'RECKONING', 'STANDOFF'];
+    return A[Math.floor(rnd() * A.length)] + ' ' + B[Math.floor(rnd() * B.length)];
+  }
+  // generate ONE crazy-shaped, structure-packed, beatable-by-construction hole from a seed
+  function genWacky(seed) {
+    var s = (seed >>> 0) || 0x2545F491; if (s === 0) s = 1;
+    function rnd() { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s = s >>> 0; return s / 4294967296; }
+    function rr(a, b) { return a + rnd() * (b - a); }
+    function ri(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
+    function ch(p) { return rnd() < p; }
+    // winding centerline: 4-6 waypoints, alternating sides → a real snake (tight necks between big arenas)
+    var nWp = ri(4, 6), wp = [[0, 0]], z = 0, sgn = ch(0.5) ? 1 : -1;
+    for (var i = 1; i < nWp; i++) { z += Math.round(rr(480, 700)); wp.push([Math.round(sgn * rr(160, 380)), z]); sgn = -sgn; }
+    // width fn: narrow pinches (~base) <-> wide arenas (base+bulge), like DIAMONDBACK
+    var freq = ri(2, 4), base = rr(170, 210), bulge = rr(420, 600);
+    var width = function (t) { return base + bulge * Math.pow(Math.sin(t * PI * freq), 2); };
+    // obstacle plan — a "bunch of structures", but pinch-aware so a neck is never fully blocked
+    function obs(b, tee, cup) {
+      for (var k = 1; k < nWp - 1; k++) {
+        var wx = wp[k][0], wz = wp[k][1], ww = width(k / (nWp - 1)), r = rnd(), spin = (ch(0.5) ? 1 : -1);
+        if (ww < 250) {                                   // PINCH — only pass-through stuff
+          if (r < 0.45) b.bumper(wx - 70, wz, 34).bumper(wx + 70, wz, 34);
+          else if (r < 0.75) b.turntable(wx, wz, Math.min(ww * 0.34, 115), rr(1.4, 2.0) * spin);
+          else b.windmill(wx, wz, Math.min(ww * 0.42, 120), 3, rr(1.2, 1.8) * spin);
+        } else {                                          // ARENA — full toolkit
+          if (r < 0.18) b.hill(wx, wz, Math.min(ww * 0.7, 340), rr(80, 150));
+          else if (r < 0.34) b.bumper(wx - 80, wz, 38).bumper(wx + 80, wz, 38).bumper(wx, wz - 90, 36);
+          else if (r < 0.50) b.pendulum(wx, wz, { len: rr(255, 335), amp: rr(0.7, 0.95), speed: rr(1.0, 1.35), rb: 38 });
+          else if (r < 0.64) b.turntable(wx, wz, Math.min(ww * 0.4, 170), rr(1.4, 2.2) * spin);
+          else if (r < 0.78) b.windmill(wx, wz, Math.min(ww * 0.45, 195), ri(3, 4), rr(1.2, 1.9) * spin);
+          else if (r < 0.90) b.gate(wx - ww / 2 - 26, wz, wx + ww / 2 + 26, wz, { barFrac: 0.38, speed: rr(1.05, 1.4), h: 70 });
+          else b.conveyor(wx, wz, Math.min(ww * 0.85, 350), 330, PI / 2, 2300);
+        }
+      }
+      // a SLIDE across one bend (tube), maybe a loop-de-loop, maybe a fire hoop near the cup
+      if (ch(0.55) && nWp >= 4) { var a = ri(1, nWp - 3); b.tube(wp[a][0], wp[a][1], wp[a + 1][0], wp[a + 1][1], 64); }
+      if (ch(0.4)) { var li = ri(1, nWp - 2); b.loopde(wp[li][0], wp[li][1], 108, 0); }
+      if (ch(0.5)) b.firering(wp[nWp - 2][0], wp[nWp - 2][1], 110, 175, 150);
+      b.coin(wp[1][0], wp[1][1], 1).coin(wp[nWp - 1][0], wp[nWp - 1][1], 2);
+    }
+    return isl(genName(rnd), ri(3, 4), wp, width, obs);
+  }
+  // serialize any built hole object to the editor/daily JSON (so a generated hole can be published as the daily)
+  function serializeHole(h) { var sv = ED.draft; ED.draft = h; try { return edSerialize(); } finally { ED.draft = sv; } }
+  PG.__genWacky = function (seed) { return genWacky(seed); };
+  // propose N fresh wacky holes — returns [{name, par, json}] ready to preview/publish
+  PG.__proposeWacky = function (n, baseSeed) {
+    n = n || 3; var out = [], seed = (baseSeed >>> 0) || ((new Date().getTime() ^ (St.frame || 0)) >>> 0);
+    for (var i = 0; i < n; i++) { var h = genWacky(seed + i * 0x9E3779B1); out.push({ name: h.name, par: h.par, json: serializeHole(h) }); }
+    return out;
+  };
   // headless beatability bot: plays hole `hi` up to `tries` times, each as multiple aimed strokes from the ball's live position toward the cup; returns {sunk, tries, strokes}. Test-only; leaves St on hole hi (caller should reload).
   PG.__beatN = function (hi, tries, maxStrokes) {
     tries = tries || 16; maxStrokes = maxStrokes || 14;
