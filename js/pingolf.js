@@ -3943,6 +3943,8 @@
       if (ch(0.4) && nWp >= 4) { var pk = ri(1, nWp - 3), ex = wp[Math.min(pk + 2, nWp - 1)]; b.portal(wp[pk][0], wp[pk][1], [{ x: ex[0], z: ex[1] }], 50); }   // TELEPORT toward the cup
       if (ch(0.34) && nWp >= 4) { var tk = ri(1, nWp - 2); b.tier(wp[tk][1], -(44 + Math.floor(rnd() * 64)), 9999); }   // multi-level: the green steps DOWN past here
       if (ch(0.5)) b.firering(wp[nWp - 2][0], wp[nWp - 2][1], 110, 175, 150);
+      if (ch(0.45)) { var pw = wp[ri(1, nWp - 1)], pk = ['slow', 'shield', 'magnet', 'jump', 'gem'][Math.floor(rnd() * 5)]; b.powerup(pw[0], pw[1], pk); }   // a power-up to grab mid-run
+      if (ch(0.3)) { var bw = wp[ri(1, nWp - 2)]; b.bouncer(bw[0], bw[1], 56); }   // a spring pad
       b.coin(wp[1][0], wp[1][1], 1).coin(wp[nWp - 1][0], wp[nWp - 1][1], 2);
     }
     return isl(genName(rnd), ri(3, 4), wp, width, obs);
