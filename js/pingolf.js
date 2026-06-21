@@ -678,13 +678,13 @@
   }
   // ===== LIGHTING MOODS — distinct cinematic looks (lights + tone-map exposure + fog + post-FX color grade) =====
   var MOODS = {
-    daytime: { name: '☀ Daylight', exp: 1.42, sun: { c: 0xfff4d8, i: 1.75 }, amb: { c: 0xeaf0ff, i: 0.44 }, hemi: { s: 0xcfe6ff, g: 0x6a5a3a, i: 0.72 }, rim: { c: 0xeaf4ff, i: 0.4 }, fill: { c: 0xfff0d0, i: 0.42 }, fog: 0xd8c6a0, grade: { sat: 1.06, sep: 0, tint: [1, 1, 1], con: 1.08, bright: 1.02, lift: 0.7, split: 0.35 }, ca: 0.0014, grain: 0.06, vig: 0.26 },
-    sunset: { name: '🌅 Sunset', exp: 1.14, sun: { c: 0xffbf52, i: 1.6 }, amb: { c: 0xffdcb0, i: 0.2 }, hemi: { s: 0xffe0ae, g: 0x4a3320, i: 0.42 }, rim: { c: 0xbfe0ff, i: 0.6 }, fill: { c: 0xffcf8a, i: 0.28 }, fog: 0xc9a06a, grade: { sat: 1.12, sep: 0, tint: [1, 1, 1], con: 1.16, bright: 0.93, lift: 1, split: 1 }, ca: 0.0026, grain: 0.13, vig: 0.4 },
-    night: { name: '🌙 Moody Night', exp: 0.7, sun: { c: 0x7d93d6, i: 0.9 }, amb: { c: 0x26365e, i: 0.22 }, hemi: { s: 0x2c3e6e, g: 0x080c18, i: 0.4 }, rim: { c: 0x9fc0ff, i: 0.8 }, fill: { c: 0x36406e, i: 0.18 }, fog: 0x0e1530, grade: { sat: 0.8, sep: 0, tint: [0.6, 0.73, 1.1], con: 1.24, bright: 0.7, lift: 1.4, split: 0.6 }, ca: 0.003, grain: 0.18, vig: 0.62 },
-    noir: { name: '🎬 Film Noir', exp: 1.0, sun: { c: 0xffffff, i: 2.1 }, amb: { c: 0x222222, i: 0.13 }, hemi: { s: 0x484848, g: 0x101010, i: 0.26 }, rim: { c: 0xffffff, i: 0.6 }, fill: { c: 0x303030, i: 0.1 }, fog: 0x202327, grade: { sat: 0, sep: 0, tint: [1, 1, 1], con: 1.62, bright: 0.98, lift: 1.1, split: 0 }, ca: 0.0016, grain: 0.24, vig: 0.68 },
-    faded: { name: '🎞 Dusty Faded', exp: 1.2, sun: { c: 0xffe8c0, i: 1.4 }, amb: { c: 0xe8d8b8, i: 0.3 }, hemi: { s: 0xe6d4b0, g: 0x5a4a30, i: 0.5 }, rim: { c: 0xfff0d8, i: 0.4 }, fill: { c: 0xffe0b0, i: 0.3 }, fog: 0xd6c4a4, grade: { sat: 0.5, sep: 0.45, tint: [1.06, 0.99, 0.85], con: 0.84, bright: 1.06, lift: 2.0, split: 0.3 }, ca: 0.0022, grain: 0.36, vig: 0.46 },
-    redglow: { name: '🔴 Red Glow', exp: 0.86, sun: { c: 0xff5a3a, i: 1.5 }, amb: { c: 0x5a1a1a, i: 0.24 }, hemi: { s: 0x6a1e1e, g: 0x120505, i: 0.4 }, rim: { c: 0xff8a6a, i: 0.6 }, fill: { c: 0x8a2a2a, i: 0.22 }, fog: 0x280808, grade: { sat: 0.74, sep: 0, tint: [1.34, 0.44, 0.38], con: 1.3, bright: 0.82, lift: 1.2, split: 0.4 }, ca: 0.0038, grain: 0.2, vig: 0.62 },
-    sincity: { name: '🖤 Sin City', exp: 1.05, sun: { c: 0xffffff, i: 2.2 }, amb: { c: 0x1a1a1a, i: 0.11 }, hemi: { s: 0x3a3a3a, g: 0x080808, i: 0.22 }, rim: { c: 0xffffff, i: 0.6 }, fill: { c: 0x282828, i: 0.09 }, fog: 0x121212, grade: { sat: 0.07, sep: 0, tint: [1.14, 0.95, 0.95], con: 1.78, bright: 1.0, lift: 0.9, split: 0 }, ca: 0.0018, grain: 0.28, vig: 0.74 }
+    daytime: { name: '☀ Daylight', exp: 1.4, sun: { c: 0xfff4d8, i: 1.78 }, amb: { c: 0xe6eeff, i: 0.46 }, hemi: { s: 0xcfe6ff, g: 0x6a5a3a, i: 0.76 }, rim: { c: 0xeaf4ff, i: 0.42 }, fill: { c: 0xfff0d0, i: 0.44 }, fog: 0xd6c8a8, grade: { sat: 1.1, sep: 0, shad: [0.86, 0.94, 1.1], high: [1.08, 1.06, 0.92], lo: 0.2, hi: 0.84, con: 1.12, bright: 1.03, lift: 0.5 }, ca: 0.0014, grain: 0.06, vig: 0.28 },
+    sunset: { name: '🌅 Sunset', exp: 1.14, sun: { c: 0xffbf52, i: 1.6 }, amb: { c: 0xffdcb0, i: 0.2 }, hemi: { s: 0xffe0ae, g: 0x4a3320, i: 0.42 }, rim: { c: 0xbfe0ff, i: 0.6 }, fill: { c: 0xffcf8a, i: 0.28 }, fog: 0xc9a06a, grade: { sat: 1.14, sep: 0, shad: [0.9, 0.97, 1.08], high: [1.12, 1.01, 0.82], lo: 0.18, hi: 0.75, con: 1.16, bright: 0.93, lift: 1 }, ca: 0.0026, grain: 0.13, vig: 0.4 },
+    night: { name: '🌙 Moody Night', exp: 0.64, sun: { c: 0x8aa2e6, i: 1.0 }, amb: { c: 0x1c2a52, i: 0.18 }, hemi: { s: 0x24345c, g: 0x05070e, i: 0.36 }, rim: { c: 0xb2ceff, i: 1.05 }, fill: { c: 0x2a3868, i: 0.15 }, fog: 0x070a18, grade: { sat: 0.95, sep: 0, shad: [0.28, 0.42, 0.9], high: [0.84, 0.98, 1.18], lo: 0.08, hi: 0.64, con: 1.38, bright: 0.72, lift: 1.5 }, ca: 0.003, grain: 0.16, vig: 0.68 },
+    noir: { name: '🎬 Film Noir', exp: 1.0, sun: { c: 0xffffff, i: 2.15 }, amb: { c: 0x202020, i: 0.12 }, hemi: { s: 0x484848, g: 0x0e0e0e, i: 0.26 }, rim: { c: 0xffffff, i: 0.7 }, fill: { c: 0x2c2c2c, i: 0.09 }, fog: 0x1f2226, grade: { sat: 0, sep: 0, shad: [1, 1, 1], high: [1, 1, 1], lo: 0.2, hi: 0.78, con: 1.66, bright: 0.98, lift: 1.0 }, ca: 0.0015, grain: 0.24, vig: 0.7 },
+    faded: { name: '🎞 Dusty Faded', exp: 1.18, sun: { c: 0xffe8c0, i: 1.42 }, amb: { c: 0xe6d8bc, i: 0.32 }, hemi: { s: 0xe6d4b0, g: 0x5a4a30, i: 0.52 }, rim: { c: 0xfff0d8, i: 0.4 }, fill: { c: 0xffe0b0, i: 0.3 }, fog: 0xcabfa2, grade: { sat: 0.62, sep: 0.14, shad: [0.82, 0.97, 0.93], high: [1.16, 1.05, 0.76], lo: 0.16, hi: 0.82, con: 0.82, bright: 1.02, lift: 2.8 }, ca: 0.0022, grain: 0.32, vig: 0.44 },
+    redglow: { name: '🔴 Red Glow', exp: 0.82, sun: { c: 0xff5a3a, i: 1.6 }, amb: { c: 0x441010, i: 0.22 }, hemi: { s: 0x561616, g: 0x0c0303, i: 0.36 }, rim: { c: 0xff9a66, i: 0.75 }, fill: { c: 0x741f1f, i: 0.2 }, fog: 0x190505, grade: { sat: 0.96, sep: 0, shad: [0.48, 0.09, 0.09], high: [1.52, 0.68, 0.34], lo: 0.12, hi: 0.72, con: 1.36, bright: 0.84, lift: 1.3 }, ca: 0.0036, grain: 0.2, vig: 0.64 },
+    sincity: { name: '🖤 Sin City', exp: 1.05, sun: { c: 0xffffff, i: 2.35 }, amb: { c: 0x141414, i: 0.1 }, hemi: { s: 0x343434, g: 0x060606, i: 0.22 }, rim: { c: 0xffffff, i: 0.75 }, fill: { c: 0x222222, i: 0.08 }, fog: 0x101010, grade: { sat: 0.07, sep: 0, shad: [0.9, 0.9, 0.95], high: [1.06, 1.0, 1.0], lo: 0.16, hi: 0.74, con: 1.98, bright: 1.0, lift: 0.5 }, ca: 0.0016, grain: 0.28, vig: 0.78 }
   };
   var MOOD_ORDER = ['daytime', 'sunset', 'night', 'noir', 'faded', 'redglow', 'sincity'];
   function resolveMood() {
@@ -701,7 +701,7 @@
     L(R3.sun, m.sun.c, m.sun.i); L(R3.amb, m.amb.c, m.amb.i); L(R3.rim, m.rim.c, m.rim.i); L(R3.fill, m.fill.c, m.fill.i);
     if (R3.hemi) { R3.hemi.color.setHex(m.hemi.s); R3.hemi.groundColor.setHex(m.hemi.g); R3.hemi.intensity = m.hemi.i; }
     if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
-    if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uTint.value.set(g.tint[0], g.tint[1], g.tint[2]); u.uCon.value = g.con; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uSplit.value = g.split; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca; }
+    if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uShad.value.set(g.shad[0], g.shad[1], g.shad[2]); u.uHigh.value.set(g.high[0], g.high[1], g.high[2]); u.uLo.value = g.lo; u.uHi.value = g.hi; u.uCon.value = g.con; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca; }
     // B&W moods (noir / sin city) → desaturate the HUD canvas + on-screen controls too, so the whole frame reads black-and-white
     var _gf = m.grade.sat < 0.12 ? 'grayscale(1) contrast(1.04)' : '';
     [St.hud, document.getElementById('cam'), document.getElementById('snd')].concat(R3.hudBtns || []).forEach(function (e) { if (e) try { e.style.filter = _gf; } catch (x) { } });
@@ -1025,7 +1025,7 @@
       var fsh = [
         'precision highp float; varying vec2 vUv;',
         'uniform sampler2D tD; uniform sampler2D tB; uniform float uT; uniform float uCA; uniform float uGrain; uniform float uVig; uniform float uDof; uniform float uFocus; uniform float uBloom; uniform vec2 uRes;',
-        'uniform float uSat; uniform float uSep; uniform vec3 uTint; uniform float uCon; uniform float uBright; uniform float uLift; uniform float uSplit;',
+        'uniform float uSat; uniform float uSep; uniform vec3 uShad; uniform vec3 uHigh; uniform float uLo; uniform float uHi; uniform float uCon; uniform float uBright; uniform float uLift;',
         'float hash(vec2 p){ vec3 q = fract(vec3(p.xyx) * 443.8975); q += dot(q, q.yzx + 19.19); return fract((q.x + q.y) * q.z); }',
         'void main(){',
         '  vec2 d = vUv - 0.5; float r2 = dot(d, d);',
@@ -1041,16 +1041,17 @@
         '  col += max(ring - 0.78, 0.0) * 0.35;',
         '  col += texture2D(tB, vUv).rgb * uBloom;',                                       // BLOOM: lights actually glow
         '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
-        '  col = mix(col, mix(col * vec3(0.92, 0.97, 1.05), col * vec3(1.09, 1.01, 0.85), smoothstep(0.18, 0.75, lum)), uSplit);',   // western split-tone, scaled by uSplit (0 = neutral for noir)
-        '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
-        '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',
-        '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',
-        '  col = mix(vec3(dot(col, vec3(0.299,0.587,0.114))), col, uSat);',                                       // saturation (0 = B&W for noir/sin city)
+        '  col = mix(vec3(lum), col, uSat);',                                                                       // 1. saturation (0 = B&W for noir/sin city)
         '  vec3 sep = vec3(dot(col, vec3(0.393,0.769,0.189)), dot(col, vec3(0.349,0.686,0.168)), dot(col, vec3(0.272,0.534,0.131)));',
-        '  col = mix(col, sep, uSep);',                                                                            // sepia (dusty faded film)
-        '  col *= uTint;',                                                                                         // mood tint (night blue / red glow)
-        '  col = clamp((col - 0.5) * uCon + 0.5, 0.0, 1.0);',                                                      // contrast
-        '  col = col * uBright + vec3(0.055, 0.050, 0.044) * uLift;',                                              // brightness + black lift
+        '  col = mix(col, sep, uSep);',                                                                            // 2. sepia (dusty faded film)
+        '  float gl = clamp(dot(col, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);',
+        '  col = mix(col * uShad, col * uHigh, smoothstep(uLo, uHi, gl));',                                        // 3. SPLIT-TONE: a distinct shadow colour and highlight colour = real cinematic depth (not a flat wash)
+        '  col = clamp((col - 0.5) * uCon + 0.5, 0.0, 1.0);',                                                      // 4. contrast
+        '  col = mix(col, col * col * (3.0 - 2.0 * col), 0.2);',                                                   // 5. gentle filmic S-curve (toe + shoulder) — richness, not a linear stretch
+        '  col = clamp(col * uBright + vec3(0.055, 0.050, 0.044) * uLift, 0.0, 1.0);',                             // 6. brightness + (lifted) black point
+        '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
+        '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',                                             // 7. film grain on top of the grade
+        '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',                                                       // 8. vignette
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       // FXAA — edge smoothing on the final image: kills the jaggies on rounded silhouettes and the painted horizon line
@@ -1084,7 +1085,7 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.12 }, uSep: { value: 0 }, uTint: { value: new T.Vector3(1, 1, 1) }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 }, uSplit: { value: 1 } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.14 }, uSep: { value: 0 }, uShad: { value: new T.Vector3(0.9, 0.97, 1.08) }, uHigh: { value: new T.Vector3(1.12, 1.01, 0.82) }, uLo: { value: 0.18 }, uHi: { value: 0.75 }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
       R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
