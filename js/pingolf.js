@@ -3928,9 +3928,11 @@
           else b.conveyor(wx, wz, Math.min(ww * 0.85, 350), 330, PI / 2, 2300);
         }
       }
-      // a SLIDE across one bend (tube), maybe a loop-de-loop, maybe a fire hoop near the cup
+      // SLIDE across a bend (tube), loop-de-loop, TELEPORT shortcut, a multi-level step-down, a fire-hoop bonus
       if (ch(0.55) && nWp >= 4) { var a = ri(1, nWp - 3); b.tube(wp[a][0], wp[a][1], wp[a + 1][0], wp[a + 1][1], 64); }
       if (ch(0.4)) { var li = ri(1, nWp - 2); b.loopde(wp[li][0], wp[li][1], 108, 0); }
+      if (ch(0.4) && nWp >= 4) { var pk = ri(1, nWp - 3), ex = wp[Math.min(pk + 2, nWp - 1)]; b.portal(wp[pk][0], wp[pk][1], [{ x: ex[0], z: ex[1] }], 50); }   // TELEPORT toward the cup
+      if (ch(0.34) && nWp >= 4) { var tk = ri(1, nWp - 2); b.tier(wp[tk][1], -(44 + Math.floor(rnd() * 64)), 9999); }   // multi-level: the green steps DOWN past here
       if (ch(0.5)) b.firering(wp[nWp - 2][0], wp[nWp - 2][1], 110, 175, 150);
       b.coin(wp[1][0], wp[1][1], 1).coin(wp[nWp - 1][0], wp[nWp - 1][1], 2);
     }
