@@ -7,6 +7,12 @@
 <title>Gunslingers Pinball Golf — Wild West Pinball + Mini-Golf</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%232b1c10'/%3E%3Cpath d='M32 7 L38 24 L56 24 L41 35 L47 52 L32 42 L17 52 L23 35 L8 24 L26 24 Z' fill='%23f5c542' stroke='%23160d06' stroke-width='1.5'/%3E%3C/svg%3E" />
 <meta name="theme-color" content="#2b1c10" />
+<link rel="manifest" href="manifest.json" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Gunslingers" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 <meta name="description" content="A 3D Wild-West pinball + mini-golf hybrid. 27 hand-built holes of six-shooter pinball chaos and high-desert putting, plus a full 2D + 3D level editor. Free & open source, runs in your browser." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Gunslingers Pinball Golf" />
@@ -250,5 +256,6 @@
       });
     })();
   </script>
+  <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+{
+  "name": "Gunslingers Pinball Golf",
+  "short_name": "Gunslingers",
+  "description": "A daily Wild-West pinball mini-golf game — one shared hole every day. Race the ghosts, climb the ladder, share your score.",
+  "start_url": "./game.html?daily",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#160d06",
+  "theme_color": "#2b1c10",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
