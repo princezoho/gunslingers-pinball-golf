@@ -55,7 +55,7 @@
     jump: { c: 0x49d36a, e: 0x14702a, ch: '↑', name: 'JUMP', dur: 0, info: 'Pops the ball up into the air — hop clean over walls and hazards like a proper mini-golf jump.' }
   };
   var PU_KINDS = ['magnet', 'shield', 'slow', 'gem', 'jump'];
-  var BUILD = 'BUILD 218 · CLEAN UI';
+  var BUILD = 'BUILD 219 · SMOOTH CONTROLS';
 
   /* ================================================================ HOLE BUILDER
      A tiny DSL: each hole function fills a builder with obstacles and returns it. */
@@ -2118,7 +2118,10 @@
     var ff = clamp(hyp(b.vx, b.vz) / 4200, 0, 1), tf = 58 + ff * 14; R3.cam.fov += (tf - R3.cam.fov) * 0.1; R3.cam.updateProjectionMatrix();
     if (R3.sun) { R3.sun.position.set(b.x + R3.sunOff.x, R3.sunOff.y, b.z + R3.sunOff.z); R3.sun.target.position.set(b.x, b.y, b.z); R3.sun.target.updateMatrixWorld(); }
   }
-  function project(x, y, z) { var v = new T.Vector3(x, y, z).project(R3.cam); return { x: (v.x * .5 + .5) * St.w, y: (-v.y * .5 + .5) * St.h, vis: v.z < 1 }; }
+  var _projV = null;
+  function project(x, y, z) { if (!_projV) _projV = new T.Vector3(); var v = _projV.set(x, y, z).project(R3.cam); return { x: (v.x * .5 + .5) * St.w, y: (-v.y * .5 + .5) * St.h, vis: v.z < 1 }; }   // reuse scratch vector (called ~145x/frame during aim — don't allocate a Vector3 each time)
+  function projInto(out, x, y, z) { if (!_projV) _projV = new T.Vector3(); var v = _projV.set(x, y, z).project(R3.cam); out.x = (v.x * .5 + .5) * St.w; out.y = (-v.y * .5 + .5) * St.h; out.vis = v.z < 1; return out; }   // allocation-free projection into a reused object
+  var _sBS = { x: 0, y: 0, vis: false }, _sLP = { x: 0, y: 0, vis: false }, _sPE = { x: 0, y: 0, vis: false }, _sPP = { x: 0, y: 0, vis: false };   // drawAim scratch — no per-frame allocation
 
   /* ================================================================ sync + HUD */
   function segCross(ax, az, bx, bz, cx, cz, dx, dz) {   // 2D segment AB × CD -> t along AB, or -1
@@ -2246,9 +2249,11 @@
     c.globalAlpha = 1;
   }
   // simulate the shot forward (gravity, terrain, roll friction, wall bounces) so the aim guide shows the real path + bank shots
+  var _predPool = [];   // reused point pool — predictPath runs every frame during a drag, so it must NOT allocate (garbage → GC stalls = the "buffering/stuck" hitch)
   function predictPath(b, power) {
-    var f = aimDir(), v = lerp(K.shotMin, K.shotMax, power * power), hole = St.hole, bn = hole.bounds;
-    var x = b.x, z = b.z, y = b.y, vx = f.x * v, vz = f.z * v, vy = 0, dt = 1 / 90, pts = [{ x: x, y: y, z: z }], bounces = 0, walls = hole.walls;
+    var f = aimDir(), v = lerp(K.shotMin, K.shotMax, power * power), hole = St.hole, bn = hole.bounds, pts = _predPool;
+    var x = b.x, z = b.z, y = b.y, vx = f.x * v, vz = f.z * v, vy = 0, dt = 1 / 90, bounces = 0, walls = hole.walls, R = K.R + K.wallHalf;
+    var p0 = pts[0] || (pts[0] = { x: 0, y: 0, z: 0 }); p0.x = x; p0.y = y; p0.z = z; var n = 1;
     for (var step = 0; step < 110 && bounces < 4; step++) {
       vy -= K.g * dt; vx *= (1 - K.airDrag * dt); vz *= (1 - K.airDrag * dt);
       x += vx * dt; y += vy * dt; z += vz * dt;
@@ -2258,12 +2263,13 @@
       else if (z > bn.maxZ - 12) { z = bn.maxZ - 12; vz = -Math.abs(vz) * .5; bounces++; }
       var gh = hole.terrain(x, z), surf = gh + K.R;
       if (y <= surf) { y = surf; if (vy < 0) vy = 0; var sp = Math.sqrt(vx * vx + vz * vz); if (sp > 0) { var ns = Math.max(0, sp - K.rollFric * dt), kf = ns / sp; vx *= kf; vz *= kf; } }
-      for (var wi = 0; wi < walls.length; wi++) { var s = walls[wi]; if (y > gh + s.h - 4) continue; if (s._hl !== undefined) { var _bx = x - s._mx, _bz = z - s._mz; if (_bx * _bx + _bz * _bz > s._hl * s._hl) continue; }   // broad-phase: skip walls whose bounding circle the ball can't reach this step
-        var cc = nearestOnSeg(x, z, s.ax, s.az, s.bx, s.bz), dx = x - cc.x, dz = z - cc.z, dd = Math.sqrt(dx * dx + dz * dz), R = K.R + K.wallHalf; if (dd < R) { var nx = dd > 1e-4 ? dx / dd : 0, nz = dd > 1e-4 ? dz / dd : -1; x = cc.x + nx * R; z = cc.z + nz * R; var vn = vx * nx + vz * nz; if (vn < 0) { var e = (s.e == null ? K.wallE : s.e); vx -= (1 + e) * vn * nx; vz -= (1 + e) * vn * nz; bounces++; } } }
-      pts.push({ x: x, y: y, z: z });
+      for (var wi = 0; wi < walls.length; wi++) { var s = walls[wi]; if (y > gh + s.h - 4) continue; if (s._hl !== undefined) { var _bx = x - s._mx, _bz = z - s._mz; if (_bx * _bx + _bz * _bz > s._hl * s._hl) continue; }   // broad-phase cull
+        var sdx = s.bx - s.ax, sdz = s.bz - s.az, l2 = sdx * sdx + sdz * sdz, tt = l2 ? clamp(((x - s.ax) * sdx + (z - s.az) * sdz) / l2, 0, 1) : 0, ccx = s.ax + sdx * tt, ccz = s.az + sdz * tt;   // inlined nearestOnSeg — no allocation
+        var dx = x - ccx, dz = z - ccz, dd = Math.sqrt(dx * dx + dz * dz); if (dd < R) { var nx = dd > 1e-4 ? dx / dd : 0, nz = dd > 1e-4 ? dz / dd : -1; x = ccx + nx * R; z = ccz + nz * R; var vn = vx * nx + vz * nz; if (vn < 0) { var e = (s.e == null ? K.wallE : s.e); vx -= (1 + e) * vn * nx; vz -= (1 + e) * vn * nz; bounces++; } } }
+      var pp = pts[n] || (pts[n] = { x: 0, y: 0, z: 0 }); pp.x = x; pp.y = y; pp.z = z; n++;
       if (Math.sqrt(vx * vx + vz * vz) < 45 && y <= surf + 1) break;
     }
-    return pts;
+    pts._n = n; return pts;   // pts._n = valid point count (the pool array itself is reused, never truncated)
   }
   // magnet power-up: pulsing "tractor beam" from the ball to the cup so the pull is visible in-world (not just the HUD badge)
   function drawMagnetPull(c, b) {
@@ -2281,22 +2287,22 @@
     c.restore();
   }
   function drawAim(c, b) {
-    var bs = project(b.x, b.y, b.z); if (!bs.vis) return;
+    var bs = projInto(_sBS, b.x, b.y, b.z); if (!bs.vis) return;
     // while ACTIVELY dragging, recompute every frame so the trajectory tracks your finger smoothly (the wall-culling keeps it cheap ~2ms). Only when idle (just looking) do we throttle to ~12Hz to save the frame.
     var _now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     var pts;
     if (St.drag) { pts = predictPath(b, St.power); St._aimPts = pts; St._aimMs = _now; }
     else if (St._aimPts && (_now - (St._aimMs || 0)) < 80) pts = St._aimPts;
     else { pts = predictPath(b, St.power); St._aimPts = pts; St._aimMs = _now; }
-    var n = pts.length;
+    var n = pts._n != null ? pts._n : pts.length;   // pooled array isn't truncated — use the valid count
     // faint connecting line
     c.globalAlpha = .5; c.lineWidth = 3; c.lineCap = 'round'; c.strokeStyle = 'rgba(255,240,200,.45)'; c.beginPath(); var started = false;
-    for (var i = 0; i < n; i++) { var s = project(pts[i].x, pts[i].y + 12, pts[i].z); if (!s.vis) { started = false; continue; } if (!started) { c.moveTo(s.x, s.y); started = true; } else c.lineTo(s.x, s.y); }
+    for (var i = 0; i < n; i++) { var s = projInto(_sLP, pts[i].x, pts[i].y + 12, pts[i].z); if (!s.vis) { started = false; continue; } if (!started) { c.moveTo(s.x, s.y); started = true; } else c.lineTo(s.x, s.y); }
     c.stroke(); c.globalAlpha = 1;
     // dots along the path, green→gold→red, every few samples
-    for (var j = 0; j < n; j += 3) { var sp2 = project(pts[j].x, pts[j].y + 12, pts[j].z); if (!sp2.vis) continue; var tt = j / (n - 1 || 1); c.globalAlpha = .92; c.fillStyle = tt < .5 ? COL.grn : tt < .82 ? COL.gold : COL.red; c.beginPath(); c.arc(sp2.x, sp2.y, 2.6 + (1 - tt) * 2.6, 0, TAU); c.fill(); }
+    for (var j = 0; j < n; j += 3) { var sp2 = projInto(_sLP, pts[j].x, pts[j].y + 12, pts[j].z); if (!sp2.vis) continue; var tt = j / (n - 1 || 1); c.globalAlpha = .92; c.fillStyle = tt < .5 ? COL.grn : tt < .82 ? COL.gold : COL.red; c.beginPath(); c.arc(sp2.x, sp2.y, 2.6 + (1 - tt) * 2.6, 0, TAU); c.fill(); }
     // arrowhead at the end
-    if (n > 2) { var pe = project(pts[n - 1].x, pts[n - 1].y + 12, pts[n - 1].z), pp = project(pts[n - 2].x, pts[n - 2].y + 12, pts[n - 2].z); if (pe.vis && pp.vis) { c.save(); c.translate(pe.x, pe.y); c.rotate(Math.atan2(pe.y - pp.y, pe.x - pp.x)); c.fillStyle = COL.red; c.beginPath(); c.moveTo(11, 0); c.lineTo(-7, -7); c.lineTo(-7, 7); c.closePath(); c.fill(); c.restore(); } }
+    if (n > 2) { var pe = projInto(_sPE, pts[n - 1].x, pts[n - 1].y + 12, pts[n - 1].z), pp = projInto(_sPP, pts[n - 2].x, pts[n - 2].y + 12, pts[n - 2].z); if (pe.vis && pp.vis) { c.save(); c.translate(pe.x, pe.y); c.rotate(Math.atan2(pe.y - pp.y, pe.x - pp.x)); c.fillStyle = COL.red; c.beginPath(); c.moveTo(11, 0); c.lineTo(-7, -7); c.lineTo(-7, 7); c.closePath(); c.fill(); c.restore(); } }
     c.globalAlpha = 1;
     if (St.drag && St.drag.pull > 5) { c.strokeStyle = 'rgba(255,238,196,.6)'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(bs.x, bs.y); c.lineTo(St.drag.sx, St.drag.sy); c.stroke(); c.fillStyle = St.power > .8 ? COL.red : 'rgba(255,238,196,.92)'; c.beginPath(); c.arc(St.drag.sx, St.drag.sy, 9, 0, TAU); c.fill(); }
   }
