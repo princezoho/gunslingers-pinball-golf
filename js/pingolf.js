@@ -1082,6 +1082,27 @@
     x.fillStyle = g; x.fillRect(0, 0, 4, 256);
     var t = new T.CanvasTexture(c); if (T.sRGBEncoding) t.encoding = T.sRGBEncoding; t.wrapS = t.wrapT = T.ClampToEdgeWrapping; R3._islSky = t; return t;
   }
+  function islandWaterMat() {   // SPARKLING SEA — analytic-normal water (3 summed wave directions) with Fresnel reflection + a sharp sun glint, so the floating islands rise out of a living sea instead of an empty teal void. Flat plane, normal-only (≈0 vertex cost); outputs LINEAR colour so the composite grades it.
+    return new T.ShaderMaterial({
+      transparent: true, depthWrite: false, extensions: { derivatives: true },
+      uniforms: { uTime: { value: 0 }, uSun: { value: new T.Vector3(-0.6, 0.5, -0.3).normalize() }, uDeep: { value: new T.Color(0x0b3a42) }, uShallow: { value: new T.Color(0x2f8b96) }, uSky: { value: new T.Color(0xd2e6dd) } },
+      vertexShader: ['varying vec3 vW;', 'void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vW = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }'].join('\n'),
+      fragmentShader: [
+        'precision highp float;',
+        'uniform float uTime; uniform vec3 uSun, uDeep, uShallow, uSky; varying vec3 vW;',
+        'vec3 wnorm(vec2 p){ float t=uTime; vec2 d1=normalize(vec2(0.9,0.3)),d2=normalize(vec2(-0.4,0.9)),d3=normalize(vec2(0.65,-0.7)); vec2 g=vec2(0.0); float k1=0.012,k2=0.022,k3=0.037;',
+        ' g += d1*sin(dot(d1,p)*k1 + t*1.1)*0.9; g += d2*sin(dot(d2,p)*k2 + t*1.5)*0.55; g += d3*sin(dot(d3,p)*k3 + t*2.1)*0.3;',
+        ' return normalize(vec3(-g.x*0.6, 1.0, -g.y*0.6)); }',
+        'void main(){ vec3 N=wnorm(vW.xz); vec3 V=normalize(cameraPosition - vW);',
+        ' float fres = 0.02 + 0.98*pow(1.0-max(dot(N,V),0.0),5.0);',
+        ' vec3 R=reflect(-V,N); float up=clamp(R.y*0.5+0.5,0.0,1.0);',
+        ' vec3 refl=mix(uShallow,uSky,up*up); vec3 base=mix(uDeep,uShallow,0.35);',
+        ' vec3 col=mix(base,refl,fres);',
+        ' float glint=pow(max(dot(R,normalize(uSun)),0.0),180.0); col += vec3(1.0,0.95,0.84)*glint*2.4;',
+        ' gl_FragColor=vec4(col,0.9); }'
+      ].join('\n')
+    });
+  }
   function inPoly(poly, x, z) {   // ray-cast point-in-polygon
     var c = false; for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) { var a = poly[i], b = poly[j]; if (((a.z > z) !== (b.z > z)) && (x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x)) c = !c; } return c;
   }
@@ -1290,6 +1311,7 @@
     toonSync();   // real toon shading (banded MeshToonMaterial) + inverted-hull ink outline for cartoon/cel/line
     if (R3.spot && R3.spotBase > 0.001 && St.hole && St.balls && St.balls[0]) { var _sb = St.balls[0], _sgy = St.hole.terrain(_sb.x, _sb.z); R3.spot.position.set(_sb.x + Math.sin(St.t * 0.9) * 90, _sgy + 1400, _sb.z - 120); R3.spot.target.position.set(_sb.x, _sgy, _sb.z); R3.spot.intensity = R3.spotBase * (0.82 + 0.18 * Math.sin(St.t * 3.5)); }   // SPOTLIGHT tracks the ball with a gentle sway + pulse = drama/action
     if (R3.moodDust && R3.moodDust.visible && St.hole) { var _db = St.hole.bounds, _dcx = (_db.minX + _db.maxX) / 2, _dcz = (_db.minZ + _db.maxZ) / 2; R3.moodDust.position.set(_dcx, St.hole.terrain(_dcx, _dcz) - 60, _dcz); var _dp = R3.moodDust.geometry.attributes.position, _da = _dp.array; for (var _di = 0; _di < R3.dustSpd.length; _di++) { _da[_di * 3 + 1] += R3.dustSpd[_di] * 0.5; _da[_di * 3] += Math.sin(St.t * 0.5 + R3.dustPh[_di]) * 0.45; _da[_di * 3 + 2] += Math.cos(St.t * 0.4 + R3.dustPh[_di]) * 0.3; if (_da[_di * 3 + 1] > 1200) _da[_di * 3 + 1] = 0; } _dp.needsUpdate = true; }   // dust slowly rises + drifts on the breeze, wrapping at the top
+    if (R3.waterMesh && R3.waterMesh.material.uniforms) R3.waterMesh.material.uniforms.uTime.value = St.t;   // animate the sea
     if (R3.prismOn && R3.prism && St.hole) { var _bn = St.hole.bounds, _cx = (_bn.minX + _bn.maxX) / 2, _cz = (_bn.minZ + _bn.maxZ) / 2, _rr = Math.max(700, (_bn.maxX - _bn.minX + _bn.maxZ - _bn.minZ) * 0.32), _gy = St.hole.terrain(_cx, _cz); for (var _k = 0; _k < R3.prism.length; _k++) { var _a = St.t * 0.3 + _k * (TAU / R3.prism.length), _pl = R3.prism[_k]; _pl.position.set(_cx + Math.cos(_a) * _rr, _gy + 150 + Math.sin(St.t * 1.2 + _k * 1.7) * 90, _cz + Math.sin(_a) * _rr); _pl.intensity = R3.prismI * (0.55 + 0.45 * Math.sin(St.t * 2.3 + _k * 2.1)); } }   // PRISMATIC: real coloured point lights orbit the table at different heights + pulse → additive coloured illumination that actually lights the geometry & casts coloured speculars
     R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
     var p = R3.post;
@@ -1339,7 +1361,7 @@
     if (R3.group) R3.scene.remove(R3.group);
     R3.group = new T.Group(); R3.scene.add(R3.group);
     R3.ghostMesh = null;   // the old ghost sphere belonged to the removed group — drop the ref so syncGhost re-creates it in the NEW group (else the rival/replay ghost goes invisible after any hole reload)
-    R3.portalSwirls = []; R3.flagWave = null;
+    R3.portalSwirls = []; R3.flagWave = null; R3.waterMesh = null;
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
     R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); R3.holeBg = R3.scene.background; R3.wireDirty = true; R3.outlineDirty = true; if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
     R3.scene.environment = (hole.theme === 'moon') ? null : (R3.env || null);   // night scene: no warm desert IBL
@@ -1421,7 +1443,10 @@
       var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, patchY, midZ); patch.receiveShadow = true; R3.group.add(patch);
     }
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
-    if (Array.isArray(hole.islands) && hole.islands.length) { if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false; hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); }); }   // hide the rectangular turf ONCE, then render each island's own green floor (none of which hide each other now)
+    if (Array.isArray(hole.islands) && hole.islands.length) { if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false; hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); });   // hide the rectangular turf ONCE, then render each island's own green floor (none of which hide each other now)
+      var _seaY = Math.min.apply(null, hole.islands.map(function (il) { return il.y || 0; })) - 210, _wr = Math.max(spanX, spanZ) * 1.3 + 1400;   // SPARKLING SEA the islands rise out of (was an empty teal void)
+      var _water = new T.Mesh(new T.PlaneGeometry(_wr, _wr, 1, 1), islandWaterMat()); _water.rotation.x = -PI / 2; _water.position.set((bn.minX + bn.maxX) / 2, _seaY, midZ); _water.renderOrder = -1; if (R3.sun) _water.material.uniforms.uSun.value.copy(R3.sun.position).normalize(); R3.group.add(_water); R3.waterMesh = _water;
+    }
     else if (Array.isArray(hole.shape)) buildShapedGreen(hole, bn, midZ, spanX, spanZ);   // organic holes carry hole.shape as the polygon ARRAY (normal holes leave it as the builder method) — replace the rectangular green with the organic tiered one
     // DIORAMA DRESSING — props on the apron just outside the walls (visual only, no collision). PER-HOLE: the RNG is salted by the hole so every hole gets DIFFERENT props in DIFFERENT spots (before, it was seeded only by prop index → identical cacti on every level), and each hole draws from its own "biome" palette (saguaro / crystal field / fungal grove / boulder badlands / oasis / frontier / alien garden).
     (function () {
