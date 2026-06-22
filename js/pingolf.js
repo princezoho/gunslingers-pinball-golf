@@ -1130,7 +1130,7 @@
     var grassN = photoTex('grass_n.jpg#isl', false, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var grassD = photoTex('grass_g.jpg#isl', true, [Math.max(4, gw / 240), Math.max(4, gd / 240)]);
     var _gc = new T.Color(0x4eaa3c); if (_gc.convertSRGBToLinear) _gc.convertSRGBToLinear();   // bright fairway green (gray grass texture × this tint reads as real grass)
-    var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 1, metalness: 0, envMapIntensity: 0.1 })); green.receiveShadow = true; R3.group.add(green); if (!polyArg) R3.turf = green;   // don't reassign R3.turf for island calls (each island would otherwise hide the next)
+    var green = new T.Mesh(geo, new T.MeshStandardMaterial({ map: grassD, normalMap: grassN, color: _gc, roughness: 0.82, metalness: 0, envMapIntensity: 0.45 })); green.material.normalScale.set(1.6, 1.6); green.receiveShadow = true; R3.group.add(green); if (!polyArg) R3.turf = green;   // LUSH grass: lower roughness + more env + stronger normal relief so the turf catches the raking light with a subtle sheen + visible blade texture (was flat matte). don't reassign R3.turf for island calls
     // CUP COLLAR — only the island holding the cup gets the worn rim
     if (hasCup) {
     var collarMat = green.material.clone();
@@ -1393,7 +1393,7 @@
     var gtex = (tgf ? tgf[0] : 'grass_d.jpg').replace('_d.', '_g.');   // the REAL surface texture, desaturated to gray detail (grass blades / snow / regolith) — gt tints it to the backdrop color
     var grndTile = photoTex(gtex + '#turf', true, [Math.max(6, Math.round(spanX / 200)), Math.max(10, Math.round(spanZ / 200))]);
     var _ice = hole.theme === 'ice';
-    var turfMat = new T.MeshStandardMaterial({ map: grndTile, normalMap: tgN, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), vertexColors: true, roughness: _ice ? .6 : .95, metalness: 0, envMapIntensity: _ice ? .25 : .3 });   // the playfield is THIS hole's painted desert (its own painting foreground tile) + theme normal-map relief; the gt tint nudges the lit+tonemapped result to the painting's ground-average color — painted look AND matched color
+    var turfMat = new T.MeshStandardMaterial({ map: grndTile, normalMap: tgN, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), vertexColors: true, roughness: _ice ? .6 : .84, metalness: 0, envMapIntensity: _ice ? .25 : .48 }); turfMat.normalScale.set(1.6, 1.6);   // playfield catches the raking light with a subtle sheen + stronger relief (was flat matte roughness .95)   // the playfield is THIS hole's painted desert (its own painting foreground tile) + theme normal-map relief; the gt tint nudges the lit+tonemapped result to the painting's ground-average color — painted look AND matched color
     var turf = new T.Mesh(geo, turfMat); turf.receiveShadow = true; R3.group.add(turf); R3.turf = turf;
     // punch a REAL hole through the flat green at the cup — the solid grid would otherwise CAP it (you'd see only a ring, no hole). A clean turf collar hides the blocky grid cut behind a perfectly round rim.
     (function () {
