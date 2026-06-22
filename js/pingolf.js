@@ -911,17 +911,21 @@
   function envFromEquirect(t) { try { var pm = new T.PMREMGenerator(R3.r); pm.compileEquirectangularShader(); var e = pm.fromEquirectangular(t).texture; pm.dispose(); return e; } catch (e2) { return null; } }
   function initEnv() {   // REAL photographic desert HDRI -> PMREM image-based lighting: grounds every metal/glass/matte surface in a true light field (the believable-render lever). Procedural gradient is the instant fallback until the photo loads; the painted brand sky stays the VISIBLE backdrop (scene.background is never set).
     try {
-      var c = document.createElement('canvas'); c.width = 256; c.height = 128; var x = c.getContext('2d');
-      var g = x.createLinearGradient(0, 0, 0, 128);
-      g.addColorStop(0, '#7fa8d0'); g.addColorStop(0.42, '#d9b88a'); g.addColorStop(0.55, '#f2cf9a'); g.addColorStop(0.62, '#8a6a42'); g.addColorStop(1, '#3a2a18');
-      x.fillStyle = g; x.fillRect(0, 0, 256, 128);
-      var sg = x.createRadialGradient(70, 44, 2, 70, 44, 36); sg.addColorStop(0, 'rgba(255,246,218,1)'); sg.addColorStop(0.3, 'rgba(255,226,162,.8)'); sg.addColorStop(1, 'rgba(255,214,140,0)');
-      x.fillStyle = sg; x.fillRect(0, 0, 256, 128);
+      // HIGH-CONTRAST equirect (1024x512, was 256x128): a brighter zenith, a hot near-white sun disc + a darker ground = a much wider dynamic range, so EVERY reflective surface (chrome ball, gold, steel rails, glass) catches crisp bright speculars instead of a flat gray sheen. The biggest believability lever; mood-independent + zero per-frame cost.
+      var c = document.createElement('canvas'); c.width = 1024; c.height = 512; var x = c.getContext('2d');
+      var g = x.createLinearGradient(0, 0, 0, 512);
+      g.addColorStop(0, '#aacdf6'); g.addColorStop(0.38, '#8db6e4'); g.addColorStop(0.5, '#f3d29c'); g.addColorStop(0.56, '#ffd896'); g.addColorStop(0.64, '#6a4e2e'); g.addColorStop(1, '#1f1607');
+      x.fillStyle = g; x.fillRect(0, 0, 1024, 512);
+      var sx = 276, sy = 176;   // keep the sun's tuned azimuth/elevation ratio (0.27, 0.34) so glints align with R3.sun
+      var sg = x.createRadialGradient(sx, sy, 3, sx, sy, 150); sg.addColorStop(0, 'rgba(255,253,244,1)'); sg.addColorStop(0.12, 'rgba(255,245,216,1)'); sg.addColorStop(0.4, 'rgba(255,226,160,.5)'); sg.addColorStop(1, 'rgba(255,214,140,0)');
+      x.fillStyle = sg; x.fillRect(0, 0, 1024, 512);
       var t = new T.CanvasTexture(c); t.mapping = T.EquirectangularReflectionMapping; if (T.sRGBEncoding) t.encoding = T.sRGBEncoding;
       R3.env = envFromEquirect(t); t.dispose();
-      new T.TextureLoader().load('assets/env-desert.jpg', function (ph) {   // swap to the real HDRI once decoded
-        ph.mapping = T.EquirectangularReflectionMapping; if (T.sRGBEncoding) ph.encoding = T.sRGBEncoding;
-        var real = envFromEquirect(ph); ph.dispose();
+      new T.TextureLoader().load('assets/env-desert.jpg', function (ph) {   // swap to the real HDRI once decoded — contrast-boost it first so the LDR jpg yields punchier reflections
+        var src = ph;
+        try { var pc = document.createElement('canvas'); pc.width = ph.image.width; pc.height = ph.image.height; var px = pc.getContext('2d'); px.filter = 'contrast(1.5) brightness(1.12) saturate(1.2)'; px.drawImage(ph.image, 0, 0); src = new T.CanvasTexture(pc); } catch (e3) { src = ph; }
+        src.mapping = T.EquirectangularReflectionMapping; if (T.sRGBEncoding) src.encoding = T.sRGBEncoding;
+        var real = envFromEquirect(src); if (src !== ph) src.dispose(); ph.dispose();
         if (real) { R3.env = real; if (R3.scene && St.hole && St.hole.theme !== 'moon') R3.scene.environment = real; }
       });
     } catch (e) { R3.env = null; }
@@ -1126,10 +1130,10 @@
     var skirt = new T.Mesh(sg, new T.MeshStandardMaterial({ color: 0x9a7548, roughness: 1, flatShading: true })); R3.group.add(skirt);
   }
   function metalMat(color, metalness, env, normScale) {   // realistic worn metal: scratched roughness + normal break up the reflection so it reads as REAL metal, not mirror plastic
-    var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 1.8 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
+    var m = new T.MeshStandardMaterial({ color: color, metalness: metalness == null ? 1 : metalness, roughness: 1, envMapIntensity: env == null ? 2.2 : env, roughnessMap: photoTex('metal_r.jpg#mtl', false, [2.4, 2.4]), normalMap: photoTex('metal_n.jpg#mtl', false, [2.4, 2.4]) });
     m.normalScale = new T.Vector2(normScale == null ? 0.32 : normScale, normScale == null ? 0.32 : normScale); return m;
   }
-  function goldMat(env) { var m = metalMat(0xffce5c, 1, env == null ? 2.6 : env, 0.24); m.emissive = new T.Color(0x3a2600); m.emissiveIntensity = 0.18; return m; }   // rich warm gold: bright reflective metal with a faint warm glow so it reads as real gold, not flat yellow
+  function goldMat(env) { var m = metalMat(0xffce5c, 1, env == null ? 3.0 : env, 0.24); m.emissive = new T.Color(0x3a2600); m.emissiveIntensity = 0.18; return m; }   // rich warm gold: bright reflective metal with a faint warm glow so it reads as real gold, not flat yellow
   function spriteMat(name) {
     var key = 'sprm_' + name; if (R3['_' + key]) return R3['_' + key];
     var m = new T.MeshStandardMaterial({ transparent: true, alphaTest: .45, side: T.DoubleSide, roughness: .9, opacity: 0 });
@@ -1266,7 +1270,7 @@
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.14 }, uSep: { value: 0 }, uShad: { value: new T.Vector3(0.9, 0.97, 1.08) }, uHigh: { value: new T.Vector3(1.12, 1.01, 0.82) }, uLo: { value: 0.18 }, uHi: { value: 0.75 }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 }, uGmAmt: { value: 0 }, uGm0: { value: new T.Vector3(0, 0, 0) }, uGm1: { value: new T.Vector3(0.5, 0.5, 0.5) }, uGm2: { value: new T.Vector3(1, 1, 1) }, uPost: { value: 0 }, uEdge: { value: 0 }, uStyle: { value: 0 }, uScan: { value: 0 }, tAO: { value: null }, uAOAmt: { value: 0.6 }, uAODebug: { value: 0.0 } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.014 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.14 }, uSep: { value: 0 }, uShad: { value: new T.Vector3(0.9, 0.97, 1.08) }, uHigh: { value: new T.Vector3(1.12, 1.01, 0.82) }, uLo: { value: 0.18 }, uHi: { value: 0.75 }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 }, uGmAmt: { value: 0 }, uGm0: { value: new T.Vector3(0, 0, 0) }, uGm1: { value: new T.Vector3(0.5, 0.5, 0.5) }, uGm2: { value: new T.Vector3(1, 1, 1) }, uPost: { value: 0 }, uEdge: { value: 0 }, uStyle: { value: 0 }, uScan: { value: 0 }, tAO: { value: null }, uAOAmt: { value: 0.72 }, uAODebug: { value: 0.0 } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
       // SSAO setup: hemisphere kernel + 4x4 rotation noise + half-res AO buffers
       var ssaoKernel = []; for (var ki = 0; ki < 16; ki++) { var kv = new T.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 0.85 + 0.15); kv.normalize(); var ks = ki / 16.0; kv.multiplyScalar(0.12 + 0.88 * ks * ks); ssaoKernel.push(kv); }
@@ -1919,7 +1923,7 @@
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
-      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .3, clearcoat: .85, clearcoatRoughness: .3, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; if ('envMapIntensity' in m.material) m.material.envMapIntensity = R3.moodRefl || 0.9; R3.group.add(m); R3.ballMeshes.push(m);   // ball wears its face/markings — keep the texture in toon/flat modes; honour the current mood's reflection boost
+      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .12, clearcoat: 1, clearcoatRoughness: .06, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; if ('envMapIntensity' in m.material) m.material.envMapIntensity = R3.moodRefl || 0.9; R3.group.add(m); R3.ballMeshes.push(m);   // ball wears its face/markings — keep the texture in toon/flat modes; honour the current mood's reflection boost
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
       var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
