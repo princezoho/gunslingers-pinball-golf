@@ -1221,7 +1221,10 @@
         '  vec3 rA = 0.5*(texture2D(tD, vUv + dir*(1.0/3.0-0.5)).rgb + texture2D(tD, vUv + dir*(2.0/3.0-0.5)).rgb);',
         '  vec3 rB = rA*0.5 + 0.25*(texture2D(tD, vUv + dir*-0.5).rgb + texture2D(tD, vUv + dir*0.5).rgb);',
         '  float lB = dot(rB, L);',
-        '  gl_FragColor = vec4((lB < lMin || lB > lMax) ? rA : rB, 1.0);',
+        '  vec3 aa = (lB < lMin || lB > lMax) ? rA : rB;',
+        '  vec3 lf = (nw + ne + sw + se + mC) * 0.2;',                                                            // cheap local average from the FXAA taps already in registers (NO extra texture fetches)',
+        '  aa = clamp(aa + (mC - lf) * 0.26, 0.0, 1.0);',                                                        // subtle unsharp/CAS-style sharpen — restores the crispness FXAA softens; free + no colour shift',
+        '  gl_FragColor = vec4(aa, 1.0);',
         '}'].join('\n');
       var rt;
       if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 2 : 4; }
