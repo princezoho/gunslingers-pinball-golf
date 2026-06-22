@@ -707,7 +707,7 @@
   function applyMood(name) {
     var m = MOODS[name] || MOODS.sunset; St.mood = MOODS[name] ? name : 'sunset';
     if (!R3.ready) return m;
-    if (R3.r.toneMapping) R3.r.toneMappingExposure = m.exp;
+    if (R3.r.toneMapping) R3.r.toneMappingExposure = m.exp * 0.85;   // CINEMATIC baseline: underexpose ~a third of a stop on EVERY mood (owner: "lower f-stop, underexpose a drop") — highlights pop, shadows deepen, less washed-out
     function L(o, c, i) { if (!o) return; o.color.setHex(c); o.intensity = i; }
     L(R3.sun, m.sun.c, m.sun.i); L(R3.amb, m.amb.c, m.amb.i); L(R3.rim, m.rim.c, m.rim.i); L(R3.fill, m.fill.c, m.fill.i);
     if (R3.hemi) { R3.hemi.color.setHex(m.hemi.s); R3.hemi.groundColor.setHex(m.hemi.g); R3.hemi.intensity = m.hemi.i; }
@@ -717,7 +717,7 @@
     R3.moodRefl = m.refl || 0.9; if (R3.ballMeshes) R3.ballMeshes.forEach(function (b) { if (b.material && 'envMapIntensity' in b.material) b.material.envMapIntensity = R3.moodRefl; });   // per-mood reflectivity boost — sunset cranks it so the chrome ball catches the layered colour (R3.moodRefl re-applied when a new hole rebuilds the ball)
     ensureDust(); if (R3.moodDust) { R3.moodDust.visible = !!m.dust; R3.moodDust.material.opacity = m.dust ? (m.dustOp || 0.55) : 0; if (m.dust && m.dustC != null) R3.moodDust.material.color.setHex(m.dustC); }   // airborne dust motes for the Dusty look (moodDust — distinct from the old removed R3.dust)
     if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
-    if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uShad.value.set(g.shad[0], g.shad[1], g.shad[2]); u.uHigh.value.set(g.high[0], g.high[1], g.high[2]); u.uLo.value = g.lo; u.uHi.value = g.hi; u.uCon.value = g.con; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca;
+    if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uShad.value.set(g.shad[0], g.shad[1], g.shad[2]); u.uHigh.value.set(g.high[0], g.high[1], g.high[2]); u.uLo.value = g.lo; u.uHi.value = g.hi; u.uCon.value = g.con * 1.08; u.uBright.value = g.bright; u.uLift.value = g.lift * 0.85; u.uGrain.value = m.grain; u.uVig.value = Math.min(0.62, m.vig + 0.04); R3.post.ca = m.ca;   // CINEMATIC: a little more contrast + deeper blacks + a touch more vignette, every mood
       u.uGmAmt.value = g.gmAmt || 0; if (g.gm) { u.uGm0.value.set(g.gm[0][0], g.gm[0][1], g.gm[0][2]); u.uGm1.value.set(g.gm[1][0], g.gm[1][1], g.gm[1][2]); u.uGm2.value.set(g.gm[2][0], g.gm[2][1], g.gm[2][2]); } u.uPost.value = g.post || 0; u.uEdge.value = g.edge || 0; u.uStyle.value = g.style || 0; u.uScan.value = g.scan || 0; }
     // B&W moods (noir / sin city) → desaturate the HUD canvas + on-screen controls too, so the whole frame reads black-and-white
     var _gf = m.grade.sat < 0.12 ? 'grayscale(1) contrast(1.04)' : '';
