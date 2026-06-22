@@ -719,6 +719,7 @@
     if (R3.scene && R3.scene.fog) R3.scene.fog.color.setHex(m.fog);
     if (R3.post && R3.post.mat) { var u = R3.post.mat.uniforms, g = m.grade; u.uSat.value = g.sat; u.uSep.value = g.sep; u.uShad.value.set(g.shad[0], g.shad[1], g.shad[2]); u.uHigh.value.set(g.high[0], g.high[1], g.high[2]); u.uBloomTint.value.set(1 + (g.high[0] - 1) * 0.7, 1 + (g.high[1] - 1) * 0.7, 1 + (g.high[2] - 1) * 0.7); u.uLo.value = g.lo; u.uHi.value = g.hi; u.uCon.value = g.con * 1.06; u.uBright.value = g.bright; u.uLift.value = g.lift; u.uGrain.value = m.grain; u.uVig.value = m.vig; R3.post.ca = m.ca;   // CINEMATIC: a uniform +6% contrast S-curve, every mood (lift left per-mood so night doesn't crush; depth comes from lighting + split-tone, not lifting)
       u.uGmAmt.value = g.gmAmt || 0; if (g.gm) { u.uGm0.value.set(g.gm[0][0], g.gm[0][1], g.gm[0][2]); u.uGm1.value.set(g.gm[1][0], g.gm[1][1], g.gm[1][2]); u.uGm2.value.set(g.gm[2][0], g.gm[2][1], g.gm[2][2]); } u.uPost.value = g.post || 0; u.uEdge.value = g.edge || 0; u.uStyle.value = g.style || 0; u.uScan.value = g.scan || 0; u.uGodray.value = m.godray || 0; }   // god-ray strength per mood (sunny modes only)
+    if (R3.rimColU) { R3.rimAmtU.value = (m.grade.sat < 0.12) ? 0 : (m.rimAmt != null ? m.rimAmt : 0.7); R3.rimColU.value.setHex(m.rimCol || 0xffdca8); }   // fresnel edge-glow strength/colour per mood (off for B&W); warm gold default
     // B&W moods (noir / sin city) → desaturate the HUD canvas + on-screen controls too, so the whole frame reads black-and-white
     var _gf = m.grade.sat < 0.12 ? 'grayscale(1) contrast(1.04)' : '';
     [St.hud, document.getElementById('cam'), document.getElementById('snd')].concat(R3.hudBtns || []).forEach(function (e) { if (e) try { e.style.filter = _gf; } catch (x) { } });
@@ -1357,6 +1358,16 @@
   }
 
   /* ---------------- build scene from a hole ---------------- */
+  function rimPatch(mat) {   // FRESNEL EDGE-GLOW: inject a rim term so object silhouettes catch a bright cinematic edge light (the AAA "rim/kicker" pop a directional light can't fake). Shared uniforms → applyMood sets strength/colour per mood.
+    if (!mat || mat._rim || (mat.type !== 'MeshStandardMaterial' && mat.type !== 'MeshPhysicalMaterial')) return mat;
+    mat._rim = true;
+    if (!R3.rimColU) { R3.rimColU = { value: new T.Color(0xffdca8) }; R3.rimAmtU = { value: 0.0 }; }
+    mat.onBeforeCompile = function (shader) {
+      shader.uniforms.uRimCol = R3.rimColU; shader.uniforms.uRimAmt = R3.rimAmtU;
+      shader.fragmentShader = 'uniform vec3 uRimCol; uniform float uRimAmt;\n' + shader.fragmentShader.replace('#include <output_fragment>', 'float _fr = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.5); outgoingLight += uRimCol * (_fr * uRimAmt);\n#include <output_fragment>');
+    };
+    mat.needsUpdate = true; return mat;
+  }
   function flipperShape(L) { var r0 = 16, r1 = 7, sh = new T.Shape(), phi = Math.asin((r0 - r1) / L); sh.absarc(0, 0, r0, PI / 2 + phi, 1.5 * PI - phi, false); sh.absarc(L, 0, r1, -PI / 2 - phi, PI / 2 + phi, false); return sh; }
   function buildScene(hole) {
     if (!R3.ready) return;
@@ -1947,11 +1958,12 @@
     // always-on-top ball locator — a glow that marks exactly where the ball is when geometry would hide it
     R3.ballLocator = new T.Mesh(new T.SphereGeometry(K.R * 1.1, 18, 14), new T.MeshBasicMaterial({ color: 0xffe39a, transparent: true, opacity: 0, depthTest: false, depthWrite: false, blending: T.AdditiveBlending }));
     R3.ballLocator.renderOrder = 10000; R3.ballLocator.visible = false; R3.group.add(R3.ballLocator);
+    R3.group.traverse(function (o) { if (o.isMesh && o.castShadow && o.material) rimPatch(o.material); });   // fresnel rim-glow on the OBJECTS (curbs/obstacles/bumpers cast shadows) — ground/dome don't cast, so they're skipped
   }
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
-      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .12, clearcoat: 1, clearcoatRoughness: .06, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; if ('envMapIntensity' in m.material) m.material.envMapIntensity = R3.moodRefl || 0.9; R3.group.add(m); R3.ballMeshes.push(m);   // ball wears its face/markings — keep the texture in toon/flat modes; honour the current mood's reflection boost
+      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .12, clearcoat: 1, clearcoatRoughness: .06, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; if ('envMapIntensity' in m.material) m.material.envMapIntensity = R3.moodRefl || 0.9; rimPatch(m.material); R3.group.add(m); R3.ballMeshes.push(m);   // ball wears its face/markings — keep the texture in toon/flat modes; honour the current mood's reflection boost
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
       var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
