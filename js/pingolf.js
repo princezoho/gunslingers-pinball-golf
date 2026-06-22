@@ -1198,6 +1198,7 @@
         '  float n = hash(vUv * uRes * 0.5 + vec2(mod(uT, 64.0) * 17.31, mod(uT, 64.0) * 9.73));',
         '  col += (n - 0.5) * uGrain * (0.35 + 0.65 * (1.0 - lum));',                                             // 7. film grain on top of the grade
         '  col *= 1.0 - uVig * smoothstep(0.16, 0.6, r2);',                                                       // 8. vignette
+        '  col += (hash(vUv * uRes * 1.37 + 11.3) - 0.5) * (1.0 / 255.0);',                                       // 9. always-on 1-LSB dither (debanding) — kills 8-bit gradient banding even in the flat-fill looks that set grain:0 (cartoon/cel/line); imperceptible otherwise
         '  gl_FragColor = vec4(col, 1.0);',
         '}'].join('\n');
       // FXAA — edge smoothing on the final image: kills the jaggies on rounded silhouettes and the painted horizon line
