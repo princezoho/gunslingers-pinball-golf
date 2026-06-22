@@ -1158,6 +1158,7 @@
         'uniform sampler2D tD; uniform sampler2D tB; uniform float uT; uniform float uCA; uniform float uGrain; uniform float uVig; uniform float uDof; uniform float uFocus; uniform float uBloom; uniform vec2 uRes;',
         'uniform float uSat; uniform float uSep; uniform vec3 uShad; uniform vec3 uHigh; uniform float uLo; uniform float uHi; uniform float uCon; uniform float uBright; uniform float uLift;',
         'uniform float uGmAmt; uniform vec3 uGm0; uniform vec3 uGm1; uniform vec3 uGm2; uniform float uPost; uniform float uEdge; uniform float uStyle; uniform float uScan;',
+        'uniform sampler2D tAO; uniform float uAOAmt; uniform float uAODebug;',
         'float hash(vec2 p){ vec3 q = fract(vec3(p.xyx) * 443.8975); q += dot(q, q.yzx + 19.19); return fract((q.x + q.y) * q.z); }',
         'void main(){',
         '  vec2 d = vUv - 0.5; float r2 = dot(d, d);',
@@ -1171,6 +1172,8 @@
         '  ring *= 0.125;',
         '  vec3 col = mix(base, ring, clamp(br * 220.0, 0.0, 0.62));',
         '  col += max(ring - 0.78, 0.0) * 0.35;',
+        '  if (uAODebug > 0.5) { gl_FragColor = vec4(vec3(texture2D(tAO, vUv).r), 1.0); return; }',                 // DEBUG: view the raw AO buffer',
+        '  if (uAOAmt > 0.001) { col *= mix(1.0, texture2D(tAO, vUv).r, uAOAmt); }',                               // SSAO grounding — darken occluded crevices BEFORE bloom (glow not occluded)',
         '  col += texture2D(tB, vUv).rgb * uBloom;',                                       // BLOOM: lights actually glow
         '  float lum = dot(col, vec3(0.299, 0.587, 0.114));',
         '  col = mix(vec3(lum), col, uSat);',                                                                       // 1. saturation (0 = B&W for noir/sin city)
@@ -1226,19 +1229,55 @@
         '  aa = clamp(aa + (mC - lf) * 0.26, 0.0, 1.0);',                                                        // subtle unsharp/CAS-style sharpen — restores the crispness FXAA softens; free + no colour shift',
         '  gl_FragColor = vec4(aa, 1.0);',
         '}'].join('\n');
-      var rt;
-      if (R3.r.capabilities && R3.r.capabilities.isWebGL2 && T.WebGLMultisampleRenderTarget) { rt = new T.WebGLMultisampleRenderTarget(8, 8); rt.samples = (window.matchMedia && matchMedia('(pointer:coarse)').matches) ? 2 : 4; }
-      else rt = new T.WebGLRenderTarget(8, 8);
+      // SSAO — hemisphere-kernel ambient occlusion from the depth texture (view-space reconstruction, derivative normals). Grounds geometry + adds contact depth = AAA feel.
+      var ssaoF = [
+        'precision highp float; varying vec2 vUv;',
+        'uniform sampler2D tDepth; uniform sampler2D tNoise;',
+        'uniform mat4 uProj; uniform mat4 uProjInv;',
+        'uniform vec3 uKernel[16]; uniform vec2 uNoiseScale;',
+        'uniform float uRadius; uniform float uBias; uniform float uStrength;',
+        'vec3 vpos(vec2 uv, float d){ vec4 c = vec4(uv*2.0-1.0, d*2.0-1.0, 1.0); vec4 v = uProjInv*c; return v.xyz/v.w; }',
+        'void main(){',
+        '  float d = texture2D(tDepth, vUv).x;',
+        '  if (d >= 0.9999) { gl_FragColor = vec4(1.0); return; }',                                              // sky/background → no AO
+        '  vec3 P = vpos(vUv, d);',
+        '  vec3 N = normalize(cross(dFdx(P), dFdy(P)));',
+        '  vec3 rv = texture2D(tNoise, vUv*uNoiseScale).xyz*2.0-1.0;',
+        '  vec3 T = normalize(rv - N*dot(rv,N)); vec3 B = cross(N,T); mat3 TBN = mat3(T,B,N);',
+        '  float occ = 0.0;',
+        '  for (int i=0;i<16;i++){',
+        '    vec3 sp = P + TBN*uKernel[i]*uRadius;',
+        '    vec4 o = uProj*vec4(sp,1.0); vec2 su = o.xy/o.w*0.5+0.5;',
+        '    if (su.x<0.0||su.x>1.0||su.y<0.0||su.y>1.0) { continue; }',
+        '    float sz = vpos(su, texture2D(tDepth, su).x).z;',                                                   // geometry view-Z at the sample
+        '    float rc = smoothstep(0.0, 1.0, uRadius/max(abs(P.z - sz), 0.0001));',                              // range falloff
+        '    occ += (sz >= sp.z + uBias ? 1.0 : 0.0)*rc;',                                                       // occluder is closer to camera than the sample
+        '  }',
+        '  gl_FragColor = vec4(vec3(clamp(1.0 - (occ/16.0)*uStrength, 0.0, 1.0)), 1.0);',
+        '}'].join('\n');
+      var ssaoBlurF = [
+        'precision highp float; varying vec2 vUv; uniform sampler2D tD; uniform vec2 uTexel;',
+        'void main(){ float s = 0.0; for (int x=-2;x<2;x++){ for (int y=-2;y<2;y++){ s += texture2D(tD, vUv + vec2(float(x),float(y))*uTexel).r; } } gl_FragColor = vec4(vec3(s/16.0), 1.0); }'].join('\n');   // 4x4 box blur denoise (matches the 4x4 noise tile)
+      var rt = new T.WebGLRenderTarget(8, 8);   // non-MSAA so we can attach a DEPTH texture for SSAO; FXAA + CAS sharpen + 2x pixelRatio handle the edges
+      rt.depthTexture = new T.DepthTexture(8, 8); rt.depthTexture.type = (T.UnsignedIntType !== undefined) ? T.UnsignedIntType : T.UnsignedShortType;   // 24/32-bit depth for clean SSAO reconstruction
       if (T.sRGBEncoding) rt.texture.encoding = T.sRGBEncoding;
       rt.texture.minFilter = T.LinearFilter; rt.texture.generateMipmaps = false;
       var mkRT = function () { var r = new T.WebGLRenderTarget(8, 8); r.texture.minFilter = T.LinearFilter; r.texture.generateMipmaps = false; return r; };
       var b1 = mkRT(), b2 = mkRT(), ldr = mkRT();   // ldr = the composited image, fed to the FXAA pass before it hits the screen
       var brightM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: brightF, uniforms: { tD: { value: rt.texture }, uThresh: { value: 0.88 } }, depthTest: false, depthWrite: false });
       var blurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: blurF, uniforms: { tD: { value: b1.texture }, uDir: { value: new T.Vector2(0, 0) } }, depthTest: false, depthWrite: false });
-      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.14 }, uSep: { value: 0 }, uShad: { value: new T.Vector3(0.9, 0.97, 1.08) }, uHigh: { value: new T.Vector3(1.12, 1.01, 0.82) }, uLo: { value: 0.18 }, uHi: { value: 0.75 }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 }, uGmAmt: { value: 0 }, uGm0: { value: new T.Vector3(0, 0, 0) }, uGm1: { value: new T.Vector3(0.5, 0.5, 0.5) }, uGm2: { value: new T.Vector3(1, 1, 1) }, uPost: { value: 0 }, uEdge: { value: 0 }, uStyle: { value: 0 }, uScan: { value: 0 } }, depthTest: false, depthWrite: false });
+      var mat = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fsh, uniforms: { tD: { value: rt.texture }, tB: { value: b1.texture }, uT: { value: 0 }, uCA: { value: 0.0026 }, uGrain: { value: 0.13 }, uVig: { value: 0.4 }, uDof: { value: 0.004 }, uFocus: { value: 0.56 }, uBloom: { value: 0.82 }, uRes: { value: new T.Vector2(8, 8) }, uSat: { value: 1.14 }, uSep: { value: 0 }, uShad: { value: new T.Vector3(0.9, 0.97, 1.08) }, uHigh: { value: new T.Vector3(1.12, 1.01, 0.82) }, uLo: { value: 0.18 }, uHi: { value: 0.75 }, uCon: { value: 1.16 }, uBright: { value: 0.93 }, uLift: { value: 1 }, uGmAmt: { value: 0 }, uGm0: { value: new T.Vector3(0, 0, 0) }, uGm1: { value: new T.Vector3(0.5, 0.5, 0.5) }, uGm2: { value: new T.Vector3(1, 1, 1) }, uPost: { value: 0 }, uEdge: { value: 0 }, uStyle: { value: 0 }, uScan: { value: 0 }, tAO: { value: null }, uAOAmt: { value: 0.6 }, uAODebug: { value: 0.0 } }, depthTest: false, depthWrite: false });
       var fxaaM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: fxaaF, uniforms: { tD: { value: ldr.texture }, uRes: { value: new T.Vector2(8, 8) } }, depthTest: false, depthWrite: false });
+      // SSAO setup: hemisphere kernel + 4x4 rotation noise + half-res AO buffers
+      var ssaoKernel = []; for (var ki = 0; ki < 16; ki++) { var kv = new T.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 0.85 + 0.15); kv.normalize(); var ks = ki / 16.0; kv.multiplyScalar(0.12 + 0.88 * ks * ks); ssaoKernel.push(kv); }
+      var nsz = 4, ndata = new Uint8Array(nsz * nsz * 4); for (var ni = 0; ni < nsz * nsz; ni++) { ndata[ni * 4] = Math.floor(Math.random() * 256); ndata[ni * 4 + 1] = Math.floor(Math.random() * 256); ndata[ni * 4 + 2] = 128; ndata[ni * 4 + 3] = 255; }
+      var noiseTex = new T.DataTexture(ndata, nsz, nsz); noiseTex.wrapS = noiseTex.wrapT = T.RepeatWrapping; noiseTex.magFilter = noiseTex.minFilter = T.NearestFilter; noiseTex.needsUpdate = true;
+      var ao = mkRT(), aoB = mkRT();   // half-res raw AO + blurred AO
+      mat.uniforms.tAO.value = aoB.texture;
+      var ssaoM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: ssaoF, uniforms: { tDepth: { value: rt.depthTexture }, tNoise: { value: noiseTex }, uProj: { value: new T.Matrix4() }, uProjInv: { value: new T.Matrix4() }, uKernel: { value: ssaoKernel }, uNoiseScale: { value: new T.Vector2(1, 1) }, uRadius: { value: 42 }, uBias: { value: 0.5 }, uStrength: { value: 1.15 } }, depthTest: false, depthWrite: false, extensions: { derivatives: true } });
+      var ssaoBlurM = new T.ShaderMaterial({ vertexShader: vsh, fragmentShader: ssaoBlurF, uniforms: { tD: { value: ao.texture }, uTexel: { value: new T.Vector2(1, 1) } }, depthTest: false, depthWrite: false });
       var qs = new T.Scene(), quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false; qs.add(quad);
-      R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+      R3.post = { on: true, ca: 0.0026, rt: rt, b1: b1, b2: b2, ldr: ldr, ao: ao, aoB: aoB, ssaoM: ssaoM, ssaoBlurM: ssaoBlurM, brightM: brightM, blurM: blurM, mat: mat, fxaaM: fxaaM, quad: quad, scene: qs, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
     } catch (e) { R3.post = null; }
   }
   function renderGL() {
@@ -1257,8 +1296,15 @@
           p.rt.setSize(w, h); p.mat.uniforms.uRes.value.set(w, h);
           p.ldr.setSize(w, h); p.fxaaM.uniforms.uRes.value.set(w, h);
           var bw = Math.max(8, w >> 2), bh = Math.max(8, h >> 2); p.b1.setSize(bw, bh); p.b2.setSize(bw, bh);
+          var aw = Math.max(8, w >> 1), ah = Math.max(8, h >> 1); p.ao.setSize(aw, ah); p.aoB.setSize(aw, ah); p.ssaoM.uniforms.uNoiseScale.value.set(aw / 4, ah / 4); p.ssaoBlurM.uniforms.uTexel.value.set(1 / aw, 1 / ah);   // SSAO at half-res
         }
         R3.r.setRenderTarget(p.rt); R3.r.render(R3.scene, R3.cam);
+        // SSAO: depth-buffer ambient occlusion (half-res) -> 4x4 blur denoise
+        if (p.mat.uniforms.uAOAmt.value > 0.001 || p.mat.uniforms.uAODebug.value > 0.5) {
+          p.ssaoM.uniforms.uProj.value.copy(R3.cam.projectionMatrix); p.ssaoM.uniforms.uProjInv.value.copy(R3.cam.projectionMatrix).invert();
+          p.quad.material = p.ssaoM; R3.r.setRenderTarget(p.ao); R3.r.render(p.scene, p.cam);
+          p.quad.material = p.ssaoBlurM; p.ssaoBlurM.uniforms.tD.value = p.ao.texture; R3.r.setRenderTarget(p.aoB); R3.r.render(p.scene, p.cam);
+        }
         // bloom chain: bright-pass -> H blur -> V blur (quarter res)
         p.quad.material = p.brightM; p.brightM.uniforms.tD.value = p.rt.texture;
         R3.r.setRenderTarget(p.b1); R3.r.render(p.scene, p.cam);
