@@ -659,7 +659,7 @@
     if (!T) return false;
     try {
       R3.r = new T.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-      var coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches; R3.r.setPixelRatio(Math.min(coarse ? 1.2 : 1.5, window.devicePixelRatio || 1));   // phones get a lighter pixel load; FXAA+MSAA keep edges clean   // cap at 1.5x: FXAA+MSAA keep edges clean, ~45% fewer pixels = solid 60fps on retina
+      var coarse = window.matchMedia && matchMedia('(pointer:coarse)').matches; R3.r.setPixelRatio(Math.min(coarse ? 1.5 : 2.0, window.devicePixelRatio || 1));   // 30fps budget → higher render resolution for a crisper AAA image (was 1.2/1.5 for 60fps)
       if (T.sRGBEncoding) R3.r.outputEncoding = T.sRGBEncoding;
       if (T.ACESFilmicToneMapping) { R3.r.toneMapping = T.ACESFilmicToneMapping; R3.r.toneMappingExposure = 1.14; }
       R3.r.shadowMap.enabled = true; R3.r.shadowMap.type = T.PCFSoftShadowMap || T.PCFShadowMap; R3.r.shadowMap.autoUpdate = false;   // we drive shadow updates manually (every few frames) instead of a full shadow re-render EVERY frame — big CPU + GC win, the soft shadows lag imperceptibly
@@ -668,7 +668,7 @@
       var amb0 = new T.AmbientLight(0xffdcb0, 0.2); R3.scene.add(amb0); R3.amb = amb0;
       var hemi0 = new T.HemisphereLight(0xffe0ae, 0x4a3320, 0.42); R3.scene.add(hemi0); R3.hemi = hemi0;
       var sun = new T.DirectionalLight(0xffbf52, 1.6); sun.position.set(-820, 1250, -360); sun.castShadow = true;   // low, warm golden-hour sun
-      sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
+      sun.shadow.mapSize.width = sun.shadow.mapSize.height = 4096;   // 30fps budget → 4K shadow map over the tight frustum = crisp, clean contact shadows (was 2048)
       var sc = sun.shadow.camera; sc.near = 100; sc.far = 4400; sc.left = -1150; sc.right = 1150; sc.top = 1150; sc.bottom = -1150;   // tight frustum around the table = much crisper shadows from the same 2048 map
       sun.shadow.bias = -0.0005; if ('normalBias' in sun.shadow) sun.shadow.normalBias = 2;
       R3.scene.add(sun.target); R3.scene.add(sun); R3.sun = sun;
