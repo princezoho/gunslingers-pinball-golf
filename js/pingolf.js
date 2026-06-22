@@ -45,7 +45,7 @@
   var PHYS_KEYS = ['g', 'rollFric', 'groundE', 'wallE', 'cupR', 'shotMax', 'bumpKick', 'flipKick', 'vMax'];
   function applyPhys(phys) { PHYS_KEYS.forEach(function (k) { K[k] = (phys && phys[k] != null) ? phys[k] : KD[k]; }); }
   function themePhys(theme) { var t = THEMES[theme] || THEMES.grass, p = {}; PHYS_KEYS.forEach(function (k) { p[k] = t[k] != null ? t[k] : KD[k]; }); return p; }
-  var COL = { gold: '#ffffff', cream: '#f5efdc', ink: '#191007', red: '#df3b32', grn: '#86d85f', blue: '#3aa0ff' };
+  var COL = { gold: '#f5c542', cream: '#f5efdc', ink: '#191007', red: '#df3b32', grn: '#86d85f', blue: '#3aa0ff' };   // COL.gold is canvas GAMEPLAY juice only (pops/sparks/cup rings/power meter/aim dots) — owner keeps these gold; menu/HUD TEXT uses literal #fff/#f5efdc, never COL.gold
   // POWER-UPS — beneficial pickups (roll over to grab). c/e = body+glow colour, ch = map glyph, dur = effect seconds (0 = instant)
   var PU = {
     magnet: { c: 0xff4477, e: 0x7a0a2a, ch: 'M', name: 'MAGNET', dur: 3.6, info: 'Pulls the ball toward the cup for a few seconds — grab it near the green and let it suck you in.' },
@@ -1334,6 +1334,7 @@
     St.shocks = []; hole._hull = undefined;   // walls may have changed (editor) — recompute the OOB hull lazily
     if (R3.group) R3.scene.remove(R3.group);
     R3.group = new T.Group(); R3.scene.add(R3.group);
+    R3.ghostMesh = null;   // the old ghost sphere belonged to the removed group — drop the ref so syncGhost re-creates it in the NEW group (else the rival/replay ghost goes invisible after any hole reload)
     R3.portalSwirls = []; R3.flagWave = null;
     var skyC = (THEMES[hole.theme] || THEMES.grass).sky || 0xc9a06a;   // theme-specific sky + fog (e.g. dark night for Moon)
     R3.scene.background = skyTex(hole.theme || 'grass', skyC) || new T.Color(skyC); R3.holeBg = R3.scene.background; R3.wireDirty = true; R3.outlineDirty = true; if (R3.scene.fog) R3.scene.fog.color.setHex(FOGC[hole.theme || 'grass'] || skyC);
@@ -1980,6 +1981,11 @@
   }
   function stepBall(b, dt, hole) {
     if (b.sunk || b.dead) return;
+    // SAFETY: if anything ever drove the ball non-finite (NaN/Inf position or velocity), the rescue checks below (terrain<=-2000 etc.) silently fail and the ball free-falls forever — a soft-lock. Snap it back to where the shot was played.
+    if (!isFinite(b.x) || !isFinite(b.y) || !isFinite(b.z) || !isFinite(b.vx) || !isFinite(b.vy) || !isFinite(b.vz)) {
+      var rr = b.shotFrom || hole.tee, rgy = hole.terrain(rr.x, rr.z); if (!isFinite(rgy)) rgy = 0;
+      b.x = rr.x; b.z = rr.z; b.y = rgy + K.R; b.vx = 0; b.vy = 0; b.vz = 0; b.air = false; b.stillT = 0; b.settled = false; b.loop = null;
+    }
     if (b.loopCd > 0) b.loopCd -= dt;
     if (b.hzCd > 0) b.hzCd -= dt;
     if (b.loop) { stepLoop(b, dt); return; }
@@ -2051,6 +2057,7 @@
     var tts = hole.turntables || []; for (i = 0; i < tts.length; i++) { var tt = tts[i]; if (b.air || b.y > gy + 60) continue; var trx = b.x - tt.x, trz = b.z - tt.z, td = hyp(trx, trz); if (td < tt.r) { var inv = 1 / (td || 1), tgx = -trz * inv, tgz = trx * inv, surf = tt.spin * Math.min(td, tt.r); b.vx += tgx * surf * 9 * dt; b.vz += tgz * surf * 9 * dt; tt.flash = .1; } }   // TURNTABLE: whirl the ball tangentially (no centripetal force → always spirals off the edge, never traps)
     // boosters
     if (b.boostCd > 0) b.boostCd -= dt;
+    // NOTE: the `b.boostCd <= 0` guard reads `undefined <= 0` (false) on a fresh ball, so boosters currently never fire. This is a real bug (B01) — BUT enabling them regresses 3 shipped holes (CANYON SPLIT/WINDMILL RUN/LOOP-DE-LOOP CITY) that were balanced around dead boosters: their cup-pointing 2900-4200 pads blast the tee shot out of control and the holes fail the beatability gate. Leaving disabled until those holes are re-tuned (owner design call). Editor/genWacky boosters share this; revisit together.
     for (i = 0; i < hole.boosters.length; i++) { var z = hole.boosters[i]; if (b.boostCd <= 0 && b.y < gy + 70 && hyp(b.x - z.x, b.z - z.z) < z.r) { b.vx = z.dx * z.spd; b.vz = z.dz * z.spd; b.boostCd = K.boostCd; z.flash = .3; St.shake = Math.min(11, St.shake + 7); pop3d(z.x, z.z, gy, 'TURBO!', COL.blue); spark(z.x, gy + 16, z.z, 16); spawnShock(z.x, gy, z.z, COL.blue); sfx('boost'); break; } }
     // CANNON — roll in, get BLASTED airborne in the barrel's direction (a high arc)
     if (b.cannonCd > 0) b.cannonCd -= dt;
@@ -2247,7 +2254,7 @@
       elt('div', 'width:46px;text-align:right;color:#ffffff;', bs['h' + hidx] != null ? ('' + bs['h' + hidx]) : '–', r);
     }
     var tp = totYou - totPar, tpStr = tp > 0 ? '+' + tp : tp === 0 ? 'EVEN' : String(tp);
-    var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:1px solid rgba(245,197,66,.22);font:900 15px Georgia;color:#ffffff;', null, box);
+    var tr = elt('div', 'display:flex;align-items:center;padding:9px 6px;margin-top:6px;border-top:1px solid rgba(255,255,255,.22);font:900 15px Georgia;color:#ffffff;', null, box);
     elt('div', 'flex:1;', 'TOTAL', tr); elt('div', 'width:46px;text-align:right;opacity:.7;', String(totPar), tr); elt('div', 'width:92px;text-align:right;', totYou + ' (' + tpStr + ')', tr);
     var act = elt('div', 'display:flex;gap:8px;margin-top:14px;', null, box);
     var pa = elt('button', 'flex:1;padding:11px;background:transparent;border:none;color:#ffffff;font:900 15px Wantedo,Georgia;cursor:pointer;', '▶ CHANGE NINE', act); pa.onclick = function () { ov.remove(); chooseSet(); };
@@ -2647,6 +2654,7 @@
     var d = ED.draft, L = [];
     d.bumpers.forEach(function (it, i) { L.push({ kind: 'bumper', item: it, x: it.x, z: it.z, arr: d.bumpers, idx: i }); });
     d.boosters.forEach(function (it, i) { L.push({ kind: 'booster', item: it, x: it.x, z: it.z, arr: d.boosters, idx: i }); });
+    (d.bouncers || []).forEach(function (it, i) { L.push({ kind: 'bouncer', item: it, x: it.x, z: it.z, arr: d.bouncers, idx: i }); });   // were invisible to select/move/delete/erase
     d.flippers.forEach(function (it, i) { L.push({ kind: 'flipper', item: it, x: it.px, z: it.pz, arr: d.flippers, idx: i }); });
     d.windmills.forEach(function (it, i) { L.push({ kind: 'windmill', item: it, x: it.x, z: it.z, arr: d.windmills, idx: i }); });
     d.loops.forEach(function (it, i) { L.push({ kind: 'loop', item: it, x: it.x, z: it.z, arr: d.loops, idx: i }); });
@@ -2887,6 +2895,7 @@
     else if (kind === 'windmill') { var wr = R(it.r || 200, 10), n = it.n || 4; c.strokeStyle = '#c8442e'; c.lineWidth = 3; for (var a = 0; a < n; a++) { var aa2 = a / n * TAU; c.beginPath(); c.moveTo(s.x, s.y); c.lineTo(s.x + Math.cos(aa2) * wr, s.y + Math.sin(aa2) * wr); c.stroke(); } c.fillStyle = '#6e4524'; c.beginPath(); c.arc(s.x, s.y, 4, 0, TAU); c.fill(); }
     else if (kind === 'conveyor') { var cl = R(it.len || 480, 10) / 2, cw = R(it.w || 240, 8) / 2, ca = it.ang || 0; c.save(); c.translate(s.x, s.y); c.rotate(ca - PI / 2); c.fillStyle = sel ? 'rgba(245,197,66,.22)' : 'rgba(40,42,48,.5)'; c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.fillRect(-cw, -cl, cw * 2, cl * 2); c.strokeRect(-cw, -cl, cw * 2, cl * 2); c.fillStyle = '#ffffff'; for (var cai = -1; cai <= 1; cai++) { var cy = cai * cl * 0.55; c.beginPath(); c.moveTo(0, cy - 6); c.lineTo(6, cy + 5); c.lineTo(-6, cy + 5); c.closePath(); c.fill(); } c.restore(); }
     else if (kind === 'pendulum') { var sw = R((it.len || 360) * Math.sin(it.amp || 1.1), 6); c.strokeStyle = '#9a9aa2'; c.lineWidth = 3; c.beginPath(); c.moveTo(s.x - sw, s.y); c.lineTo(s.x + sw, s.y); c.stroke(); c.fillStyle = sel ? '#ffffff' : '#33363d'; c.strokeStyle = '#15161a'; c.lineWidth = 1.5; c.beginPath(); c.arc(s.x, s.y, R(it.rb || 46, 4), 0, TAU); c.fill(); c.stroke(); }
+    else if (kind === 'bouncer') { var bcr = R(it.r || 64, 9); c.fillStyle = 'rgba(134,216,95,.26)'; c.strokeStyle = '#86d85f'; c.lineWidth = 2; c.beginPath(); c.arc(s.x, s.y, bcr, 0, TAU); c.fill(); c.stroke(); c.fillStyle = '#eafff0'; c.beginPath(); c.moveTo(s.x, s.y - 8); c.lineTo(s.x + 5, s.y + 2); c.lineTo(s.x - 5, s.y + 2); c.closePath(); c.fill(); }
     else if (kind === 'turntable') { var ttr = R(it.r || 200, 10); c.fillStyle = sel ? 'rgba(245,197,66,.18)' : 'rgba(71,74,83,.5)'; c.strokeStyle = '#ffffff'; c.lineWidth = 2; c.beginPath(); c.arc(s.x, s.y, ttr, 0, TAU); c.fill(); c.stroke(); for (var ti = 0; ti < 3; ti++) { var ta = ti / 3 * PI; c.beginPath(); c.moveTo(s.x - Math.cos(ta) * ttr, s.y - Math.sin(ta) * ttr); c.lineTo(s.x + Math.cos(ta) * ttr, s.y + Math.sin(ta) * ttr); c.stroke(); } var dir = (it.spin || 0) >= 0 ? 1 : -1; c.beginPath(); c.arc(s.x, s.y, ttr * 0.5, -0.6 * dir, 1.8 * dir); c.stroke(); }
     else if (kind === 'loop') { var lr = R(it.r || 130, 7); c.strokeStyle = '#e8902a'; c.lineWidth = 3; c.beginPath(); c.arc(s.x, s.y, lr, 0, TAU); c.stroke(); c.fillStyle = '#e8902a'; c.font = '700 9px Georgia'; c.textAlign = 'center'; c.fillText('∞', s.x, s.y + 3); }
     else if (kind === 'warp') { var pr = R(it.r || 50, 8); c.fillStyle = '#0a0616'; c.beginPath(); c.arc(s.x, s.y, pr, 0, TAU); c.fill(); c.strokeStyle = '#2aa8ff'; c.lineWidth = 3; c.beginPath(); c.arc(s.x, s.y, pr, 0, TAU); c.stroke(); c.fillStyle = '#2aa8ff'; c.font = '700 9px Georgia'; c.textAlign = 'center'; c.fillText('', s.x, s.y + 3); }
@@ -3193,7 +3202,9 @@
     d.wall(L[0].x, L[0].z, R[0].x, R[0].z); d.wall(L[pts.length - 1].x, L[pts.length - 1].z, R[pts.length - 1].x, R[pts.length - 1].z);
   }
   function applyShape(kind) {
-    edSnapshot(); var d = newDraft(); d.walls = []; d.terrainFeatures = []; d.noBox = true; var i, pts, hw = 155;
+    edSnapshot(); var prev = ED.draft || {}; var d = newDraft();
+    d.theme = prev.theme || d.theme; d.phys = prev.phys || d.phys; if (prev.turf != null) d.turf = prev.turf; if (prev.mood) d.mood = prev.mood; if (prev._ov != null) d._ov = prev._ov; if (prev.par) d.par = prev.par;   // a preset shape changes the LAYOUT, not the theme/physics/mood/campaign-slot — keep those from the draft being edited
+    d.walls = []; d.terrainFeatures = []; d.noBox = true; var i, pts, hw = 155;
     if (kind === 's') { d.name = 'S-CURVE'; d.bounds = { minX: -560, maxX: 560, minZ: -40, maxZ: 2200 }; pts = []; for (i = 0; i <= 28; i++) { var t = i / 28; pts.push({ x: Math.sin(t * TAU) * 370, z: 70 + t * 2010 }); } genCorridor(d, pts, hw); d.tee = { x: pts[0].x, z: pts[0].z }; d.cup = { x: pts[28].x, z: pts[28].z }; }
     else if (kind === 'z') { d.name = 'Z-BEND'; d.bounds = { minX: -580, maxX: 580, minZ: -40, maxZ: 2100 }; pts = chaikin([{ x: -360, z: 300 }, { x: 360, z: 300 }, { x: -360, z: 1780 }, { x: 360, z: 1780 }], 3); genCorridor(d, pts, 170); d.tee = { x: -360, z: 300 }; d.cup = { x: 360, z: 1780 }; }
     else if (kind === 'w') { d.name = 'W-ZIGZAG'; d.bounds = { minX: -620, maxX: 620, minZ: -40, maxZ: 1850 }; pts = chaikin([{ x: -440, z: 300 }, { x: -210, z: 1500 }, { x: 0, z: 360 }, { x: 210, z: 1500 }, { x: 440, z: 360 }], 3); genCorridor(d, pts, 165); d.tee = { x: -440, z: 300 }; d.cup = { x: 440, z: 360 }; }
@@ -3212,8 +3223,8 @@
     });
     var cl = elt('button', 'margin-top:8px;width:100%;padding:8px;background:#3a2614;color:#ffffff;font:700 12px Georgia;cursor:pointer;', 'Cancel', box); cl.onclick = function () { m.style.display = 'none'; };
   }
-  function edSerialize() { var d = ED.draft; return { name: d.name, par: d.par, bounds: d.bounds, tee: d.tee, cup: d.cup, walls: d.walls.filter(function (w) { return !w._bnd; }).map(function (w) { return { ax: w.ax, az: w.az, bx: w.bx, bz: w.bz, e: w.e, h: w.h }; }), bumpers: d.bumpers.map(function (b) { return { x: b.x, z: b.z, r: b.r, kick: b.kick }; }), bouncers: (d.bouncers || []).map(function (b) { return { x: b.x, z: b.z, r: b.r }; }), boosters: d.boosters.map(function (b) { return { x: b.x, z: b.z, ang: Math.atan2(b.dz, b.dx), r: b.r, spd: b.spd }; }), flippers: d.flippers.map(function (f) { return { side: f.side, px: f.px, pz: f.pz, len: f.len, rot: f.rot, speed: f.speed, power: f.power }; }), windmills: d.windmills.map(function (w) { return { x: w.x, z: w.z, r: w.r, n: w.n, speed: w.speed }; }), lasers: d.lasers.map(function (l) { return { ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase }; }), gates: (d.gates || []).map(function (g) { return { ax: g.ax, az: g.az, bx: g.bx, bz: g.bz, barFrac: g.barFrac, speed: g.speed, h: g.h }; }), conveyors: (d.conveyors || []).map(function (cv) { return { x: cv.x, z: cv.z, w: cv.w, len: cv.len, ang: cv.ang, force: cv.force }; }), pendulums: (d.pendulums || []).map(function (pd) { return { x: pd.x, z: pd.z, len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }; }), turntables: (d.turntables || []).map(function (tt) { return { x: tt.x, z: tt.z, r: tt.r, spin: tt.spin }; }), loops: d.loops.map(function (l) { return { x: l.x, z: l.z, r: l.r, ang: l.ang }; }), warps: d.warps.map(function (w) { return { x: w.x, z: w.z, ex: w.ex, ez: w.ez, r: w.r, tube: !!w.tube }; }), portals: d.portals.map(function (w) { return { x: w.x, z: w.z, exits: (w.exits || [{ x: w.ex, z: w.ez }]).map(function (e) { return { x: e.x, z: e.z }; }), r: w.r }; }), firerings: d.firerings.map(function (f) { return { x: f.x, z: f.z, r: f.r, h: f.h, points: f.points }; }), enemies: d.enemies.map(function (e) { return { x: e.x, z: e.z, ex: e.ex, ez: e.ez, r: e.r, speed: e.speed, type: e.type, behavior: e.behavior, effect: e.effect }; }), coins: d.coins.map(function (c) { return { x: c.x, z: c.z, value: c.value }; }), powerups: (d.powerups || []).map(function (p) { return { x: p.x, z: p.z, kind: p.kind }; }), terrain: d.terrainFeatures, noBox: d.noBox, wallH: d.wallH || 52, theme: d.theme || 'grass', phys: d.phys || themePhys(d.theme || 'grass'), turf: d.turf, shape: (Array.isArray(d.shape) ? d.shape.map(function (p) { return { x: p.x, z: p.z }; }) : null), islands: (Array.isArray(d.islands) ? d.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }) : null), mood: d.mood || null, multiball: d.multiball ? { x: d.multiball.x, z: d.multiball.z, r: d.multiball.r } : null }; }
-  function edDeserialize(o) { var d = builder(); d.name = o.name || 'LEVEL'; d.par = o.par || 3; d.bounds = o.bounds; d.tee = o.tee; d.cup = o.cup; d.noBox = !!o.noBox; d.wallH = o.wallH || 52; d.theme = o.theme || 'grass'; d.phys = o.phys || themePhys(d.theme); d.turf = o.turf != null ? o.turf : (THEMES[d.theme] || THEMES.grass).turf; rebuildBox(d); (o.loops || []).forEach(function (l) { d.loopde(l.x, l.z, l.r, l.ang); }); (o.warps || []).forEach(function (w) { if (w.tube) d.tube(w.x, w.z, w.ex, w.ez, w.r); else d.warp(w.x, w.z, w.ex, w.ez, w.r); }); (o.portals || []).forEach(function (w) { d.portal(w.x, w.z, w.exits || (w.ex != null ? [{ x: w.ex, z: w.ez }] : null), w.r); }); (o.firerings || []).forEach(function (f) { d.firering(f.x, f.z, f.r, f.h, f.points); }); (o.enemies || []).forEach(function (e) { d.enemy(e.x, e.z, e.ex, e.ez, e.r, e.speed, e.type, e.behavior, e.effect); }); (o.coins || []).forEach(function (c) { d.coin(c.x, c.z, c.value); }); (o.powerups || []).forEach(function (p) { d.powerup(p.x, p.z, p.kind); }); (o.walls || []).forEach(function (w) { d.wall(w.ax, w.az, w.bx, w.bz, { e: w.e, h: w.h }); }); (o.bumpers || []).forEach(function (b) { d.bumper(b.x, b.z, b.r); if (b.kick != null) last(d.bumpers).kick = b.kick; }); (o.bouncers || []).forEach(function (b) { d.bouncer(b.x, b.z, b.r); }); (o.boosters || []).forEach(function (b) { d.booster(b.x, b.z, b.ang, b.r, b.spd); }); (o.flippers || []).forEach(function (f) { d.flip(f.side, f.px, f.pz, f.len, f.rot, f.speed); if (f.power != null) last(d.flippers).power = f.power; }); (o.windmills || []).forEach(function (w) { d.windmill(w.x, w.z, w.r, w.n, w.speed); }); (o.lasers || []).forEach(function (l) { d.lasers.push({ ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase, on: false }); }); (o.gates || []).forEach(function (g) { d.gate(g.ax, g.az, g.bx, g.bz, { barFrac: g.barFrac, speed: g.speed, h: g.h }); }); (o.conveyors || []).forEach(function (cv) { d.conveyor(cv.x, cv.z, cv.w, cv.len, cv.ang, cv.force); }); (o.pendulums || []).forEach(function (pd) { d.pendulum(pd.x, pd.z, { len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb }); }); (o.turntables || []).forEach(function (tt) { d.turntable(tt.x, tt.z, tt.r, tt.spin); }); (o.terrain || []).forEach(function (t) { d.terrainFeatures.push(t); }); if (o.multiball) d.mball(o.multiball.x, o.multiball.z, o.multiball.r); if (Array.isArray(o.shape) && o.shape.length >= 3) d.shape = o.shape.map(function (p) { return { x: p.x, z: p.z }; }); if (Array.isArray(o.islands) && o.islands.length) { d.islands = o.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }); d.noBox = true; } if (o.mood) d.mood = o.mood; return d; }
+  function edSerialize() { var d = ED.draft; return { name: d.name, par: d.par, bounds: d.bounds, tee: d.tee, cup: d.cup, walls: d.walls.filter(function (w) { return !w._bnd; }).map(function (w) { return { ax: w.ax, az: w.az, bx: w.bx, bz: w.bz, e: w.e, h: w.h }; }), bumpers: d.bumpers.map(function (b) { return { x: b.x, z: b.z, r: b.r, kick: b.kick }; }), bouncers: (d.bouncers || []).map(function (b) { return { x: b.x, z: b.z, r: b.r }; }), boosters: d.boosters.map(function (b) { return { x: b.x, z: b.z, ang: Math.atan2(b.dz, b.dx), r: b.r, spd: b.spd }; }), flippers: d.flippers.map(function (f) { return { side: f.side, px: f.px, pz: f.pz, len: f.len, rot: f.rot, speed: f.speed, power: f.power }; }), windmills: d.windmills.map(function (w) { return { x: w.x, z: w.z, r: w.r, n: w.n, speed: w.speed }; }), lasers: d.lasers.map(function (l) { return { ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase }; }), gates: (d.gates || []).map(function (g) { return { ax: g.ax, az: g.az, bx: g.bx, bz: g.bz, barFrac: g.barFrac, speed: g.speed, h: g.h, ph: g.ph, e: g.e }; }), conveyors: (d.conveyors || []).map(function (cv) { return { x: cv.x, z: cv.z, w: cv.w, len: cv.len, ang: cv.ang, force: cv.force }; }), pendulums: (d.pendulums || []).map(function (pd) { return { x: pd.x, z: pd.z, len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb, ph: pd.ph }; }), turntables: (d.turntables || []).map(function (tt) { return { x: tt.x, z: tt.z, r: tt.r, spin: tt.spin }; }), loops: d.loops.map(function (l) { return { x: l.x, z: l.z, r: l.r, ang: l.ang }; }), warps: d.warps.map(function (w) { return { x: w.x, z: w.z, ex: w.ex, ez: w.ez, r: w.r, tube: !!w.tube }; }), portals: d.portals.map(function (w) { return { x: w.x, z: w.z, exits: (w.exits || [{ x: w.ex, z: w.ez }]).map(function (e) { return { x: e.x, z: e.z }; }), r: w.r }; }), firerings: d.firerings.map(function (f) { return { x: f.x, z: f.z, r: f.r, h: f.h, points: f.points, period: f.period }; }), enemies: d.enemies.map(function (e) { return { x: e.x, z: e.z, ex: e.ex, ez: e.ez, r: e.r, speed: e.speed, type: e.type, behavior: e.behavior, effect: e.effect }; }), coins: d.coins.map(function (c) { return { x: c.x, z: c.z, value: c.value }; }), powerups: (d.powerups || []).map(function (p) { return { x: p.x, z: p.z, kind: p.kind }; }), terrain: d.terrainFeatures, noBox: d.noBox, wallH: d.wallH || 52, theme: d.theme || 'grass', phys: d.phys || themePhys(d.theme || 'grass'), turf: d.turf, shape: (Array.isArray(d.shape) ? d.shape.map(function (p) { return { x: p.x, z: p.z }; }) : null), islands: (Array.isArray(d.islands) ? d.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }) : null), mood: d.mood || null, multiball: d.multiball ? { x: d.multiball.x, z: d.multiball.z, r: d.multiball.r } : null }; }
+  function edDeserialize(o) { var d = builder(); d.name = o.name || 'LEVEL'; d.par = o.par || 3; d.bounds = o.bounds; d.tee = o.tee; d.cup = o.cup; d.noBox = !!o.noBox; d.wallH = o.wallH || 52; d.theme = o.theme || 'grass'; d.phys = o.phys || themePhys(d.theme); d.turf = o.turf != null ? o.turf : (THEMES[d.theme] || THEMES.grass).turf; rebuildBox(d); (o.loops || []).forEach(function (l) { d.loopde(l.x, l.z, l.r, l.ang); }); (o.warps || []).forEach(function (w) { if (w.tube) d.tube(w.x, w.z, w.ex, w.ez, w.r); else d.warp(w.x, w.z, w.ex, w.ez, w.r); }); (o.portals || []).forEach(function (w) { d.portal(w.x, w.z, w.exits || (w.ex != null ? [{ x: w.ex, z: w.ez }] : null), w.r); }); (o.firerings || []).forEach(function (f) { d.firering(f.x, f.z, f.r, f.h, f.points, f.period); }); (o.enemies || []).forEach(function (e) { d.enemy(e.x, e.z, e.ex, e.ez, e.r, e.speed, e.type, e.behavior, e.effect); }); (o.coins || []).forEach(function (c) { d.coin(c.x, c.z, c.value); }); (o.powerups || []).forEach(function (p) { d.powerup(p.x, p.z, p.kind); }); (o.walls || []).forEach(function (w) { d.wall(w.ax, w.az, w.bx, w.bz, { e: w.e, h: w.h }); }); (o.bumpers || []).forEach(function (b) { d.bumper(b.x, b.z, b.r); if (b.kick != null) last(d.bumpers).kick = b.kick; }); (o.bouncers || []).forEach(function (b) { d.bouncer(b.x, b.z, b.r); }); (o.boosters || []).forEach(function (b) { d.booster(b.x, b.z, b.ang, b.r, b.spd); }); (o.flippers || []).forEach(function (f) { d.flip(f.side, f.px, f.pz, f.len, f.rot, f.speed); if (f.power != null) last(d.flippers).power = f.power; }); (o.windmills || []).forEach(function (w) { d.windmill(w.x, w.z, w.r, w.n, w.speed); }); (o.lasers || []).forEach(function (l) { d.lasers.push({ ax: l.ax, az: l.az, bx: l.bx, bz: l.bz, period: l.period, onFrac: l.onFrac, phase: l.phase, on: false }); }); (o.gates || []).forEach(function (g) { d.gate(g.ax, g.az, g.bx, g.bz, { barFrac: g.barFrac, speed: g.speed, h: g.h, phase: g.ph, e: g.e }); }); (o.conveyors || []).forEach(function (cv) { d.conveyor(cv.x, cv.z, cv.w, cv.len, cv.ang, cv.force); }); (o.pendulums || []).forEach(function (pd) { d.pendulum(pd.x, pd.z, { len: pd.len, amp: pd.amp, speed: pd.speed, rb: pd.rb, phase: pd.ph }); }); (o.turntables || []).forEach(function (tt) { d.turntable(tt.x, tt.z, tt.r, tt.spin); }); (o.terrain || []).forEach(function (t) { d.terrainFeatures.push(t); }); if (o.multiball) d.mball(o.multiball.x, o.multiball.z, o.multiball.r); if (Array.isArray(o.shape) && o.shape.length >= 3) d.shape = o.shape.map(function (p) { return { x: p.x, z: p.z }; }); if (Array.isArray(o.islands) && o.islands.length) { d.islands = o.islands.map(function (il) { return { poly: il.poly.map(function (p) { return { x: p.x, z: p.z }; }), y: il.y || 0 }; }); d.noBox = true; } if (o.mood) d.mood = o.mood; return d; }
   function edStore() { try { return JSON.parse(localStorage.getItem('pg_levels') || '{}'); } catch (e) { return {}; } }
   // headless: can the auto-bot sink this draft? (used to gate owner publishing) — restores all state, silences audio
   function testDraftBeatable(d, tries, maxStrokes) {
@@ -3301,7 +3312,7 @@
       var ta = elt('textarea', 'width:100%;height:150px;padding:8px;background:#1a1109;color:#cfe;font:11px monospace;resize:vertical;', null, box); ta.value = json; ta.readOnly = true;
       var rb = elt('div', 'display:flex;gap:6px;margin-top:8px;', null, box);
       var cp = elt('button', 'flex:1;padding:10px;background:linear-gradient(180deg,#3a6a8a,#1f3850);color:#dff;font:800 12px Georgia;cursor:pointer;', '⧉ Copy', rb);
-      cp.onclick = function () { ta.select(); try { document.execCommand('copy'); } catch (e) { } try { if (navigator.clipboard) navigator.clipboard.writeText(json); } catch (e) { } edToast('Copied '); };
+      cp.onclick = function () { ta.select(); try { document.execCommand('copy'); } catch (e) { } try { if (navigator.clipboard) navigator.clipboard.writeText(json); } catch (e) { } edToast('Copied'); };
       var dl = elt('button', 'flex:1;padding:10px;background:linear-gradient(180deg,#3a8a30,#1f5018);color:#fff;font:800 12px Georgia;cursor:pointer;', '⇩ Download .json', rb);
       dl.onclick = function () { try { var blob = new Blob([json], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = (ED.draft.name || 'level').replace(/[^a-z0-9_-]+/gi, '_') + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000); edToast('Downloaded '); } catch (e) { edToast('Download blocked — use Copy', false); } };
       setTimeout(function () { ta.select(); }, 50);
@@ -3550,7 +3561,7 @@
   }
   // ---- the share card shown on finishing the daily hole ----
   function copyText(str, okMsg) {
-    function done() { socialToast(okMsg || 'Copied '); }
+    function done() { socialToast(okMsg || 'Copied'); }
     try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(str).then(done, function () { legacyCopy(str); done(); }); return; } } catch (e) { }
     legacyCopy(str); done();
   }
@@ -3571,7 +3582,7 @@
   }
   function shareStrings(rec) {
     var n = St.dailyN, name = rec.name || (St.hole && St.hole.name) || 'the hole', strokes = St.strokes, par = rec.par, over = strokes - par;
-    var verdict = strokes === 1 ? 'HOLE IN ONE! ' : over <= -2 ? 'EAGLE ' : over === -1 ? 'BIRDIE ' : over === 0 ? 'PAR ' : over === 1 ? 'BOGEY ' : '+' + over + ' ';
+    var verdict = strokes === 1 ? 'HOLE IN ONE!' : over <= -2 ? 'EAGLE' : over === -1 ? 'BIRDIE' : over === 0 ? 'PAR' : over === 1 ? 'BOGEY' : '+' + over;
     var overStr = over === 0 ? 'E' : (over > 0 ? '+' + over : String(over));
     var bar = ''; for (var k = 0; k < Math.min(strokes - 1, 11); k++) bar += '●'; bar += '◎';
     var link = shareBase() + '?daily' + (rec.hi >= 0 ? '=' + rec.hi : '');   // custom (hi<0) -> '?daily' = today's published
@@ -3613,10 +3624,13 @@
   function highlightSubPath(rec) {
     var path = rec.path || []; if (path.length < 4) return path.slice();
     var shots = rec.shots || [], n = path.length;
+    // Decoded/stored ghosts keep ORIGINAL (uncapped) shot indices while rec.path was capped to <=281 samples — rescale indices into the capped-path space, else every index overshoots and we fall back to the tap-in instead of the best shot.
+    var maxI = 0; for (var m = 0; m < shots.length; m++) maxI = Math.max(maxI, shots[m].i | 0);
+    var iscale = (maxI >= n && maxI > 0) ? (n - 1) / maxI : 1;
     var bestStart = -1, bestEnd = -1, bestLen = -1;
     for (var k = 0; k < shots.length; k++) {
-      var si = shots[k].i | 0, ei = (k + 1 < shots.length) ? (shots[k + 1].i | 0) : n;
-      if (si < 0) si = 0; if (ei > n) ei = n;
+      var si = Math.round((shots[k].i | 0) * iscale), ei = (k + 1 < shots.length) ? Math.round((shots[k + 1].i | 0) * iscale) : n;
+      if (si < 0) si = 0; if (si > n) si = n; if (ei > n) ei = n;
       if (ei - si < 4) continue;   // too short to read as a highlight
       var d = 0; for (var j = si; j + 1 < ei; j++) { var a = path[j], b = path[j + 1]; if (a && b) { var dx = a[0] - b[0], dz = a[2] - b[2]; d += Math.sqrt(dx * dx + dz * dz); } }
       if (d > bestLen) { bestLen = d; bestStart = si; bestEnd = ei; }
@@ -3668,6 +3682,8 @@
   function global_GIF() { return (typeof GIFQuick !== 'undefined') ? GIFQuick : (window.GIFQuick || null); }
   function showDailyCard(rec) {
     var old = document.getElementById('pg-daily'); if (old) old.remove();
+    // On a page-reload revisit (reviewStoredDaily) dailyFinish never ran, so St.streak is undefined and the streak badge/share/countdown silently vanish. Re-read it from storage when it was counted for the day being shown.
+    if (St.streak == null) { try { var _sk = JSON.parse(localStorage.getItem('pg_streak') || 'null'); var _td = St.dailyDay || new Date().toISOString().slice(0, 10); if (_sk && typeof _sk.count === 'number' && _sk.last === _td) St.streak = _sk.count; } catch (e) { } }
     var S = shareStrings(rec);
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-daily';
     var _cardCss = document.createElement('style'); _cardCss.textContent = '#pg-daily button,#pg-daily a,#pg-daily input{border:none!important;outline:none;}#pg-daily input{background:rgba(0,0,0,.26);text-align:center;}'; ov.appendChild(_cardCss);   // no boxes/strokes — flat controls on the blur
@@ -3680,7 +3696,7 @@
     if (St.streak > 1) elt('div', 'font:800 13px Georgia;color:#f5efdc;margin-bottom:6px;', '' + St.streak + '-day streak', box);
     var sc = S.over < 0 ? '#ffffff' : S.over === 0 ? '#f5efdc' : '#f5efdc';
     elt('div', 'font:900 46px Wantedo,Georgia;color:' + sc + ';line-height:1.05;', S.strokes + ' strokes', box);
-    elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:8px;', S.verdict + '  (' + S.overStr + ')', box);
+    elt('div', 'font:900 18px Wantedo,Georgia;color:' + sc + ';margin-bottom:8px;', S.verdict + ' (' + S.overStr + ')', box);
     var bar = ''; for (var k = 0; k < Math.min(S.strokes - 1, 11); k++) bar += '●'; bar += '◎';
     elt('div', 'font:20px Georgia;margin:4px 0 10px;', bar, box);
     // ---- head-to-head vs the ghost you raced ----
@@ -3719,34 +3735,37 @@
       var nameIn = elt('input', 'flex:1;padding:10px;background:#1a1109;color:#f5efdc;font:14px Georgia;text-align:center;', null, postRow);
       nameIn.placeholder = 'Your name'; nameIn.maxLength = 24; nameIn.value = playerName();
       nameIn.onchange = function () { var v = (nameIn.value || '').trim(); if (v) { setPlayerName(v); if (!St.dailyPractice && !St.archive) { postBtn.disabled = false; postBtn.textContent = 'POST as ' + v.slice(0, 12); postBtn.style.color = '#ffffff'; } } };   // change your name → re-post under it
-      if (firstTime) { nameIn.style.borderColor = '#ffffff'; nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.3)'; nameIn.onfocus = function () { nameIn.style.boxShadow = '0 0 0 2px rgba(245,197,66,.6)'; }; }
+      if (firstTime) { nameIn.style.background = 'rgba(255,255,255,.16)'; }   // gentle highlight to draw first-timers to the name field — no drop-shadow/gold ring (no-chrome)
       var postBtn = elt('button', 'padding:10px 16px;background:transparent;color:#f5efdc;font:900 14px Wantedo,Georgia;cursor:pointer;white-space:nowrap;', 'POST', postRow);
       if (St.dailyPractice || St.archive) { postRow.style.display = 'none'; }   // no posting on practice/archive runs
       var lbBox = elt('div', 'margin-top:10px;', null, lbWrap);
       function renderLB() {
         lbBox.textContent = '';
-        if (St.standing && St.standing.total) {
-          var sd = St.standing, suffix = St.archive ? '' : ' today', smsg;
-          if (!St.archive && sd.rank === 1 && sd.total === 1) smsg = 'First to finish today — you set the pace!';
-          else if (!St.archive && sd.rank === 1) smsg = 'You’re LEADING — #1 of ' + sd.total + ' today!';   // top of the pack — defend it
-          else smsg = 'You’re #' + sd.rank + ' of ' + sd.total + suffix;
-          elt('div', 'font:900 14px Wantedo,Georgia;color:#f5efdc;margin-bottom:6px;', smsg, lbBox);
+        var headEl = elt('div', 'font:900 14px Wantedo,Georgia;color:#f5efdc;margin-bottom:6px;', '', lbBox);
+        function setHead(rank, total) {   // single source for the headline so the rank can be reconciled to the visible board below
+          var suffix = St.archive ? '' : ' today', smsg;
+          if (!St.archive && rank === 1 && total === 1) smsg = 'First to finish today — you set the pace!';
+          else if (!St.archive && rank === 1) smsg = 'You’re LEADING — #1 of ' + total + ' today!';   // top of the pack — defend it
+          else smsg = 'You’re #' + rank + ' of ' + total + suffix;
+          headEl.textContent = smsg; headEl.style.display = '';
         }
+        if (St.standing && St.standing.total) setHead(St.standing.rank, St.standing.total); else headEl.style.display = 'none';
         elt('div', 'font:700 11px Georgia;color:#f5efdc;opacity:.8;letter-spacing:1px;margin-bottom:4px;', St.archive ? ('DAILY #' + St.dailyN + ' LEADERBOARD') : 'TODAY’S LEADERBOARD', lbBox);
         var me = playerName();
         var rowsBox = elt('div', 'max-height:200px;overflow-y:auto;', null, lbBox);   // capped + scrollable so it can't push the share buttons off-screen
         net.leaderboard(St.dailyDay, 12).then(function (rows) {
           if (!rows || !rows.length) { elt('div', 'font:600 12px Georgia;color:#ffffff;', 'Be the first to post a score!', rowsBox); return; }
-          var myRow = null;
+          var myRow = null, myIdx = -1;
           rows.forEach(function (r, i) {
             var mine = me && r.name === me;
             var row = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:1px 0;font:13px Georgia;color:' + (mine ? '#ffffff' : '#f5efdc') + ';', null, rowsBox);
-            if (mine) myRow = row;
+            if (mine) { myRow = row; myIdx = i; }
             elt('div', 'width:26px;color:#f5efdc;font-weight:700;', (i + 1) + '.', row);
             elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
             var ov = r.par != null ? (r.strokes - r.par) : 0, oc = ov < 0 ? '#ffffff' : ov === 0 ? '#f5efdc' : '#f5efdc';
             elt('div', 'font-weight:800;color:' + oc + ';', r.strokes + (r.par != null && ov !== 0 ? (ov > 0 ? ' +' + ov : ' ' + ov) : ''), row);
           });
+          if (myIdx >= 0 && St.standing && St.standing.total) setHead(myIdx + 1, St.standing.total);   // player is visible on the board — make the headline rank match their actual row so the two never contradict on ties
           if (myRow && myRow.offsetTop > rowsBox.clientHeight) rowsBox.scrollTop = myRow.offsetTop - rowsBox.clientHeight / 2;   // keep your own row in view
         });
       }
@@ -3754,7 +3773,7 @@
         var nm = (nameIn.value || '').trim() || 'Anon'; postBtn.disabled = true; postBtn.textContent = 'Posting…'; postBtn.style.opacity = '1';
         submitDailyRun(rec, nm).then(function (ok) {
           if (ok === false) { postBtn.disabled = false; postBtn.textContent = 'Retry post'; postBtn.style.color = '#ffffff'; return; }   // submit failed (offline?) — let them try again
-          postBtn.textContent = 'Posted '; postBtn.style.color = '#ffffff';
+          postBtn.textContent = 'Posted'; postBtn.style.color = '#ffffff';
           net.standing(St.dailyDay, nm).then(function (st) { if (st && st.total) St.standing = st; renderLB(); });
         });
       }
@@ -3780,14 +3799,14 @@
             elt('div', 'font:700 11px Georgia;color:#f5efdc;opacity:.8;letter-spacing:1px;margin-bottom:4px;text-align:center;', 'TEAM LEADERBOARD', tlist);
             rows.slice(0, 8).forEach(function (r, i) {
               var mine = team.id && r.team_id === team.id;
-              var rw = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;font:13px Georgia;color:#f5efdc;' + (mine ? 'background:rgba(245,197,66,.2);' : 'background:rgba(245,197,66,.06);'), null, tlist);
+              var rw = elt('div', 'display:flex;align-items:center;padding:4px 8px;margin:2px 0;font:13px Georgia;' + (mine ? 'color:#ffffff;font-weight:800;' : 'color:#f5efdc;'), null, tlist);
               elt('div', 'width:24px;color:#f5efdc;font-weight:700;', (i + 1) + '.', rw);
               elt('div', 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.team + (mine ? ' (you)' : '') + ' · ' + r.members + 'p', rw);
               elt('div', 'font-weight:800;color:#f5efdc;white-space:nowrap;', 'best ' + r.best, rw);
             });
           });
           // team all-time record + current streak
-          var trec = elt('div', 'margin-top:6px;padding-top:6px;border-top:1px solid rgba(245,197,66,.15);', null, teamWrap);
+          var trec = elt('div', 'margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.15);', null, teamWrap);
           net.teamRecord(team.id).then(function (tr) {
             if (!tr || tr.best == null) return;   // no team record yet
             elt('div', 'font:800 12px Georgia;color:#f5efdc;text-align:center;', 'Team record: ' + tr.best + ' (best ball) · ' + tr.days + ' day' + (tr.days === 1 ? '' : 's') + ' played', trec);
@@ -3873,7 +3892,7 @@
     }
     var row = elt('div', 'display:flex;gap:8px;margin-top:8px;', null, box);
     var rep = elt('button', 'flex:1;padding:11px;background:transparent;color:#f5efdc;font:900 13px Wantedo,Georgia;cursor:pointer;', 'WATCH REPLAY', row);
-    rep.onclick = function () { ov.remove(); var rp = capReplay(rec.path); St.ghost = { path: rp, shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { showDailyCard(rec); }, (rp.length / 20 + 0.6) * 1000); };
+    rep.onclick = function () { ov.remove(); var rp = capReplay(rec.path); St.ghost = { path: rp, shots: rec.shots, par: rec.par, t: 0, playing: true }; setTimeout(function () { St.ghost = null; showDailyCard(rec); }, (rp.length / 20 + 0.6) * 1000); };
     var pf = elt('button', 'flex:1;padding:11px;background:transparent;color:#f5efdc;font:900 13px Wantedo,Georgia;cursor:pointer;', 'FULL GAME', row);
     pf.onclick = function () { ov.remove(); St.daily = false; St.ghost = null; chooseSet(); };
     // watch how the day's best player sank it
@@ -3897,7 +3916,7 @@
     if (cs.played > 0) {
       var avg = cs.over / cs.played, avgStr = (Math.abs(avg) < 0.05) ? 'even' : (avg > 0 ? '+' + avg.toFixed(1) : avg.toFixed(1));
       var line = '' + cs.played + ' dail' + (cs.played === 1 ? 'y' : 'ies') + ' · avg ' + avgStr + ' vs par · beat the ghost ' + cs.beat + '×' + (cs.ace ? ' · ' + cs.ace + ' ace' + (cs.ace > 1 ? 's' : '') : '');
-      elt('div', 'font:700 12px Georgia;color:#ffffff;margin-top:12px;padding:8px;background:rgba(245,197,66,.06);', line, box);
+      elt('div', 'font:700 12px Georgia;color:#ffffff;margin-top:12px;', line, box);
     }
     var streakLive = (St.streak > 1 && !St.archive && !St.dailyPractice);   // remind them what's at stake right as they leave
     var paintCd = function () { var t = fmtCountdown(); return streakLive ? ('Keep your ' + St.streak + '-day streak — ' + t.replace('Next daily in', 'next hole in')) : t; };
@@ -3940,7 +3959,7 @@
   function teamBallFinish() {
     tbClearTurn();
     var hole = St.hole, n = St.tbShots.length || St.strokes, par = hole ? hole.par : 3, over = n - par;
-    var verdict = n === 1 ? 'HOLE IN ONE! ' : over <= -2 ? 'EAGLE ' : over === -1 ? 'BIRDIE ' : over === 0 ? 'PAR ' : over === 1 ? 'BOGEY ' : '+' + over + ' ';
+    var verdict = n === 1 ? 'HOLE IN ONE!' : over <= -2 ? 'EAGLE' : over === -1 ? 'BIRDIE' : over === 0 ? 'PAR' : over === 1 ? 'BOGEY' : '+' + over;
     var counts = {}; St.tbShots.forEach(function (p) { counts[p] = (counts[p] || 0) + 1; });
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-teamball';
@@ -3957,7 +3976,7 @@
       elt('div', 'font-weight:800;color:#f5efdc;', (counts[p] || 0) + ' shot' + ((counts[p] || 0) === 1 ? '' : 's'), rw);
     });
     var prim = 'width:100%;padding:12px;font:900 16px Wantedo,Georgia;cursor:pointer;margin-top:11px;background:transparent;border:none;';
-    var tbText = 'Team Ball — ' + St.tbPlayers.join(', ') + ' sank ' + (hole ? hole.name : 'the hole') + ' in ' + n + ' shots (' + verdict.replace(/[]/g, '').trim() + ')! Play Gunslingers Pinball Golf ' + shareBase() + '?daily';
+    var tbText = 'Team Ball — ' + St.tbPlayers.join(', ') + ' sank ' + (hole ? hole.name : 'the hole') + ' in ' + n + ' shots (' + verdict + ')! Play Gunslingers Pinball Golf ' + shareBase() + '?daily';
     var sh = elt('button', prim + 'color:#f5efdc;', 'SHARE RESULT', box);
     sh.onclick = function () { shareLocalResult(tbText); };
     var again = elt('button', prim + 'color:#f5efdc;', 'NEXT HOLE, SAME TEAM', box);
@@ -3994,7 +4013,7 @@
     var hole = St.hole, par = hole ? hole.par : 3;
     var rows = St.bbPlayers.map(function (p, i) { return { name: p, s: St.bbScores[i] }; }).sort(function (a, b) { return a.s - b.s; });
     var best = rows[0], over = best.s - par;
-    var verdict = best.s === 1 ? 'HOLE IN ONE! ' : over <= -2 ? 'EAGLE ' : over === -1 ? 'BIRDIE ' : over === 0 ? 'PAR ' : over === 1 ? 'BOGEY ' : '+' + over + ' ';
+    var verdict = best.s === 1 ? 'HOLE IN ONE!' : over <= -2 ? 'EAGLE' : over === -1 ? 'BIRDIE' : over === 0 ? 'PAR' : over === 1 ? 'BOGEY' : '+' + over;
     var old = document.getElementById('pg-teamball'); if (old) old.remove();
     var ov = elt('div', 'position:fixed;inset:0;z-index:57;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.22);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);', null, document.body); ov.id = 'pg-teamball';
     var box = elt('div', 'width:400px;max-width:94%;max-height:92%;overflow:auto;background:transparent;border:none;padding:22px;text-align:center;', null, ov); box.className = 'edscroll';
@@ -4084,7 +4103,7 @@
         rows.forEach(function (r, i) {
           var mine = mode === 'players' ? (me && r.name === me) : (myTeam && myTeam.name === r.name);
           var row = elt('div', 'display:flex;align-items:center;gap:8px;padding:5px 10px;margin:2px 0;font:13px Georgia;color:' + (mine ? '#ffffff' : '#f5efdc') + ';', null, listBox);
-          elt('div', 'width:28px;color:#ffffff;font-weight:700;text-align:center;', i === 0 ? '' : i === 1 ? '' : i === 2 ? '' : (i + 1) + '.', row);
+          elt('div', 'width:28px;color:#ffffff;font-weight:700;text-align:center;', (i + 1) + '.', row);
           elt('div', 'flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:' + (mine ? '800' : '400') + ';', r.name + (mine ? ' (you)' : ''), row);
           elt('div', 'font-weight:800;color:#ffffff;white-space:nowrap;', r.wins + '', row);
           if (mode === 'players') { var av = Number(r.avg_over), avs = av === 0 ? 'E' : (av > 0 ? '+' + av : '' + av); elt('div', 'font:600 11px Georgia;color:#ffffff;white-space:nowrap;', r.dailies + 'd · avg ' + avs, row); }
@@ -4324,6 +4343,8 @@
   PG.__testHole = function (json, tries) {
     tries = tries || 9; var maxStrokes = 13, h;
     try { h = edDeserialize(json); } catch (e) { return { beatable: false, err: 'deserialize' }; }
+    var _kSave = {}; PHYS_KEYS.forEach(function (k) { _kSave[k] = K[k]; });   // test under the HOLE'S OWN physics (ice/moon/mud/sand), not whatever K was last active — else the verdict is wrong; restore after so the caller's state isn't clobbered
+    try { applyPhys(h.phys || themePhys(h.theme || 'grass')); } catch (e) { }
     var sunk = false, best = 99;
     for (var t = 0; t < tries && !sunk; t++) {
       try { PG.__loadHoleObj(h); } catch (e) { return { beatable: false, err: 'load' }; }
@@ -4340,6 +4361,7 @@
         if (sunk) { best = Math.min(best, strokes); break; } if (!settled) break;
       }
     }
+    PHYS_KEYS.forEach(function (k) { K[k] = _kSave[k]; });   // restore physics
     return { beatable: sunk, strokes: sunk ? best : null };
   };
   // propose N fresh wacky holes — returns [{name, par, json}] ready to preview/publish

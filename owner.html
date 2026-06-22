@@ -117,7 +117,8 @@
       $('gateErr').textContent='Checking…';
       // probe: attempt a no-op owner call (leaderboard is public; use a guarded one). We call save_bank then delete to verify.
       PGNet.saveBank(pass, '__probe__', null, {probe:true}, null).then(function(id){
-        return PGNet.deleteBank(pass, id).then(function(){ enter(); });
+        enter();   // the gated save_bank succeeding already proves the passcode — unlock now; never let probe cleanup block a valid login
+        try { var pid = Array.isArray(id) ? (id[0] && id[0].id != null ? id[0].id : id[0]) : (id && id.id != null ? id.id : id); if (pid != null) PGNet.deleteBank(pass, pid); } catch(e){}   // best-effort cleanup (loadBank also filters __probe__ rows)
       }).catch(function(e){ $('gateErr').textContent = /unauth/i.test(e.message||'') ? 'Wrong passcode.' : ('Error: '+e.message); });
     }
     function enter(){
@@ -239,7 +240,7 @@
           (function tryHole(h){
             c.innerHTML='<p class="hint">Day '+(i+1)+'/'+days+' ('+day+') — testing “'+h.name+'” is beatable…</p>';
             var res; try{ res=PG.__testHole(h.json, 8); }catch(e){ res={beatable:true}; }
-            if(!res.beatable && att<3){ att++; tryHole(PG.__proposeWacky(1)[0]); return; }   // regenerate until beatable
+            if(!res.beatable){ if(att<5){ att++; tryHole(PG.__proposeWacky(1)[0]); return; } c.innerHTML='<p class="hint">Skipped '+day+' — no beatable hole after several tries (day falls back to the auto-hole).</p>'; i++; setTimeout(next,500); return; }   // never PUBLISH an untested/unbeatable hole — skip the day instead
             c.innerHTML='<p class="hint">Publishing '+day+' — “'+h.name+'” ('+(i+1)+'/'+days+')…</p>';
             PGNet.publishDaily(pass, day, h.name, null, h.json).then(function(){ i++; next(); }, function(e){ c.innerHTML='<p class="hint">Stopped on '+day+': '+e.message+'</p>'; toast('Auto-fill failed: '+e.message); });
           })(holes[i]);
