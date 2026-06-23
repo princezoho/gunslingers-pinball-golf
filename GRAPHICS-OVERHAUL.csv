@@ -9,7 +9,9 @@ bumper,,,chrome base + glass dome. Plan: better glass + glints,pending
 coin,,,gold cylinder. Plan: better gold material + emissive rim,pending
 wood (planks),,,photo wood_d/n. Plan: bevel + sheen,pending
 metal (rails),,,worn metal roughness 1. Plan: spec-AA + anisotropy,pending
-cactus/tree,,,toon-shaded props. Plan: better material + AO,pending
+tree (conifer),7-seg flat-shaded faceted cones + 7-seg trunk,5 smooth 32-seg foliage tiers + smooth 16-seg flared trunk (de-faceted),HIGH-POLY: clearly faceted -> smooth rounded conifer. most visible change in the before/after,3->7
+HIGH-POLY conversion (scene-wide, audit-driven),faceted low-poly: 18-gon curb rails / 8-gon mushroom+posts / 22-gon cannon / 10-seg loop bands / faceted obstacle rounds,"audit (4-agent workflow) found every sub-24-seg round shape near camera; bumped: curb rail cap 18->32, post dome 22/14->32/18, mushroom stem 8->24 + cap smooth, cannon barrel 22->40 + wheels + target ring, loop bands 10/22->16/64, windmill posts 8->20, tunnel rails 14->24 + bolts, gate posts 10->24 + caps, pendulum legs 8->20, turntable hub 18->32, warp/portal rings, bouncer coil, barrel hoops",+2-6k static tris/hole (owner accepts 30fps); 0 errors; 8 obstacle-heavy holes still beatable,3->7
+cactus/saguaro,ALREADY 64-seg ribbed pleated trunk + curved arms,no change needed (verified high-poly already),audit confirmed already high-poly - left alone,7 (already good)
 sky/lighting,,,per-mood lights. Plan: better key/fill ratio + softer shadows,pending
 water (islands),,,3-wave analytic. Plan: integrate repo analytic-wave-optics,pending
 shadows,,,reverted to stable short. Plan: softer contact + AO grounding,pending

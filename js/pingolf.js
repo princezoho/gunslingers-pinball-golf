@@ -1529,22 +1529,23 @@
       var mkMushroom = function (seed) {   // a cluster of toadstools — cream stems, candy caps (the reference's mushroom props)
         var g = new T.Group(), n = 2 + Math.floor(prnd(seed) * 4);
         var stemM = new T.MeshStandardMaterial({ color: 0xe9e0cd, roughness: 0.9 });
-        var capM = new T.MeshStandardMaterial({ color: new T.Color().setHSL(0.95 + prnd(seed + 3) * 0.12, 0.62, 0.56), roughness: 0.7, flatShading: true });
+        var capM = new T.MeshStandardMaterial({ color: new T.Color().setHSL(0.95 + prnd(seed + 3) * 0.12, 0.62, 0.56), roughness: 0.7 });
         for (var i = 0; i < n; i++) {
           var sh = 18 + prnd(seed + i) * 34, sr = sh * 0.18, cr = sh * 0.52, m = new T.Group();
-          var stem = new T.Mesh(new T.CylinderGeometry(sr * 0.8, sr, sh, 8), stemM); stem.position.y = sh / 2; stem.castShadow = true; m.add(stem);
-          var cap = new T.Mesh(new T.SphereGeometry(cr, 12, 7, 0, TAU, 0, PI / 2), capM); cap.scale.y = 0.66; cap.position.y = sh; cap.castShadow = true; m.add(cap);
+          var stem = new T.Mesh(new T.CylinderGeometry(sr * 0.8, sr, sh, 24), stemM); stem.position.y = sh / 2; stem.castShadow = true; m.add(stem);
+          var cap = new T.Mesh(new T.SphereGeometry(cr, 24, 12, 0, TAU, 0, PI / 2), capM); cap.scale.y = 0.66; cap.position.y = sh; cap.castShadow = true; m.add(cap);
           var ang = prnd(seed + i * 5) * TAU, rad = prnd(seed + i * 2) * cr * 1.6; m.position.set(Math.cos(ang) * rad, 0, Math.sin(ang) * rad); m.scale.setScalar(0.7 + prnd(seed + i) * 0.6); g.add(m);
         }
         return g;
       };
-      var mkTree = function (seed) {   // low-poly conifer — stacked cone tiers on a stubby trunk
+      var mkTree = function (seed) {   // HIGH-POLY conifer — smooth tapered trunk + many smooth foliage tiers (was 7-seg flat-shaded cones)
         var g = new T.Group(), th2 = 80 + prnd(seed) * 90, tr = th2 * 0.06;
-        var trunkM = new T.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.9, flatShading: true });
+        var trunkM = new T.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.9 });
         var _lc = new T.Color().setHSL(0.33, 0.6, 0.26 + prnd(seed + 1) * 0.08); if (_lc.convertSRGBToLinear) _lc.convertSRGBToLinear();   // deep pine green (converted to linear so the warm sun doesn't wash it to pale cyan)
-        var leafM = new T.MeshStandardMaterial({ color: _lc, roughness: 0.85, flatShading: true, envMapIntensity: 0.2 });
-        var trunk = new T.Mesh(new T.CylinderGeometry(tr * 0.7, tr, th2 * 0.4, 7), trunkM); trunk.position.y = th2 * 0.2; trunk.castShadow = true; g.add(trunk);
-        for (var i = 0; i < 3; i++) { var tw = th2 * (0.34 - i * 0.07), tht = th2 * 0.32, cone = new T.Mesh(new T.ConeGeometry(tw, tht, 7), leafM); cone.position.y = th2 * (0.35 + i * 0.22) + tht / 2; cone.castShadow = true; g.add(cone); }
+        var leafM = new T.MeshStandardMaterial({ color: _lc, roughness: 0.85, envMapIntensity: 0.2 });
+        var trunk = new T.Mesh(new T.CylinderGeometry(tr * 0.55, tr * 1.2, th2 * 0.44, 16), trunkM); trunk.position.y = th2 * 0.22; trunk.castShadow = true; g.add(trunk);   // smooth flared trunk
+        var TIERS = 5;
+        for (var i = 0; i < TIERS; i++) { var f = i / (TIERS - 1), tw = th2 * (0.38 - f * 0.30), tht = th2 * 0.32, cone = new T.Mesh(new T.ConeGeometry(tw, tht, 32), leafM); cone.position.y = th2 * (0.34 + f * 0.66) + tht / 2; cone.rotation.y = prnd(seed + i) * 6.283; cone.castShadow = true; cone.receiveShadow = true; g.add(cone); }   // 5 smooth high-seg tiers = round full conifer
         return g;
       };
       var pick = function (pal, r) { var s = 0, i; for (i = 0; i < pal.length; i++) s += pal[i][1]; var x = r * s; for (i = 0; i < pal.length; i++) { x -= pal[i][1]; if (x <= 0) return pal[i][0]; } return pal[pal.length - 1][0]; };
@@ -1677,9 +1678,9 @@
       var aoM = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });   // grime/contact AO darkening along the base of the wall
       var ao = new T.Mesh(new T.PlaneGeometry(L + 14, s.h * 0.34), aoM); ao.position.set(0, s.h * 0.17, 11.2); g.add(ao);
       var capW = s.curve ? L + 22 : L + 16;   // organic curb: overlap the cap rails so the curve reads as ONE continuous rail, not blocky segments
-      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.CylinderGeometry(13, 13, capW, 18), capM2); cap.rotation.z = PI / 2; cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);   // ROUNDED rail cap (was a sharp box) — a real curb has a rounded top rail that catches a light highlight
+      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.CylinderGeometry(13, 13, capW, 32), capM2); cap.rotation.z = PI / 2; cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);   // ROUNDED rail cap (was a sharp box) — a real curb has a rounded top rail that catches a light highlight
       if (!s.curve) [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);   // posts only on straight box walls — an organic curb gets a clean rail instead of a post at every tiny segment
-        var pcap = new T.Mesh(new T.SphereGeometry(10.5, 22, 14, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
+        var pcap = new T.Mesh(new T.SphereGeometry(10.5, 32, 18, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
     // METAL TUNNELS — a polished-steel skeleton (corner rails + hoop-rib U-frames) with faint smoked-metal glazing, so the ball rolls through and stays visible but it reads as METAL, not cheap blue glass
     (hole.tunnels || []).forEach(function (tn) {
@@ -1691,13 +1692,13 @@
       [-1, 1].forEach(function (sgn) { if (!tn.roofOnly) { var side = new T.Mesh(new T.PlaneGeometry(tL, tn.h), paneM); side.rotation.y = PI / 2; side.position.set(sgn * tn.w, tn.h / 2, 0); grp.add(side); } });
       var roof = new T.Mesh(new T.PlaneGeometry(tn.w * 2, tL), paneM); roof.rotation.x = -PI / 2; roof.position.set(0, tn.h, 0); grp.add(roof);
       // four polished-steel corner rails running the length of the tunnel
-      [[-1, tn.h], [1, tn.h], [-1, 0], [1, 0]].forEach(function (e) { var rail = new T.Mesh(new T.CylinderGeometry(7, 7, tL, 14), steelM); rail.rotation.x = PI / 2; rail.position.set(e[0] * tn.w, e[1], 0); rail.castShadow = true; grp.add(rail); });
+      [[-1, tn.h], [1, tn.h], [-1, 0], [1, 0]].forEach(function (e) { var rail = new T.Mesh(new T.CylinderGeometry(7, 7, tL, 24), steelM); rail.rotation.x = PI / 2; rail.position.set(e[0] * tn.w, e[1], 0); rail.castShadow = true; grp.add(rail); });
       // metal HOOP RIBS — a U-frame (top beam + 2 posts) every ~120, with bolt collars where they meet the rails
       var ribs = Math.max(2, Math.round(tL / 120));
       for (var ri = 0; ri <= ribs; ri++) {
         var zz = -tL / 2 + (tL * ri / ribs);
         var beam = new T.Mesh(new T.BoxGeometry(tn.w * 2 + 16, 11, 11), steelM); beam.position.set(0, tn.h, zz); beam.castShadow = true; grp.add(beam);
-        if (!tn.roofOnly) [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.BoxGeometry(11, tn.h, 11), steelM); post.position.set(sgn * tn.w, tn.h / 2, zz); grp.add(post); var bolt = new T.Mesh(new T.CylinderGeometry(10, 10, 8, 12), boltM); bolt.rotation.x = PI / 2; bolt.position.set(sgn * tn.w, tn.h, zz); grp.add(bolt); });
+        if (!tn.roofOnly) [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.BoxGeometry(11, tn.h, 11), steelM); post.position.set(sgn * tn.w, tn.h / 2, zz); grp.add(post); var bolt = new T.Mesh(new T.CylinderGeometry(10, 10, 8, 24), boltM); bolt.rotation.x = PI / 2; bolt.position.set(sgn * tn.w, tn.h, zz); grp.add(bolt); });
       }
       R3.group.add(grp);
     });
@@ -1728,7 +1729,7 @@
         var barrelM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0xb98050, roughness: .66, envMapIntensity: .5 }); barrelM.normalScale = new T.Vector2(1.6, 1.6); var barrel = new T.Mesh(new T.LatheGeometry(bpts, 112), barrelM); barrel.castShadow = true; g.add(barrel);
         var lidM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#brl', true), normalMap: photoTex('wood_n.jpg#brl', false), color: 0x96683c, roughness: .7 });
         var lid = new T.Mesh(new T.CylinderGeometry(r * .78, r * .78, 5, 56), lidM); lid.position.y = 3 + r * 1.5; lid.castShadow = true; g.add(lid);
-        [0.22, 0.5, 0.78].forEach(function (hh) { var hp = new T.Mesh(new T.TorusGeometry(r * (0.78 + Math.sin(hh * PI) * 0.3) + 1.5, 2.6, 12, 64), darkIronM); hp.rotation.x = -PI / 2; hp.position.y = 2 + hh * r * 1.5; g.add(hp); });
+        [0.22, 0.5, 0.78].forEach(function (hh) { var hp = new T.Mesh(new T.TorusGeometry(r * (0.78 + Math.sin(hh * PI) * 0.3) + 1.5, 2.6, 20, 80), darkIronM); hp.rotation.x = -PI / 2; hp.position.y = 2 + hh * r * 1.5; g.add(hp); });
         var bungM = new T.MeshStandardMaterial({ color: 0xffba3a, emissive: 0xd97a10, emissiveIntensity: .8, roughness: .35 });
         var bung = new T.Mesh(new T.CylinderGeometry(r * .2, r * .2, 4, 32), bungM); bung.position.y = 6 + r * 1.5; g.add(bung); bm.coreM = bungM;
       } else {   // CLASSIC POP BUMPER — chrome base, lacquered skirt, glowing bulb under a real glass dome
@@ -1774,7 +1775,7 @@
     // windmills
     hole.windmills.forEach(function (wmi) {
       var gy = hole.terrain(wmi.x, wmi.z);
-      [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.CylinderGeometry(7, 10, wmi.r * 1.2, 8), new T.MeshStandardMaterial({ color: 0x6e4524, roughness: .85 })); post.position.set(wmi.x + sgn * wmi.r * 1.04, gy + wmi.r * 0.6, wmi.z); post.castShadow = true; R3.group.add(post); });
+      [-1, 1].forEach(function (sgn) { var post = new T.Mesh(new T.CylinderGeometry(7, 10, wmi.r * 1.2, 20), new T.MeshStandardMaterial({ color: 0x6e4524, roughness: .85 })); post.position.set(wmi.x + sgn * wmi.r * 1.04, gy + wmi.r * 0.6, wmi.z); post.castShadow = true; R3.group.add(post); });
       var hub = new T.Group(); hub.position.set(wmi.x, gy + wmi.r, wmi.z);
       var railM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wmr', true), normalMap: photoTex('wood_n.jpg#wmr', false), color: 0xb98a58, roughness: .8 });
       var bmatA = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wma', true), normalMap: photoTex('wood_n.jpg#wma', false), color: 0xf0e6d2, roughness: .65 }), bmatB = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#wmb', true), normalMap: photoTex('wood_n.jpg#wmb', false), color: 0xd86040, roughness: .65 });
@@ -1792,7 +1793,7 @@
       var gdx = ga.bx - ga.ax, gdz = ga.bz - ga.az, gL = Math.sqrt(gdx * gdx + gdz * gdz) || 1, ux = gdx / gL, uz = gdz / gL, bl = gL * ga.barFrac;
       var gy = (hole.terrain(ga.ax, ga.az) + hole.terrain(ga.bx, ga.bz)) / 2; ga.gy = gy;
       var postM = new T.MeshStandardMaterial({ map: photoTex('rock_d.jpg#gp', true), normalMap: photoTex('rock_n.jpg#gp', false), color: 0x8d7a63, roughness: .95 });
-      [[ga.ax, ga.az], [ga.bx, ga.bz]].forEach(function (p) { var post = new T.Mesh(new T.CylinderGeometry(15, 19, ga.h + 26, 10), postM); post.position.set(p[0], gy + (ga.h + 26) / 2, p[1]); post.castShadow = true; R3.group.add(post); var cap = new T.Mesh(new T.SphereGeometry(15, 18, 12), goldMat(1.8)); cap.scale.y = .6; cap.position.set(p[0], gy + ga.h + 26, p[1]); R3.group.add(cap); });
+      [[ga.ax, ga.az], [ga.bx, ga.bz]].forEach(function (p) { var post = new T.Mesh(new T.CylinderGeometry(15, 19, ga.h + 26, 24), postM); post.position.set(p[0], gy + (ga.h + 26) / 2, p[1]); post.castShadow = true; R3.group.add(post); var cap = new T.Mesh(new T.SphereGeometry(15, 28, 18), goldMat(1.8)); cap.scale.y = .6; cap.position.set(p[0], gy + ga.h + 26, p[1]); R3.group.add(cap); });
       var barG = new T.Group(); barG.position.set(ga.ax, 0, ga.az); barG.rotation.y = Math.atan2(-uz, ux);   // local +X runs along the track toward B
       var woodM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#gb', true), normalMap: photoTex('wood_n.jpg#gb', false), color: 0xb07a3e, roughness: .8 });
       var plank = new T.Mesh(new T.BoxGeometry(bl, ga.h * 0.62, 22), woodM); plank.position.set(bl / 2, gy + ga.h * 0.5, 0); plank.castShadow = true; barG.add(plank);
@@ -1813,10 +1814,10 @@
     // PENDULUMS — an A-frame gantry over the lane + a swinging iron wrecking ball
     (hole.pendulums || []).forEach(function (pd) {
       var gy = hole.terrain(pd.x, pd.z), H = gy + pd.len + pd.rb, woodM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#pen', true), color: 0x6e4a2c, roughness: .85 });
-      [-1, 1].forEach(function (s) { var leg = new T.Mesh(new T.CylinderGeometry(11, 15, H - gy, 8), woodM); leg.position.set(pd.x + s * pd.len * 0.5, (gy + H) / 2, pd.z); leg.rotation.z = s * 0.18; leg.castShadow = true; R3.group.add(leg); });
+      [-1, 1].forEach(function (s) { var leg = new T.Mesh(new T.CylinderGeometry(11, 15, H - gy, 20), woodM); leg.position.set(pd.x + s * pd.len * 0.5, (gy + H) / 2, pd.z); leg.rotation.z = s * 0.18; leg.castShadow = true; R3.group.add(leg); });
       var beam = new T.Mesh(new T.BoxGeometry(pd.len * 1.15, 16, 16), woodM); beam.position.set(pd.x, H, pd.z); R3.group.add(beam);
       var g = new T.Group(); g.position.set(pd.x, H, pd.z);
-      var arm = new T.Mesh(new T.CylinderGeometry(4.5, 4.5, pd.len, 8), metalMat(0x8a8e96, 1, 1.1)); arm.position.y = -pd.len / 2; g.add(arm);
+      var arm = new T.Mesh(new T.CylinderGeometry(4.5, 4.5, pd.len, 16), metalMat(0x8a8e96, 1, 1.1)); arm.position.y = -pd.len / 2; g.add(arm);
       var bob = new T.Mesh(new T.SphereGeometry(pd.rb, 26, 20), metalMat(0x33363d, 1, 1.5)); bob.position.y = -pd.len; bob.castShadow = true; g.add(bob);
       g.rotation.z = pd.ang; R3.group.add(g); pd.pivot = g; pd.bobMesh = bob;
     });
@@ -1826,18 +1827,18 @@
       var disc = new T.Mesh(new T.CylinderGeometry(tt.r, tt.r, 9, 44), new T.MeshStandardMaterial({ color: 0x474a53, roughness: .55, metalness: .35 })); disc.position.y = 4; disc.receiveShadow = true; g.add(disc);
       var spokeM = new T.MeshStandardMaterial({ color: 0xf5c542, emissive: 0x6a4e08, emissiveIntensity: .4, roughness: .5 });
       for (var i = 0; i < 3; i++) { var bar = new T.Mesh(new T.BoxGeometry(tt.r * 1.8, 5, 11), spokeM); bar.position.y = 9.5; bar.rotation.y = i / 3 * PI; g.add(bar); }
-      var hub = new T.Mesh(new T.CylinderGeometry(20, 22, 16, 18), metalMat(0x33363d, 1, 1.3)); hub.position.y = 11; g.add(hub);
+      var hub = new T.Mesh(new T.CylinderGeometry(20, 22, 16, 32), metalMat(0x33363d, 1, 1.3)); hub.position.y = 11; g.add(hub);
       R3.group.add(g); tt.mesh = g;
     });
     // CANNONS — a black iron cannon barrel on a wood carriage, pointing where it fires
     (hole.cannons || []).forEach(function (cn) {
       var gy = hole.terrain(cn.x, cn.z), g = new T.Group(); g.position.set(cn.x, gy, cn.z); g.rotation.y = cn.ang;
       var ironM = metalMat(0x2b2b30, 1, 1.4), woodM = new T.MeshStandardMaterial({ map: photoTex('wood_d.jpg#cn', true), color: 0x8a5a30, roughness: .8 });
-      var barrel = new T.Mesh(new T.CylinderGeometry(20, 26, 96, 22), ironM); barrel.rotation.x = -PI / 2.6; barrel.position.set(0, 44, 0); barrel.castShadow = true; g.add(barrel);
-      var mouth = new T.Mesh(new T.CylinderGeometry(20, 20, 8, 22), new T.MeshBasicMaterial({ color: 0x0a0608 })); mouth.rotation.x = -PI / 2.6; mouth.position.set(0, 44 + Math.sin(PI / 2.6) * 48, Math.cos(PI / 2.6) * 48); g.add(mouth);
+      var barrel = new T.Mesh(new T.CylinderGeometry(20, 26, 96, 40), ironM); barrel.rotation.x = -PI / 2.6; barrel.position.set(0, 44, 0); barrel.castShadow = true; g.add(barrel);
+      var mouth = new T.Mesh(new T.CylinderGeometry(20, 20, 8, 40), new T.MeshBasicMaterial({ color: 0x0a0608 })); mouth.rotation.x = -PI / 2.6; mouth.position.set(0, 44 + Math.sin(PI / 2.6) * 48, Math.cos(PI / 2.6) * 48); g.add(mouth);
       var carriage = new T.Mesh(new T.BoxGeometry(58, 26, 70), woodM); carriage.position.y = 16; carriage.castShadow = true; g.add(carriage);
-      [-1, 1].forEach(function (s) { var wheel = new T.Mesh(new T.CylinderGeometry(24, 24, 10, 24), woodM); wheel.rotation.z = PI / 2; wheel.position.set(s * 32, 20, -14); g.add(wheel); });
-      var ring = new T.Mesh(new T.TorusGeometry(cn.r, 4, 8, 28), new T.MeshStandardMaterial({ color: 0xc23a2a, emissive: 0x7a1208, emissiveIntensity: .6, roughness: .5 })); ring.rotation.x = -PI / 2; ring.position.y = 3; ring.position.set(0, 3, 0); g.add(ring);
+      [-1, 1].forEach(function (s) { var wheel = new T.Mesh(new T.CylinderGeometry(24, 24, 10, 40), woodM); wheel.rotation.z = PI / 2; wheel.position.set(s * 32, 20, -14); g.add(wheel); });
+      var ring = new T.Mesh(new T.TorusGeometry(cn.r, 4, 16, 48), new T.MeshStandardMaterial({ color: 0xc23a2a, emissive: 0x7a1208, emissiveIntensity: .6, roughness: .5 })); ring.rotation.x = -PI / 2; ring.position.y = 3; ring.position.set(0, 3, 0); g.add(ring);
       R3.group.add(g); cn.mesh = g;
     });
     // BOUNCERS — a springy red-and-white trampoline pad
@@ -1845,7 +1846,7 @@
       var gy = hole.terrain(bc.x, bc.z), g = new T.Group(); g.position.set(bc.x, gy, bc.z);
       var rim = new T.Mesh(new T.CylinderGeometry(bc.r, bc.r, 16, 28), new T.MeshStandardMaterial({ color: 0xc83a3a, roughness: .5 })); rim.position.y = 8; rim.castShadow = true; g.add(rim);
       var pad = new T.Mesh(new T.CylinderGeometry(bc.r * 0.82, bc.r * 0.82, 6, 28), new T.MeshStandardMaterial({ color: 0xf2efe6, emissive: 0x554a32, emissiveIntensity: .25, roughness: .6 })); pad.position.y = 16; g.add(pad);
-      var coil = new T.Mesh(new T.TorusGeometry(bc.r * 0.5, 4, 8, 24), goldMat(1.6)); coil.rotation.x = -PI / 2; coil.position.y = 19; g.add(coil);
+      var coil = new T.Mesh(new T.TorusGeometry(bc.r * 0.5, 4, 16, 40), goldMat(1.6)); coil.rotation.x = -PI / 2; coil.position.y = 19; g.add(coil);
       R3.group.add(g); bc.mesh = g;
     });
     // lasers
@@ -1896,14 +1897,14 @@
         var tubeMat = metalMat(0xb4bac4, 1, 1.8); tubeMat.side = T.DoubleSide;   // polished steel
         var pipe = new T.Mesh(new T.TubeGeometry(crv, 44, R, 20, false), tubeMat); pipe.castShadow = true; R3.group.add(pipe);
         var bandM = metalMat(0x7c818b, 1, 1.3);   // darker steel bands every few segments for a riveted-pipe read
-        for (var tb = 1; tb < 5; tb++) { var tp = crv.getPoint(tb / 5), band = new T.Mesh(new T.TorusGeometry(R * 1.06, R * 0.13, 10, 22), bandM); var tng = crv.getTangent(tb / 5); band.position.copy(tp); band.lookAt(tp.clone().add(tng)); R3.group.add(band); }
+        for (var tb = 1; tb < 5; tb++) { var tp = crv.getPoint(tb / 5), band = new T.Mesh(new T.TorusGeometry(R * 1.06, R * 0.13, 16, 64), bandM); var tng = crv.getTangent(tb / 5); band.position.copy(tp); band.lookAt(tp.clone().add(tng)); R3.group.add(band); }
         var rimM = metalMat(0x6a6f78, 1, 1.2);
-        [[wp.x, gy, wp.z], [wp.ex, gy2, wp.ez]].forEach(function (e, ei) { var mouth = new T.Mesh(new T.CylinderGeometry(R * 1.08, R * 1.08, 26, 20, 1, true), rimM); mouth.position.set(e[0], e[1] + R * 0.5, e[2]); R3.group.add(mouth); var hole2 = new T.Mesh(new T.CircleGeometry(R * 0.92, 20), new T.MeshBasicMaterial({ color: 0x0a0608 })); hole2.rotation.x = -PI / 2; hole2.position.set(e[0], e[1] + 2.5, e[2]); R3.group.add(hole2); if (ei === 0) wp.mesh = mouth; });
+        [[wp.x, gy, wp.z], [wp.ex, gy2, wp.ez]].forEach(function (e, ei) { var mouth = new T.Mesh(new T.CylinderGeometry(R * 1.08, R * 1.08, 26, 32, 1, true), rimM); mouth.position.set(e[0], e[1] + R * 0.5, e[2]); R3.group.add(mouth); var hole2 = new T.Mesh(new T.CircleGeometry(R * 0.92, 32), new T.MeshBasicMaterial({ color: 0x0a0608 })); hole2.rotation.x = -PI / 2; hole2.position.set(e[0], e[1] + 2.5, e[2]); R3.group.add(hole2); if (ei === 0) wp.mesh = mouth; });
         return;
       }
       var pit = new T.Mesh(new T.CylinderGeometry(wp.r, wp.r * .7, 80, 22), new T.MeshStandardMaterial({ color: 0x0a0616, roughness: 1 })); pit.position.set(wp.x, gy - 38, wp.z); R3.group.add(pit);
-      var ring1 = new T.Mesh(new T.TorusGeometry(wp.r, 6, 10, 24), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466cc, emissiveIntensity: .85, roughness: .35 })); ring1.rotation.x = -PI / 2; ring1.position.set(wp.x, gy + 2, wp.z); R3.group.add(ring1); wp.mesh = ring1;
-      var ring2 = new T.Mesh(new T.TorusGeometry(wp.r * .9, 5, 10, 24), new T.MeshStandardMaterial({ color: 0x2aff9a, emissive: 0x12a866, emissiveIntensity: .75, roughness: .35 })); ring2.rotation.x = -PI / 2; ring2.position.set(wp.ex, gy2 + 2, wp.ez); R3.group.add(ring2);
+      var ring1 = new T.Mesh(new T.TorusGeometry(wp.r, 6, 16, 48), new T.MeshStandardMaterial({ color: 0x2aa8ff, emissive: 0x1466cc, emissiveIntensity: .85, roughness: .35 })); ring1.rotation.x = -PI / 2; ring1.position.set(wp.x, gy + 2, wp.z); R3.group.add(ring1); wp.mesh = ring1;
+      var ring2 = new T.Mesh(new T.TorusGeometry(wp.r * .9, 5, 16, 48), new T.MeshStandardMaterial({ color: 0x2aff9a, emissive: 0x12a866, emissiveIntensity: .75, roughness: .35 })); ring2.rotation.x = -PI / 2; ring2.position.set(wp.ex, gy2 + 2, wp.ez); R3.group.add(ring2);
       var glow = new T.Mesh(new T.CircleGeometry(wp.r * .9, 20), new T.MeshBasicMaterial({ color: 0x2aff9a, transparent: true, opacity: .25 })); glow.rotation.x = -PI / 2; glow.position.set(wp.ex, gy2 + 1.5, wp.ez); R3.group.add(glow);
     });
     (hole.portals || []).forEach(function (po) {   // swirling VORTEX portals: dark eye, spinning spiral arms (additive, blooms), hot emissive ring
