@@ -1,0 +1,15 @@
+object/shader/lighting,before,after,notes,grade
+wall/curb,sharp box plank + flat box top cap + flat matte wood,rounded cylinder rail cap + deeper grain relief (normalScale 1.9) + wood sheen (rough .7) + 16x anisotropy,real ~2x win; to reach 9 still needs spec-AA highlights (merge into rim-patch shader) + beveled body,3->6.5 (iterate)
+paddle/flipper,,,capsule with flat caps. Plan: smoother caps + glossier lacquer,pending
+windmill,,,low-poly blades + post. Plan: smoother geometry + better material,pending
+grass,,,photo tile + normal - tiles heavily - flat sheen. Plan: detail + slope tint + less tiling,pending
+ball,,,glossy clearcoat (already decent). Plan: spec-AA + sharper env,pending
+bumper,,,chrome base + glass dome. Plan: better glass + glints,pending
+coin,,,gold cylinder. Plan: better gold material + emissive rim,pending
+wood (planks),,,photo wood_d/n. Plan: bevel + sheen,pending
+metal (rails),,,worn metal roughness 1. Plan: spec-AA + anisotropy,pending
+cactus/tree,,,toon-shaded props. Plan: better material + AO,pending
+sky/lighting,,,per-mood lights. Plan: better key/fill ratio + softer shadows,pending
+water (islands),,,3-wave analytic. Plan: integrate repo analytic-wave-optics,pending
+shadows,,,reverted to stable short. Plan: softer contact + AO grounding,pending
+</content>

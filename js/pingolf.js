@@ -1653,11 +1653,11 @@
         var d = new T.TextureLoader().load('assets/tex/plank_d.jpg'), n = new T.TextureLoader().load('assets/tex/plank_n.jpg');
         d.wrapS = d.wrapT = n.wrapS = n.wrapT = T.RepeatWrapping; if (T.sRGBEncoding) d.encoding = T.sRGBEncoding;
         d.repeat.set(bx, by); n.repeat.set(bx, by);
-        if (R3.r && R3.r.capabilities) { d.anisotropy = n.anisotropy = Math.min(8, R3.r.capabilities.getMaxAnisotropy()); }
+        if (R3.r && R3.r.capabilities) { d.anisotropy = n.anisotropy = Math.min(16, R3.r.capabilities.getMaxAnisotropy()); }   // sharper grain at grazing angles
         R3[key] = { d: d, n: n };
       }
       var tx = R3[key];
-      var m = new T.MeshStandardMaterial({ map: tx.d, normalMap: tx.n, color: tint, roughness: .82, envMapIntensity: env == null ? .55 : env }); m.normalScale = new T.Vector2(1.4, 1.4); return m;
+      var m = new T.MeshStandardMaterial({ map: tx.d, normalMap: tx.n, color: tint, roughness: .7, envMapIntensity: env == null ? .6 : env }); m.normalScale = new T.Vector2(1.9, 1.9); return m;   // deeper grain relief + a subtle wood sheen (was flat matte 0.82)
     }
     var postWoodM = plankMat(1, 2.2, 0, 0xb58a5c, .5);
     hole.walls.forEach(function (s) { if (s.tunnel) return; var dx = s.bx - s.ax, dz = s.bz - s.az, L = hyp(dx, dz); if (L < 1) return; var g = new T.Group(); var gy = hole.terrain((s.ax + s.bx) / 2, (s.az + s.bz) / 2);   // tunnel rails render as glass below, not plank
@@ -1669,7 +1669,7 @@
       var aoM = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });   // grime/contact AO darkening along the base of the wall
       var ao = new T.Mesh(new T.PlaneGeometry(L + 14, s.h * 0.34), aoM); ao.position.set(0, s.h * 0.17, 11.2); g.add(ao);
       var capW = s.curve ? L + 22 : L + 16;   // organic curb: overlap the cap rails so the curve reads as ONE continuous rail, not blocky segments
-      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.BoxGeometry(capW, 9, 27), capM2); cap.position.y = s.h + 3; cap.castShadow = true; g.add(cap); mats.push(capM2);
+      var capM2 = plankMat(repX, 0.5, prnd2(3) * 0.7, new T.Color(0xe8cda0), .5); var cap = new T.Mesh(new T.CylinderGeometry(13, 13, capW, 18), capM2); cap.rotation.z = PI / 2; cap.position.y = s.h + 2; cap.castShadow = true; g.add(cap); mats.push(capM2);   // ROUNDED rail cap (was a sharp box) — a real curb has a rounded top rail that catches a light highlight
       if (!s.curve) [-1, 1].forEach(function (sgn2) { var post = new T.Mesh(new T.CylinderGeometry(10, 12, s.h + 18, 24), postWoodM); post.position.set(sgn2 * (L / 2 + 3), (s.h + 18) / 2 - 5, 0); post.castShadow = true; g.add(post);   // posts only on straight box walls — an organic curb gets a clean rail instead of a post at every tiny segment
         var pcap = new T.Mesh(new T.SphereGeometry(10.5, 22, 14, 0, TAU, 0, PI / 2), postWoodM); pcap.position.set(sgn2 * (L / 2 + 3), s.h + 13, 0); g.add(pcap); });
       g.position.set((s.ax + s.bx) / 2, gy, (s.az + s.bz) / 2); g.rotation.y = -Math.atan2(dz, dx); R3.group.add(g); s._m3 = { mats: mats, fade: 0, gy: gy }; });
