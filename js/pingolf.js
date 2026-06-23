@@ -1670,7 +1670,10 @@
       var repX = Math.max(1.4, L / 360), repY = Math.max(0.55, s.h / 150), tint = new T.Color(s.c).lerp(new T.Color(0xffffff), 0.5);
       var pm = plankMat(repX, repY, prnd2(1) * 0.7, tint, .5);   // per-wall vertical offset so neighbouring walls never show the same board row -> no obvious repeat
       var mats = [pm];
-      var body = new T.Mesh(new T.BoxGeometry(L + (s.curve ? 24 : 14), s.h, s.curve ? 26 : 22), pm); body.position.y = s.h / 2; body.castShadow = body.receiveShadow = true; g.add(body);
+      var _bw2 = (L + (s.curve ? 24 : 14)) / 2, _bh2 = s.h, _bd2 = (s.curve ? 26 : 22) - 6, _wsh = new T.Shape(); _wsh.moveTo(-_bw2, 0); _wsh.lineTo(_bw2, 0); _wsh.lineTo(_bw2, _bh2); _wsh.lineTo(-_bw2, _bh2); _wsh.closePath();
+      var _bgeo = new T.ExtrudeGeometry(_wsh, { depth: _bd2, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 2, curveSegments: 1 });   // BEVELED plank body (was a hard box) — rounded edges catch light, no sharp corners
+      var _uv = _bgeo.attributes.uv, _bp = _bgeo.attributes.position; for (var _ui = 0; _ui < _uv.count; _ui++) { _uv.setXY(_ui, (_bp.getX(_ui) + _bw2) / (2 * _bw2), _bp.getY(_ui) / _bh2); }   // remap UVs to [0,1] so the wood texture maps like the old box
+      var body = new T.Mesh(_bgeo, pm); body.position.set(0, 0, -_bd2 / 2); body.castShadow = body.receiveShadow = true; g.add(body);
       var aoM = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false });   // grime/contact AO darkening along the base of the wall
       var ao = new T.Mesh(new T.PlaneGeometry(L + 14, s.h * 0.34), aoM); ao.position.set(0, s.h * 0.17, 11.2); g.add(ao);
       var capW = s.curve ? L + 22 : L + 16;   // organic curb: overlap the cap rails so the curve reads as ONE continuous rail, not blocky segments

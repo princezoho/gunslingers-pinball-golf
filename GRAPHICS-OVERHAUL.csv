@@ -1,5 +1,5 @@
 object/shader/lighting,before,after,notes,grade
-wall/curb,sharp box plank + flat box top cap + flat matte wood,rounded rail cap + deeper grain relief + wood sheen + 16x aniso + spec-AA clean highlights,real ~2.3x win; spec-AA is subtle (anti-shimmer); to reach 9 a beveled body remains,3->7 (iterate)
+wall/curb,flat box plank + sharp top,rounded rail cap + BEVELED extruded body (rounded edges + UV-remapped wood) + richer grain + sheen + spec-AA,real dimensional wood rail now (was a flat box); genuine ~2.3x. body bevel via ExtrudeGeometry + UV remap,3->7
 metal+ball+glossy (global),sparkly/shimmering speculars + aliased highlights,variance spec-AA from repo procedural-pbr-system.md (filteredRoughness=sqrt(rough^2+normalVariance)) injected into rimPatch shader - clean stable highlights on ALL std/physical materials,real repo-code integration; subtle but correct (matters most in motion); 0 shader errors,3->6
 paddle/flipper,ALREADY beveled ExtrudeGeometry (8-seg bevel/24 curve) polished steel + red lacquer + spec-AA,no change needed - already smooth/glossy,VERIFIED real code: NOT a flat capsule. Already ~6/10. My earlier 'plan' was an assumption,6 (already good)
 windmill,,,low-poly blades + post. Plan: smoother geometry + better material,pending
