@@ -1364,7 +1364,12 @@
     if (!R3.rimColU) { R3.rimColU = { value: new T.Color(0xffdca8) }; R3.rimAmtU = { value: 0.0 }; }
     mat.onBeforeCompile = function (shader) {
       shader.uniforms.uRimCol = R3.rimColU; shader.uniforms.uRimAmt = R3.rimAmtU;
-      shader.fragmentShader = 'uniform vec3 uRimCol; uniform float uRimAmt;\n' + shader.fragmentShader.replace('#include <output_fragment>', 'float _fr = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.5); outgoingLight += uRimCol * (_fr * uRimAmt);\n#include <output_fragment>');
+      var fs = 'uniform vec3 uRimCol; uniform float uRimAmt;\n' + shader.fragmentShader;
+      // SPECULAR ANTI-ALIASING (repo procedural-pbr-system: filteredRoughness = sqrt(roughness^2 + normal-variance)) — kills the sparkle/shimmer on glossy surfaces (ball/metal/wood) for clean stable highlights
+      fs = fs.replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n  { float _sv = max(dot(dFdx(normal), dFdx(normal)), dot(dFdy(normal), dFdy(normal))); roughnessFactor = clamp(sqrt(roughnessFactor * roughnessFactor + _sv * 1.6), 0.04, 1.0); }');
+      // FRESNEL rim glow
+      fs = fs.replace('#include <output_fragment>', 'float _fr = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 2.5); outgoingLight += uRimCol * (_fr * uRimAmt);\n#include <output_fragment>');
+      shader.fragmentShader = fs;
     };
     mat.needsUpdate = true; return mat;
   }

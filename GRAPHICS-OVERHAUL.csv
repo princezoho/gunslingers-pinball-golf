@@ -1,5 +1,6 @@
 object/shader/lighting,before,after,notes,grade
-wall/curb,sharp box plank + flat box top cap + flat matte wood,rounded cylinder rail cap + deeper grain relief (normalScale 1.9) + wood sheen (rough .7) + 16x anisotropy,real ~2x win; to reach 9 still needs spec-AA highlights (merge into rim-patch shader) + beveled body,3->6.5 (iterate)
+wall/curb,sharp box plank + flat box top cap + flat matte wood,rounded rail cap + deeper grain relief + wood sheen + 16x aniso + spec-AA clean highlights,real ~2.3x win; spec-AA is subtle (anti-shimmer); to reach 9 a beveled body remains,3->7 (iterate)
+metal+ball+glossy (global),sparkly/shimmering speculars + aliased highlights,variance spec-AA from repo procedural-pbr-system.md (filteredRoughness=sqrt(rough^2+normalVariance)) injected into rimPatch shader - clean stable highlights on ALL std/physical materials,real repo-code integration; subtle but correct (matters most in motion); 0 shader errors,3->6
 paddle/flipper,,,capsule with flat caps. Plan: smoother caps + glossier lacquer,pending
 windmill,,,low-poly blades + post. Plan: smoother geometry + better material,pending
 grass,,,photo tile + normal - tiles heavily - flat sheen. Plan: detail + slope tint + less tiling,pending
