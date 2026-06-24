@@ -49,12 +49,11 @@
       </tr>
       <tr>
         <td class="el">Tron mood</td>
-        <td><img src="gfx-shots/tron_now.jpg" alt="tron now"><div class="cap">v371 — current tron look</div></td>
-        <td><div class="pending">PENDING — being reworked to match the reference</div>
-          <div class="ref">TARGET (your reference): jet-black floor, bright cyan glowing circuit lines, red + electric-blue grid lanes, hard neon glow. Currently: a tinted recolor of the desert, not a neon-grid world.</div></td>
-        <td class="changes">Not yet changed this pass.</td>
-        <td class="grade g3">3 → ?</td>
-        <td class="next">Rebuild: dark floor + emissive cyan grid lines, red/blue lane glow, stronger bloom on the lines only, swap to a dark grid background image (not the desert panorama).</td>
+        <td><img src="gfx-shots/tron_now.jpg" alt="tron before"><div class="cap">v371 — tinted desert, NO grid</div></td>
+        <td><img src="gfx-shots/tron_after.jpg" alt="tron after"><div class="cap">v372 — glowing grid floor to the horizon</div></td>
+        <td class="changes">Added a procedural neon grid-floor: canvas cyan grid texture, additive blending, tracks the ground under the ball, 11000-unit plane so it recedes to the horizon. Visible only in tron; the dark surfaces keep their cyan edge-glow on top. Now reads as a Tron grid world (matches the reference's defining feature).</td>
+        <td class="grade g7">3 → 7</td>
+        <td class="next">To push higher: brighter neon bloom on the grid lines, a few red lanes like the reference, stronger cyan edge-glow on the obstacles.</td>
       </tr>
       <tr>
         <td class="el">Vaporwave mood</td>

@@ -765,6 +765,17 @@
     });
     R3.scene.add(R3.wireGroup);
   }
+  function tronGrid() {   // glowing neon grid floor for TRON mood (matches the reference: dark floor + bright cyan grid receding to the horizon)
+    if (R3.tronGrid) return R3.tronGrid;
+    var cv = document.createElement('canvas'); cv.width = cv.height = 128; var x = cv.getContext('2d');
+    x.clearRect(0, 0, 128, 128);
+    x.lineWidth = 5; x.strokeStyle = '#46e6ff'; x.strokeRect(0, 0, 128, 128);   // bright cyan cell border = the grid line
+    x.lineWidth = 2; x.strokeStyle = '#1a4a8a'; x.beginPath(); x.moveTo(64, 0); x.lineTo(64, 128); x.moveTo(0, 64); x.lineTo(128, 64); x.stroke();   // dim blue mid-lines (denser lane feel)
+    var tex = new T.CanvasTexture(cv); tex.wrapS = tex.wrapT = T.RepeatWrapping; tex.repeat.set(44, 44);
+    var mat = new T.MeshBasicMaterial({ map: tex, transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: 1, fog: false });
+    var mesh = new T.Mesh(new T.PlaneGeometry(11000, 11000), mat); mesh.rotation.x = -PI / 2; mesh.renderOrder = 2; mesh.visible = false; mesh.frustumCulled = false;
+    R3.scene.add(mesh); R3.tronGrid = mesh; return mesh;
+  }
   function wireSync() {
     if (!R3.scene || !R3.group) return;
     var _wf = St.mood === 'wireframe', _tron = St.mood === 'tron';
@@ -779,9 +790,12 @@
         for (var i = 0; i < kids.length; i++) { var s = kids[i].userData.src; if (s && s.visible) { kids[i].visible = true; kids[i].matrix.copy(s.matrixWorld); } else kids[i].visible = false; }
       }
       if (R3.scene.background !== R3.wireBg) { R3.scene.background = R3.wireBg; if (R3.scene.fog) R3.scene.fog.color.setHex(0x02040b); }
+      var _grd = tronGrid(); _grd.visible = _tron;                 // TRON gets the glowing grid floor; wireframe stays pure edges
+      if (_tron) { var _sb = St.balls && St.balls[0]; if (_sb && St.hole) _grd.position.set(_sb.x, St.hole.terrain(_sb.x, _sb.z) + 1.5, _sb.z); }   // grid tracks the ground under the ball (covers the visible play area)
     } else {
       if (!R3.group.visible) R3.group.visible = true;
       if (R3.wireGroup) R3.wireGroup.visible = false;
+      if (R3.tronGrid) R3.tronGrid.visible = false;
       if (R3.scene.overrideMaterial) R3.scene.overrideMaterial = null;
       if (R3.holeBg && R3.scene.background !== R3.holeBg) R3.scene.background = R3.holeBg;
     }
