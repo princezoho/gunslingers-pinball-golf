@@ -11,7 +11,7 @@
   th, td { border:1px solid #4a3a24; padding:12px; vertical-align:top; text-align:left; }
   th { background:#241a0f; color:#ffd98a; font-size:13px; text-transform:uppercase; letter-spacing:.5px; }
   td.el { font-weight:700; font-size:15px; width:120px; }
-  img { width:300px; border:1px solid #000; display:block; }
+  img { width:380px; height:auto; border:1px solid #000; display:block; }
   .cap { font-size:11px; color:#9a8a6a; margin-top:4px; }
   .grade { font-weight:800; font-size:18px; }
   .g7 { color:#7ad06a; } .g4 { color:#ffb14a; } .g3 { color:#ff7a5a; }
@@ -33,40 +33,40 @@
     <tbody>
       <tr>
         <td class="el">Wall / curb</td>
-        <td><img src="gfx-shots/wall_before.jpg" alt="wall before"><div class="cap">v349 — flat box plank, sharp top</div></td>
-        <td><img src="gfx-shots/wall_after.jpg" alt="wall after"><div class="cap">v371 — beveled body + rounded rail</div></td>
+        <td><img src="gfx-shots/wall_before.jpg?v=2" alt="wall before"><div class="cap">v349 — flat box plank, sharp top</div></td>
+        <td><img src="gfx-shots/wall_after.jpg?v=2" alt="wall after"><div class="cap">v371 — beveled body + rounded rail</div></td>
         <td class="changes">Body BoxGeometry → beveled ExtrudeGeometry (rounded edges, UVs remapped so wood maps). Rounded rail cap 18→32 segs. Deeper grain (normalScale 1.9), wood sheen, 16x anisotropy, spec-AA highlights.</td>
         <td class="grade g7">3 → 7</td>
         <td class="next">To reach 9: visible board seams / plank separation on the face, stronger base contact-AO, hardware (bolts) at posts.</td>
       </tr>
       <tr>
         <td class="el">Whole scene (high-poly)</td>
-        <td><img src="gfx-shots/scene_before.jpg" alt="scene before"><div class="cap">v349 — faceted cones, 18-gon rails</div></td>
-        <td><img src="gfx-shots/scene_after.jpg" alt="scene after"><div class="cap">v371 — smooth trees + round rails</div></td>
+        <td><img src="gfx-shots/scene_before.jpg?v=2" alt="scene before"><div class="cap">v349 — faceted cones, 18-gon rails</div></td>
+        <td><img src="gfx-shots/scene_after.jpg?v=2" alt="scene after"><div class="cap">v371 — smooth trees + round rails</div></td>
         <td class="changes">De-faceted scene-wide (4-agent audit): trees 7-seg flat cones → 5 smooth 32-seg tiers; rail caps 18→32; post domes 22→32; mushrooms, cannon, loop bands, windmill, tunnel, gate, pendulum, turntable, warp/portal, bouncer, barrel hoops all bumped. +2-6k static tris/hole.</td>
         <td class="grade g7">3 → 7</td>
         <td class="next">Geometry is now handled. Next lever is texture/material fidelity + per-mood lighting — NOT more polygons.</td>
       </tr>
       <tr>
         <td class="el">Tron mood</td>
-        <td><img src="gfx-shots/tron_now.jpg" alt="tron before"><div class="cap">v371 — tinted desert, NO grid</div></td>
-        <td><img src="gfx-shots/tron_after.jpg" alt="tron after"><div class="cap">v376 — glowing NEON grid (baked halo on lines)</div></td>
+        <td><img src="gfx-shots/tron_now.jpg?v=2" alt="tron before"><div class="cap">v371 — tinted desert, NO grid</div></td>
+        <td><img src="gfx-shots/tron_after.jpg?v=2" alt="tron after"><div class="cap">v376 — glowing NEON grid (baked halo on lines)</div></td>
         <td class="changes">Added a procedural neon grid-floor: canvas cyan grid texture, additive blending, tracks the ground under the ball, 11000-unit plane so it recedes to the horizon. Visible only in tron; the dark surfaces keep their cyan edge-glow on top. Now reads as a Tron grid world (matches the reference's defining feature).</td>
         <td class="grade g7">3 → 7</td>
         <td class="next">To push higher: brighter neon bloom on the grid lines, a few red lanes like the reference, stronger cyan edge-glow on the obstacles.</td>
       </tr>
       <tr>
         <td class="el">Vaporwave mood</td>
-        <td><img src="gfx-shots/vapor_now.jpg" alt="vaporwave before"><div class="cap">v371 — tinted desert, NO grid/sun</div></td>
-        <td><img src="gfx-shots/vapor_after.jpg" alt="vaporwave after"><div class="cap">v376 — magenta NEON grid + purple sky + sun</div></td>
+        <td><img src="gfx-shots/vapor_now.jpg?v=2" alt="vaporwave before"><div class="cap">v371 — tinted desert, NO grid/sun</div></td>
+        <td><img src="gfx-shots/vapor_after.jpg?v=2" alt="vaporwave after"><div class="cap">v376 — magenta NEON grid + purple sky + sun</div></td>
         <td class="changes">Magenta grid floor (shared neon-grid mesh, tinted magenta) + a custom vaporwave backdrop replacing the desert panorama: deep-purple sky gradient + a big orange→pink gradient sun with carved scanline bands. Now reads as a vaporwave grid world.</td>
         <td class="grade g7">3 → 7</td>
         <td class="next">The sun sits on the horizon, but the grazing top-down camera hides most of the sky behind the back wall, so it's subtle (more visible on open-back holes/angles). Could add cyan wireframe terrain on the flanks + brighter sun bloom.</td>
       </tr>
       <tr>
         <td class="el">Daily hole</td>
-        <td><img src="gfx-shots/daily_before.jpg" alt="daily before"><div class="cap">BEFORE — one of 4 fixed built-ins (27–30) cycling</div></td>
-        <td><img src="gfx-shots/daily_after.jpg" alt="daily after"><div class="cap">AFTER — "DEADWOOD TANGLE", freshly generated</div></td>
+        <td><img src="gfx-shots/daily_before.jpg?v=2" alt="daily before"><div class="cap">BEFORE — one of 4 fixed built-ins (27–30) cycling</div></td>
+        <td><img src="gfx-shots/daily_after.jpg?v=2" alt="daily after"><div class="cap">AFTER — "DEADWOOD TANGLE", freshly generated</div></td>
         <td class="changes">Root cause found: <code>dailyIndexFor()</code> always returned built-in hole 27–30 (4 holes cycling), so the same hole AND the same background repeated. Fixed: when the owner hasn't published, the daily now <strong>generates a fresh wacky single-green hole seeded by the day</strong> via genWacky — beatability-guarded (tests 4 seeds, falls back to a built-in only if all fail). Each day is a unique hole with a unique name → which also rotates the backdrop (St.hi=-1 → nameHash background). Verified 6 days: DEADWOOD TANGLE / CACTUS RIDGE / SCORPION DRIFT / COYOTE RECKONING / WIDOW'S PASS / FOOL'S GOLD GULCH — all different, all different bg index.</td>
         <td class="grade g7">3 → 7</td>
         <td class="next">This also fixes the "same backgrounds repeat" complaint (different generated hole name → different painting each day). Loads in ~107ms incl. the beatability check. Could add more obstacle variety to genWacky.</td>
