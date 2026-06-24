@@ -3564,6 +3564,18 @@
       St.banner = 'DAILY #' + St.dailyN + (St.dailyPractice ? ' · PRACTICE' : '') + ' · ' + St.dailyTitle; St.bannerT = 2.6;
     } catch (e) { loadDaily(dailyIndex(), ghost); }
   }
+  // ---- AUTO-DAILY: when the owner hasn't published a hole, GENERATE a fresh wacky one seeded by the day (a NEW procedural hole every day — never the same built-in; its unique name also rotates the backdrop) ----
+  var _genDailyCache = {};
+  function loadGeneratedDaily(dayN, ghost) {
+    var cached = _genDailyCache[dayN];
+    if (cached) { loadDailyDraft(cached, null, ghost); return; }
+    for (var a = 0; a < 4; a++) {                                   // genWacky is beatable-by-construction, but verify (deterministic seed sequence per day) and only fall back if all 4 fail
+      var seed = (((dayN >>> 0) * 0x9E3779B1) ^ (a * 0x85EBCA6B)) >>> 0;
+      var h = genWacky(seed);
+      if (testDraftBeatable(h, 7, 14).beatable) { var j = serializeHole(h); _genDailyCache[dayN] = j; loadDailyDraft(j, null, ghost); return; }
+    }
+    loadDaily(dailyIndex(), ghost);                                 // extremely rare: 4 generated seeds all unbeatable → safe built-in fallback
+  }
   // ---- the async daily orchestrator: published hole + real rival ghost ----
   function enterDaily(explicitIdx, ghost) {
     var net = NET(); St.dailyDay = net ? net.todayKey() : null; St.dailyTitle = null; St.dailySubmitted = false; St.ghostName = null;
@@ -3575,10 +3587,10 @@
       net.fetchDaily(St.dailyDay).then(function (d) {
         if (d && d.hole_json) loadDailyDraft(d.hole_json, d.title, ghost);
         else if (d && d.hole_index != null) { St.dailyTitle = d.title; loadDaily(d.hole_index, ghost); }
-        else loadDaily(dailyIndex(), ghost);
+        else loadGeneratedDaily(dailyNum(), ghost);
         afterDailyLoaded(ghost);
-      }, function () { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); });
-    } else { loadDaily(dailyIndex(), ghost); afterDailyLoaded(ghost); }
+      }, function () { loadGeneratedDaily(dailyNum(), ghost); afterDailyLoaded(ghost); });
+    } else { loadGeneratedDaily(dailyNum(), ghost); afterDailyLoaded(ghost); }
   }
   // ---- archive: play a PAST day's hole (casual; never posts / counts) ----
   function enterPastDaily(daysAgo) {
@@ -3592,10 +3604,10 @@
       net.fetchDaily(day).then(function (d) {
         if (d && d.hole_json) loadDailyDraft(d.hole_json, d.title, null);
         else if (d && d.hole_index != null) { St.dailyTitle = d.title; loadDaily(d.hole_index, null); }
-        else loadDaily(dailyIndexFor(n), null);
+        else loadGeneratedDaily(n, null);
         fin();
-      }, function () { loadDaily(dailyIndexFor(n), null); fin(); });
-    } else { loadDaily(dailyIndexFor(n), null); fin(); }
+      }, function () { loadGeneratedDaily(n, null); fin(); });
+    } else { loadGeneratedDaily(n, null); fin(); }
   }
   // one-time how-to-play coachmark for brand-new players (incoming shared-link traffic)
   function showHowTo() {
@@ -4527,7 +4539,7 @@
   PG.__makeGif = function () { var b = St.rec ? makeHighlightGif(St.rec, 'test') : null; return b ? { size: b.size, type: b.type } : null; }; PG.__makeGifBlob = function () { return St.rec ? makeHighlightGif(St.rec, 'test') : null; };
   PG.__highlightSubPath = function (rec) { return highlightSubPath(rec || St.rec); };
   PG.__isl = function (name, par, wp, width, fn) { return isl(name, par, wp, width, fn); }; PG.__ribbon = function (wp, w) { return ribbon(wp, w); }; PG.__builder = function () { return builder(); }; PG.__finishHole = function (b, name, par, tee, cup, mnx, mxx, mnz, mxz) { return finish(b, name, par, tee, cup, mnx, mxx, mnz, mxz); }; PG.__loadHoleObj = function (h) { h.terrain = terrainFn(h.terrainFeatures, h.cup); rebuildBox(h); St.hole = h; St.hi = -1; St.customName = h.name; var t = h.tee; St.balls = [newBall(t.x, t.z, true)]; St.balls[0].y = h.terrain(t.x, t.z) + K.R; buildScene(h); St.strokes = 0; St.state = 'aim'; St.testing = true; var hy = Math.atan2(h.cup.x - t.x, h.cup.z - t.z); St.holeYaw = hy; St.camYaw = hy; St.aimYaw = hy; St.power = 0.5; return h.name; };
-  PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
+  PG.__enterDaily = function (idx, ghost) { enterDaily(idx == null ? null : idx, ghost || null); }; PG.__loadGeneratedDaily = function (n, g) { loadGeneratedDaily(n == null ? dailyNum() : n, g || null); }; PG.__net = function () { return NET(); }; PG.__submitRun = function (nm) { return St.rec ? submitDailyRun(St.rec, nm || 'Tester') : null; };
   PG.__edSave = function () { edSave(); }; PG.__setOwnerMode = function (v) { St.ownerMode = !!v; };
   PG.__testDraft = function (tries, max) { return ED.draft ? testDraftBeatable(ED.draft, tries, max) : null; };
   PG.__streak = function (day) { return streakUpdate(day); }; PG.__prevDay = function (d) { return prevDay(d); };

@@ -63,6 +63,14 @@
         <td class="grade g7">3 → 7</td>
         <td class="next">The sun sits on the horizon, but the grazing top-down camera hides most of the sky behind the back wall, so it's subtle (more visible on open-back holes/angles). Could add cyan wireframe terrain on the flanks + brighter sun bloom.</td>
       </tr>
+      <tr>
+        <td class="el">Daily hole</td>
+        <td><img src="gfx-shots/daily_before.jpg" alt="daily before"><div class="cap">BEFORE — one of 4 fixed built-ins (27–30) cycling</div></td>
+        <td><img src="gfx-shots/daily_after.jpg" alt="daily after"><div class="cap">AFTER — "DEADWOOD TANGLE", freshly generated</div></td>
+        <td class="changes">Root cause found: <code>dailyIndexFor()</code> always returned built-in hole 27–30 (4 holes cycling), so the same hole AND the same background repeated. Fixed: when the owner hasn't published, the daily now <strong>generates a fresh wacky single-green hole seeded by the day</strong> via genWacky — beatability-guarded (tests 4 seeds, falls back to a built-in only if all fail). Each day is a unique hole with a unique name → which also rotates the backdrop (St.hi=-1 → nameHash background). Verified 6 days: DEADWOOD TANGLE / CACTUS RIDGE / SCORPION DRIFT / COYOTE RECKONING / WIDOW'S PASS / FOOL'S GOLD GULCH — all different, all different bg index.</td>
+        <td class="grade g7">3 → 7</td>
+        <td class="next">This also fixes the "same backgrounds repeat" complaint (different generated hole name → different painting each day). Loads in ~107ms incl. the beatability check. Could add more obstacle variety to genWacky.</td>
+      </tr>
     </tbody>
   </table>
 
