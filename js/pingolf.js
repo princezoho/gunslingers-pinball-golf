@@ -128,6 +128,14 @@
       return h;
     };
   }
+  // ROLLING DESERT DUNES — height of the SURROUNDING landscape (zero inside the play bounds + a margin, rising to rolling dunes farther out). Drives both the displaced ground patch AND prop placement, so the course sits in a real 3D landscape instead of on a flat disc. Never touches the ball (play surface stays flat inside the curbs).
+  function duneHeight(x, z, bn) {
+    if (!bn) return 0;
+    var dx = Math.max(0, Math.max(bn.minX - x, x - bn.maxX)), dz = Math.max(0, Math.max(bn.minZ - z, z - bn.maxZ));
+    var d = Math.sqrt(dx * dx + dz * dz), mask = clamp((d - 30) / 360, 0, 1);   // dunes start just outside the curbs and swell quickly so they actually read in-frame
+    var n = Math.sin(x * 0.0019 + z * 0.0011) * 0.5 + Math.sin(z * 0.0024 - x * 0.0015) * 0.4 + Math.sin((x - z) * 0.0033) * 0.3;
+    return mask * (n * 105 + 58);
+  }
 
   /* ================================================================ THE 9 HOLES */
   // every hole gets a bottom flipper V near the tee (where the ball drains back to you, like a real pinball table)
@@ -1076,7 +1084,7 @@
   function groundAlpha() {   // radial feather: the ground disc is solid under the play area, then dissolves to transparent at its rim so it melts into the painted horizon + fog — no hard circular edge cutting across the art
     if (R3._grndA) return R3._grndA;
     var c = document.createElement('canvas'); c.width = c.height = 256; var x = c.getContext('2d');
-    var g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, '#fff'); g.addColorStop(0.55, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)');   // broad feather over the outer ~45%: at the grazing game camera this melts the painted floor into the horizon-haze backing disc over a wide visible band, not a hard rim
+    var g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, '#fff'); g.addColorStop(0.84, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)');   // keep the ground OPAQUE much farther out so the rolling dunes (which rise in the outer band) actually show, then a tighter feather into the horizon haze
     x.fillStyle = g; x.fillRect(0, 0, 256, 256);
     var t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.ClampToEdgeWrapping; R3._grndA = t; return t;
   }
@@ -1504,7 +1512,14 @@
       var patchTile = photoTex(gtex + '#patch', true, [Math.max(8, Math.round(gr / 180)), Math.max(8, Math.round(gr / 180))]);
       var patchM = new T.MeshStandardMaterial({ map: patchTile, color: new T.Color().setRGB(scene.gt[0], scene.gt[1], scene.gt[2]), roughness: 1, transparent: true, alphaMap: groundAlpha(), depthWrite: false });
       var patchY = (Array.isArray(hole.islands) && hole.islands.length) ? (Math.min.apply(null, hole.islands.map(function (il) { return il.y || 0; })) - 520) : -34;   // ISLAND holes: sink the desert floor WAY below the lowest island so they float over a deep canyon (not covered by the flat patch)
-      var patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); patch.rotation.x = -PI / 2; patch.position.set(pcx, patchY, midZ); patch.receiveShadow = true; R3.group.add(patch);
+      var patch;
+      if (Array.isArray(hole.islands) && hole.islands.length) { patch = new T.Mesh(new T.CircleGeometry(gr, 96), patchM); }   // islands float over a sea — keep the flat disc
+      else {   // ROLLING DUNES: a subdivided plane displaced by duneHeight (a CircleGeometry is a flat fan — no interior verts to undulate)
+        var _pg = new T.PlaneGeometry(gr * 2, gr * 2, 84, 84), _pp = _pg.attributes.position;
+        for (var _vi = 0; _vi < _pp.count; _vi++) { _pp.setZ(_vi, duneHeight(_pp.getX(_vi) + pcx, -_pp.getY(_vi) + midZ, bn)); }
+        _pp.needsUpdate = true; _pg.computeVertexNormals(); patch = new T.Mesh(_pg, patchM);
+      }
+      patch.rotation.x = -PI / 2; patch.position.set(pcx, patchY, midZ); patch.receiveShadow = true; R3.group.add(patch);
     }
     R3.dust = null;   // removed the glowing additive "magic orb" motes — they read as fantasy sparkles, wrong for a Wild-West game
     if (Array.isArray(hole.islands) && hole.islands.length) { if (R3.turf) R3.turf.visible = false; if (R3._collar) R3._collar.visible = false; hole.islands.forEach(function (isl) { buildShapedGreen(hole, bn, midZ, spanX, spanZ, isl.poly, (isl.y || 0) - 360); });   // hide the rectangular turf ONCE, then render each island's own green floor (none of which hide each other now)
@@ -1613,7 +1628,7 @@
         else if (side === 1) { px = bn.minX - 180 + prnd(k * 2) * (bn.maxX - bn.minX + 360); pz = bn.maxZ + off; }
         else if (side === 2) { px = bn.minX - off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
         else { px = bn.maxX + off; pz = bn.minZ + prnd(k * 2) * (bn.maxZ - bn.minZ); }
-        var py = hole.terrain(px, pz), type = pick(pal, prnd(k + 99)), ob;
+        var py = hole.terrain(px, pz) + duneHeight(px, pz, bn), type = pick(pal, prnd(k + 99)), ob;   // props ride the rolling dunes, not a flat plane
         if (type === 'cactus') {
           ob = mkSaguaro(95 + prnd(k + 11) * 150, 12 + prnd(k + 13) * 8, k); ob.position.set(px, py, pz); ob.rotation.y = prnd(k + 23) * TAU; R3.group.add(ob);
         } else if (type === 'rock') {
