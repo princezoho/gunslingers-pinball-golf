@@ -769,8 +769,9 @@
     if (R3.tronGrid) return R3.tronGrid;
     var cv = document.createElement('canvas'); cv.width = cv.height = 128; var x = cv.getContext('2d');
     x.clearRect(0, 0, 128, 128);
-    x.lineWidth = 5; x.strokeStyle = '#ffffff'; x.strokeRect(0, 0, 128, 128);   // WHITE cell border (caller tints cyan/magenta)
-    x.lineWidth = 2; x.strokeStyle = 'rgba(255,255,255,0.5)'; x.beginPath(); x.moveTo(64, 0); x.lineTo(64, 128); x.moveTo(0, 64); x.lineTo(128, 64); x.stroke();   // dim mid-lines (denser lane feel)
+    x.shadowColor = '#ffffff'; x.shadowBlur = 12; x.lineCap = 'round';   // baked NEON GLOW halo around each grid line (the reference's lines glow, not flat)
+    x.lineWidth = 5; x.strokeStyle = '#ffffff'; x.beginPath(); x.moveTo(64, 0); x.lineTo(64, 128); x.moveTo(0, 64); x.lineTo(128, 64); x.stroke();   // lines at tile CENTRE → seamless tiling + glow not clipped at edges
+    x.shadowBlur = 0; x.lineWidth = 1.5; x.beginPath(); x.moveTo(64, 0); x.lineTo(64, 128); x.moveTo(0, 64); x.lineTo(128, 64); x.stroke();   // crisp bright core over the glow
     var tex = new T.CanvasTexture(cv); tex.wrapS = tex.wrapT = T.RepeatWrapping; tex.repeat.set(44, 44);
     var mat = new T.MeshBasicMaterial({ map: tex, transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: 1, fog: false });
     var mesh = new T.Mesh(new T.PlaneGeometry(11000, 11000), mat); mesh.rotation.x = -PI / 2; mesh.renderOrder = 2; mesh.visible = false; mesh.frustumCulled = false;
