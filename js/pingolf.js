@@ -765,16 +765,28 @@
     });
     R3.scene.add(R3.wireGroup);
   }
-  function tronGrid() {   // glowing neon grid floor for TRON mood (matches the reference: dark floor + bright cyan grid receding to the horizon)
+  function tronGrid() {   // glowing neon grid floor for TRON + VAPORWAVE (WHITE lines, tinted per mood via material.color)
     if (R3.tronGrid) return R3.tronGrid;
     var cv = document.createElement('canvas'); cv.width = cv.height = 128; var x = cv.getContext('2d');
     x.clearRect(0, 0, 128, 128);
-    x.lineWidth = 5; x.strokeStyle = '#46e6ff'; x.strokeRect(0, 0, 128, 128);   // bright cyan cell border = the grid line
-    x.lineWidth = 2; x.strokeStyle = '#1a4a8a'; x.beginPath(); x.moveTo(64, 0); x.lineTo(64, 128); x.moveTo(0, 64); x.lineTo(128, 64); x.stroke();   // dim blue mid-lines (denser lane feel)
+    x.lineWidth = 5; x.strokeStyle = '#ffffff'; x.strokeRect(0, 0, 128, 128);   // WHITE cell border (caller tints cyan/magenta)
+    x.lineWidth = 2; x.strokeStyle = 'rgba(255,255,255,0.5)'; x.beginPath(); x.moveTo(64, 0); x.lineTo(64, 128); x.moveTo(0, 64); x.lineTo(128, 64); x.stroke();   // dim mid-lines (denser lane feel)
     var tex = new T.CanvasTexture(cv); tex.wrapS = tex.wrapT = T.RepeatWrapping; tex.repeat.set(44, 44);
     var mat = new T.MeshBasicMaterial({ map: tex, transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: 1, fog: false });
     var mesh = new T.Mesh(new T.PlaneGeometry(11000, 11000), mat); mesh.rotation.x = -PI / 2; mesh.renderOrder = 2; mesh.visible = false; mesh.frustumCulled = false;
     R3.scene.add(mesh); R3.tronGrid = mesh; return mesh;
+  }
+  function vaporBg() {   // VAPORWAVE backdrop: deep-purple sky + big gradient sun with carved scanline bands (matches the reference)
+    if (R3.vaporBg) return R3.vaporBg;
+    var cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512; var x = cv.getContext('2d');
+    var sky = x.createLinearGradient(0, 0, 0, 512); sky.addColorStop(0, '#13021f'); sky.addColorStop(0.5, '#2a0640'); sky.addColorStop(0.74, '#7a1366'); sky.addColorStop(1, '#1a0428'); x.fillStyle = sky; x.fillRect(0, 0, 1024, 512);
+    var cx = 512, cy = 116, R = 104;   // the sun, raised into the visible sky band (grazing camera shows little sky)
+    var sun = x.createLinearGradient(0, cy - R, 0, cy + R); sun.addColorStop(0, '#ffe45a'); sun.addColorStop(0.45, '#ff8a3a'); sun.addColorStop(1, '#ff2d95'); x.fillStyle = sun;
+    x.beginPath(); x.arc(cx, cy, R, 0, TAU); x.fill();
+    x.globalCompositeOperation = 'destination-out';   // scanline bands carved out of the lower half of the sun
+    for (var b = 0; b < 8; b++) { x.fillRect(cx - R, cy + R * 0.12 + b * 13, R * 2, Math.max(2, 8 - b)); }
+    x.globalCompositeOperation = 'source-over';
+    var tex = new T.CanvasTexture(cv); if (T.sRGBEncoding) tex.encoding = T.sRGBEncoding; R3.vaporBg = tex; return tex;
   }
   function wireSync() {
     if (!R3.scene || !R3.group) return;
@@ -791,13 +803,20 @@
       }
       if (R3.scene.background !== R3.wireBg) { R3.scene.background = R3.wireBg; if (R3.scene.fog) R3.scene.fog.color.setHex(0x02040b); }
       var _grd = tronGrid(); _grd.visible = _tron;                 // TRON gets the glowing grid floor; wireframe stays pure edges
-      if (_tron) { var _sb = St.balls && St.balls[0]; if (_sb && St.hole) _grd.position.set(_sb.x, St.hole.terrain(_sb.x, _sb.z) + 1.5, _sb.z); }   // grid tracks the ground under the ball (covers the visible play area)
+      if (_tron) { _grd.material.color.setHex(0x46e6ff); var _sb = St.balls && St.balls[0]; if (_sb && St.hole) _grd.position.set(_sb.x, St.hole.terrain(_sb.x, _sb.z) + 1.5, _sb.z); }   // cyan grid tracks the ground under the ball
     } else {
       if (!R3.group.visible) R3.group.visible = true;
       if (R3.wireGroup) R3.wireGroup.visible = false;
-      if (R3.tronGrid) R3.tronGrid.visible = false;
       if (R3.scene.overrideMaterial) R3.scene.overrideMaterial = null;
-      if (R3.holeBg && R3.scene.background !== R3.holeBg) R3.scene.background = R3.holeBg;
+      if (St.mood === 'vaporwave') {                               // VAPORWAVE: magenta grid floor + purple sky + gradient sun (matches the reference)
+        var _vg = tronGrid(); _vg.visible = true; _vg.material.color.setHex(0xff39c8);
+        var _vsb = St.balls && St.balls[0]; if (_vsb && St.hole) _vg.position.set(_vsb.x, St.hole.terrain(_vsb.x, _vsb.z) + 1.5, _vsb.z);
+        if (R3.scene.background !== vaporBg()) R3.scene.background = vaporBg();
+        if (R3.scene.fog) R3.scene.fog.color.setHex(0x2a0640);
+      } else {
+        if (R3.tronGrid) R3.tronGrid.visible = false;
+        if (R3.holeBg && R3.scene.background !== R3.holeBg) R3.scene.background = R3.holeBg;
+      }
     }
   }
   // REAL toon shading: a NEAREST-filtered gradient ramp drives MeshToonMaterial → genuine BANDED lighting (not a posterize filter); inverted-hull back-faces give a real geometry ink outline (not a 2D Sobel pass).
