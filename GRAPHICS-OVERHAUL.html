@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gunslingers Pinball Golf — Graphics Overhaul (Before / After)</title>
+<style>
+  body { font-family: -apple-system, Georgia, serif; background:#15100a; color:#f3eedd; margin:0; padding:28px; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  .sub { color:#b9a98a; margin:0 0 22px; font-size:14px; }
+  table { border-collapse:collapse; width:100%; }
+  th, td { border:1px solid #4a3a24; padding:12px; vertical-align:top; text-align:left; }
+  th { background:#241a0f; color:#ffd98a; font-size:13px; text-transform:uppercase; letter-spacing:.5px; }
+  td.el { font-weight:700; font-size:15px; width:120px; }
+  img { width:300px; border:1px solid #000; display:block; }
+  .cap { font-size:11px; color:#9a8a6a; margin-top:4px; }
+  .grade { font-weight:800; font-size:18px; }
+  .g7 { color:#7ad06a; } .g4 { color:#ffb14a; } .g3 { color:#ff7a5a; }
+  .changes { font-size:13px; line-height:1.5; }
+  .next { font-size:13px; line-height:1.5; color:#ffd98a; }
+  .pending { color:#ff7a5a; font-style:italic; }
+  .legend { background:#1d1409; border:1px solid #4a3a24; padding:14px 18px; margin:22px 0; font-size:13px; line-height:1.6; }
+  .ref { background:#0d1420; border:1px solid #2a4a6a; padding:10px; font-size:12px; color:#8ab4e0; }
+</style>
+</head>
+<body>
+  <h1>Gunslingers Pinball Golf — Graphics Overhaul</h1>
+  <p class="sub">Real before / after photos of the live render. Before = v349 baseline. After = v371. Grades: before treated as 3/10, target 9/10. Updated 2026-06-24.</p>
+
+  <table>
+    <thead>
+      <tr><th>Element</th><th>Before</th><th>After</th><th>Changes made</th><th>Grade</th><th>Next steps / analysis</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="el">Wall / curb</td>
+        <td><img src="gfx-shots/wall_before.jpg" alt="wall before"><div class="cap">v349 — flat box plank, sharp top</div></td>
+        <td><img src="gfx-shots/wall_after.jpg" alt="wall after"><div class="cap">v371 — beveled body + rounded rail</div></td>
+        <td class="changes">Body BoxGeometry → beveled ExtrudeGeometry (rounded edges, UVs remapped so wood maps). Rounded rail cap 18→32 segs. Deeper grain (normalScale 1.9), wood sheen, 16x anisotropy, spec-AA highlights.</td>
+        <td class="grade g7">3 → 7</td>
+        <td class="next">To reach 9: visible board seams / plank separation on the face, stronger base contact-AO, hardware (bolts) at posts.</td>
+      </tr>
+      <tr>
+        <td class="el">Whole scene (high-poly)</td>
+        <td><img src="gfx-shots/scene_before.jpg" alt="scene before"><div class="cap">v349 — faceted cones, 18-gon rails</div></td>
+        <td><img src="gfx-shots/scene_after.jpg" alt="scene after"><div class="cap">v371 — smooth trees + round rails</div></td>
+        <td class="changes">De-faceted scene-wide (4-agent audit): trees 7-seg flat cones → 5 smooth 32-seg tiers; rail caps 18→32; post domes 22→32; mushrooms, cannon, loop bands, windmill, tunnel, gate, pendulum, turntable, warp/portal, bouncer, barrel hoops all bumped. +2-6k static tris/hole.</td>
+        <td class="grade g7">3 → 7</td>
+        <td class="next">Geometry is now handled. Next lever is texture/material fidelity + per-mood lighting — NOT more polygons.</td>
+      </tr>
+      <tr>
+        <td class="el">Tron mood</td>
+        <td><img src="gfx-shots/tron_now.jpg" alt="tron now"><div class="cap">v371 — current tron look</div></td>
+        <td><div class="pending">PENDING — being reworked to match the reference</div>
+          <div class="ref">TARGET (your reference): jet-black floor, bright cyan glowing circuit lines, red + electric-blue grid lanes, hard neon glow. Currently: a tinted recolor of the desert, not a neon-grid world.</div></td>
+        <td class="changes">Not yet changed this pass.</td>
+        <td class="grade g3">3 → ?</td>
+        <td class="next">Rebuild: dark floor + emissive cyan grid lines, red/blue lane glow, stronger bloom on the lines only, swap to a dark grid background image (not the desert panorama).</td>
+      </tr>
+      <tr>
+        <td class="el">Vaporwave mood</td>
+        <td><img src="gfx-shots/vapor_now.jpg" alt="vaporwave now"><div class="cap">v371 — current vaporwave look</div></td>
+        <td><div class="pending">PENDING — being reworked to match the reference</div>
+          <div class="ref">TARGET (your reference): magenta neon grid floor receding to a horizon, cyan wireframe mountains, a big orange→pink gradient sun with scan-line bands, deep purple sky. Currently: a magenta/cyan tint over the desert, no grid/sun.</div></td>
+        <td class="changes">Not yet changed this pass.</td>
+        <td class="grade g3">3 → ?</td>
+        <td class="next">Add a magenta ground grid + gradient-sun background image + cyan rim on geometry; pick a vaporwave background from the library instead of reusing the desert panorama.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="legend">
+    <strong>Open issues being worked (this loop):</strong><br>
+    1. <strong>Tron / Vaporwave moods</strong> don't match your reference images — rebuilding them (above).<br>
+    2. <strong>Backgrounds repeat</strong> — the mood system reuses the same panorama. Fix: rotate through the full background-image library and match the image to the mood (tron grid, vaporwave sunset, etc.).<br>
+    3. <strong>Daily hole cycles generic built-ins</strong> instead of generating a NEW wacky hole each day — investigating the daily generator.<br>
+    <br>This file is the living spreadsheet — each loop fire adds the new before/after photo + grade for whatever was changed.
+  </div>
+</body>
+</html>
