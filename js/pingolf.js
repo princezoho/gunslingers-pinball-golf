@@ -1352,6 +1352,17 @@
     if (R3.post && R3.post.mat && R3.post.mat.uniforms.uGodray && R3.post.mat.uniforms.uGodray.value > 0.001) { R3.post.mat.uniforms.uSunScreen.value.set(0.5, 0.05); }   // shafts radiate DOWN from the bright sky/horizon at the top of the view (the visible bright source — the low golden-hour sun is behind the camera)
     if (R3.prismOn && R3.prism && St.hole) { var _bn = St.hole.bounds, _cx = (_bn.minX + _bn.maxX) / 2, _cz = (_bn.minZ + _bn.maxZ) / 2, _rr = Math.max(700, (_bn.maxX - _bn.minX + _bn.maxZ - _bn.minZ) * 0.32), _gy = St.hole.terrain(_cx, _cz); for (var _k = 0; _k < R3.prism.length; _k++) { var _a = St.t * 0.3 + _k * (TAU / R3.prism.length), _pl = R3.prism[_k]; _pl.position.set(_cx + Math.cos(_a) * _rr, _gy + 150 + Math.sin(St.t * 1.2 + _k * 1.7) * 90, _cz + Math.sin(_a) * _rr); _pl.intensity = R3.prismI * (0.55 + 0.45 * Math.sin(St.t * 2.3 + _k * 2.1)); } }   // PRISMATIC: real coloured point lights orbit the table at different heights + pulse → additive coloured illumination that actually lights the geometry & casts coloured speculars
     R3._sf = (R3._sf || 0) + 1; if (R3.r.shadowMap && (R3._sf & 3) === 0) R3.r.shadowMap.needsUpdate = true;   // re-render the shadow map every 4th frame (autoUpdate is off) — ~75% less shadow work, no visible lag
+    // LIVE REFLECTION PROBE — the hero ball mirrors the ACTUAL course (curbs/obstacles/cup), not just the painted sky. Built-in r128 cube camera; gated to alternate frames; ball hidden during its own probe render so it never reflects itself.
+    if (St.hole && St.balls && St.balls[0] && R3.ballMeshes && R3.ballMeshes[0]) {
+      if (!R3.ballCube) { R3.ballCubeRT = new T.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: T.LinearMipmapLinearFilter }); R3.ballCube = new T.CubeCamera(4, 6000, R3.ballCubeRT); R3.scene.add(R3.ballCube); }
+      var _bpm = R3.ballMeshes[0];
+      if (_bpm.material && ('envMap' in _bpm.material) && _bpm.material.envMap !== R3.ballCubeRT.texture && St.mood !== 'wireframe' && St.mood !== 'tron') { _bpm.material.envMap = R3.ballCubeRT.texture; _bpm.material.needsUpdate = true; }   // assign once per ball rebuild (skip the stylized black-world modes)
+      R3._cf = (R3._cf || 0) + 1;
+      if ((R3._cf & 3) === 0 && _bpm.material && _bpm.material.envMap === R3.ballCubeRT.texture) {
+        var _spb = St.balls[0]; R3.ballCube.position.set(_spb.x, St.hole.terrain(_spb.x, _spb.z) + K.R, _spb.z);
+        var _bvis = _bpm.visible; _bpm.visible = false; R3.ballCube.update(R3.r, R3.scene); _bpm.visible = _bvis;
+      }
+    }
     var p = R3.post;
     if (p && p.on) {
       try {
@@ -2006,7 +2017,7 @@
   function ensureBallMeshes() {
     if (!R3.shieldMeshes) R3.shieldMeshes = [];
     while (R3.ballMeshes.length < St.balls.length) {
-      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .12, clearcoat: 1, clearcoatRoughness: .06, envMapIntensity: .9 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; if ('envMapIntensity' in m.material) m.material.envMapIntensity = R3.moodRefl || 0.9; rimPatch(m.material); R3.group.add(m); R3.ballMeshes.push(m);   // ball wears its face/markings — keep the texture in toon/flat modes; honour the current mood's reflection boost
+      var m = new T.Mesh(new T.SphereGeometry(K.R, 48, 32), T.MeshPhysicalMaterial ? new T.MeshPhysicalMaterial({ map: ballTex(), bumpMap: ballBump(), bumpScale: 1.1, roughness: .05, metalness: .15, clearcoat: 1, clearcoatRoughness: .02, envMapIntensity: 1.4 }) : new T.MeshStandardMaterial({ map: ballTex(), roughness: .3 })); m.castShadow = true; m.userData.keepMap = true; m.userData.ballPrime = R3.ballMeshes.length === 0; if ('envMapIntensity' in m.material) m.material.envMapIntensity = (R3.moodRefl || 0.9) * 1.5; rimPatch(m.material); R3.group.add(m); R3.ballMeshes.push(m);   // GLOSSIER ball (roughness .12→.05, clearcoatR .06→.02) so the live cube-probe reflection of the course actually reads; flagged ballPrime for the probe
       var sh = new T.Mesh(new T.CircleGeometry(K.R * 1.2, 14), new T.MeshBasicMaterial({ color: 0x0a1606, transparent: true, opacity: .32 })); sh.rotation.x = -PI / 2; R3.group.add(sh); R3.bsh.push(sh);
       var bb = new T.Mesh(new T.SphereGeometry(K.R * 1.5, 18, 14), new T.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: .4, side: T.DoubleSide, depthWrite: false })); bb.visible = false; bb.renderOrder = 3; R3.group.add(bb); R3.shieldMeshes.push(bb);
     }
