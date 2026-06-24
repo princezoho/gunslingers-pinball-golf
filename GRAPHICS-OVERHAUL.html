@@ -34,7 +34,7 @@
       <tr>
         <td class="el">Lighting / look (AAA pass)</td>
         <td><img src="gfx-shots/aaa_before.jpg?v=2" alt="look before"><div class="cap">v377 — flat, hazy, washed-out (double tone-map + flood fill)</div></td>
-        <td><img src="gfx-shots/aaa_after.jpg?v=2" alt="look after"><div class="cap">v378 — richer, contrasty, grounded form</div></td>
+        <td><img src="gfx-shots/aaa_after.jpg?v=3" alt="look after"><div class="cap">v380 — richer, contrasty, grounded + premium glow</div></td>
         <td class="changes">Root-cause overhaul (5-agent pipeline audit): (1) the scene was tone-mapped TWICE (GPU ACES + a composite S-curve) = muddy midtones — removed the 2nd curve; (2) key:fill was ~1.5:1 (flood fill killed all form) — crushed fill/hemi/ambient + tamed the fake rim → ~4:1 so every prop has a lit side + shadow side; (3) contact shadows were detached (normalBias 3→1.4) — reattached to object bases; (4) SSAO was invisible (radius 42→90) — now wraps every base/seam; contrast ×1.04→1.12, denser blacks. All "darken + separate", so no blowout/murk.</td>
         <td class="grade g7">4 → 7</td>
         <td class="next">Next for true AAA: chrome ball reflects the world (live cube-probe, not flat sky), multi-octave bloom for premium glow, anisotropic metal. In progress.</td>
