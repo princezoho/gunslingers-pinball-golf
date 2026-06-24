@@ -4373,12 +4373,14 @@
     }
     var par = wp[nWp - 1][1] > 2600 ? 4 : 3;   // longer hole → higher par (isl caps at 4)
     var h = isl(genName(rnd), par, wp, width, obs);
+    h.noBox = true;   // NO rectangular outer box — the organic shape's own curved curbs ARE the boundary (was trapping every wacky hole inside a rectangle)
     h.mood = ['sunset', 'sunset', 'daytime', 'night', 'night', 'noir', 'faded', 'redglow', 'sincity'][Math.floor(rnd() * 9)];   // varied cinematic look per generated hole (night/noir/etc.)
     return h;
   }
   // serialize any built hole object to the editor/daily JSON (so a generated hole can be published as the daily)
   function serializeHole(h) { var sv = ED.draft; ED.draft = h; try { return edSerialize(); } finally { ED.draft = sv; } }
   PG.__genWacky = function (seed) { return genWacky(seed); };
+  PG.__testGen = function (seed) { var h = genWacky(seed); var r = testDraftBeatable(h, 9, 16); return { name: h.name, noBox: !!h.noBox, walls: (h.walls || []).length, beatable: r.beatable, strokes: r.strokes }; };
   // ---- in-game GENERATOR STUDIO: generate 3 fresh wacky holes, preview / edit / publish one as today's daily ----
   function gsBtn(a, b) { return 'flex:1;min-width:118px;padding:10px;border:none;background:linear-gradient(180deg,' + a + ',' + b + ');color:#fff;font:800 12px Georgia;cursor:pointer;'; }
   function gsToast(msg) { var t = elt('div', 'position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:9800;max-width:84vw;text-align:center;padding:11px 18px;background:rgba(18,12,5,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#f5efdc;font:800 13px Georgia;', msg, document.body); setTimeout(function () { t.remove(); }, 3400); }
